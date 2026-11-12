@@ -1,6 +1,6 @@
 # Thiết kế database cho home-platform
 
-Ngày: 2026-11-11 · Trạng thái: **đã duyệt, đã áp dụng ngày 2026-11-12** (Flyway version 1 đến 3 trên database `home_platform`).
+Ngày: 2026-11-11 · Trạng thái: **đã duyệt, đã áp dụng ngày 2026-11-12** (mỗi service tự chạy migration của mình trên database `home_platform`).
 
 Ký hiệu trong tài liệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 
@@ -398,7 +398,7 @@ Chưa làm ngay; thiết kế hiện tại không cản trở bước nào.
 
 **Đã quyết định khi tạo bảng**
 
-- Thay đổi cấu trúc database do Flyway quản lý; script nằm ở `src/main/resources/db/migration`, mỗi nhóm bảng một file.
+- Thay đổi cấu trúc database do Flyway quản lý. Script nằm ở `src/main/resources/db/migration` của từng service, và mỗi service có bảng lịch sử riêng (`flyway_history_identity`, `flyway_history_registry`, `flyway_history_media`).
 - `geohash` là cột thường, do ứng dụng tính từ toạ độ.
 - Tên index và khoá ngoại: xem `docs/superpowers/plans/2026-11-11-database-schema.md`.
 
