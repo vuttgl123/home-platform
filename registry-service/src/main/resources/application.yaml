@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: registry-service
+  profiles:
+    default: uat
+  flyway:
+    table: flyway_history_registry
+    # Các service dùng chung một database. Lần đầu service này chạy, database đã có bảng
+    # của service khác, nên Flyway phải đặt mốc 0 rồi mới chạy V1 của riêng nó.
+    baseline-on-migrate: true
+    baseline-version: 0
+
+server:
+  port: 8082
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  main:
+    banner-mode: "off"

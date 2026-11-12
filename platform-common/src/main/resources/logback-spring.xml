@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Cấu hình log chuẩn cho các microservice của home-platform (Spring Boot 4 + Logback).
+
+  File không chứa gì riêng của một service: tên service lấy từ spring.application.name.
+  Mọi service dùng chung đúng một bản này: file nằm trong platform-common và tự có hiệu lực
+  ở service nào phụ thuộc vào module đó.
+
+  ĐẦU RA THEO PROFILE
+    khác prod (uat, test, ...)   console text có màu, file text, file error
+    prod                         console JSON, file text, file error, file JSON
+
+  FILE SINH RA (trong thư mục log, mặc định là ./logs)
+    <service>.log            toàn bộ log, dạng text
+    <service>-error.log      chỉ log ERROR
+    <service>.json.log       toàn bộ log, mỗi dòng một bản ghi JSON (chỉ có ở prod)
+    archive/                 file cũ đã nén gzip
+
+  THAM SỐ
+  Đặt bằng thuộc tính trong application.yaml, hoặc bằng biến môi trường / tham số -D
+  có tên ghi trong ngoặc. Cột cuối là giá trị mặc định.
+
+    logging.file.path                                      (LOG_PATH)                                       logs
+        Thư mục chứa log.
+    logging.logback.rollingpolicy.max-file-size            (LOGBACK_ROLLINGPOLICY_MAX_FILE_SIZE)            50MB
+        Cỡ tối đa của một file trước khi cắt sang file mới.
+    logging.logback.rollingpolicy.max-history              (LOGBACK_ROLLINGPOLICY_MAX_HISTORY)              30
+        Số ngày giữ file text và file JSON.
+    logging.logback.rollingpolicy.total-size-cap           (LOGBACK_ROLLINGPOLICY_TOTAL_SIZE_CAP)           3GB
+        Tổng dung lượng archive tối đa, tính riêng cho từng loại file.
+    logging.logback.rollingpolicy.clean-history-on-start   (LOGBACK_ROLLINGPOLICY_CLEAN_HISTORY_ON_START)   false
+        Dọn archive quá hạn ngay khi service khởi động.
+    (LOG_ERROR_MAX_HISTORY)                                                                                 90
+        Số ngày giữ file error.
+    (LOG_JSON_FORMAT)                                                                                       ecs
+        Định dạng JSON: ecs, logstash hoặc gelf.
+    (LOG_ASYNC_QUEUE_SIZE)                                                                                  8192
+        Số bản ghi chờ ghi file trong mỗi hàng đợi bất đồng bộ.
+    logging.level.<tên logger>
+        Level của một logger bất kỳ; ghi đè level khai báo trong file này.
+
+  Đổi level lúc đang chạy: dùng endpoint loggers của Actuator. Không bật scan="true"
+  vì Logback không quét lại được file có thẻ springProfile / springProperty.
+-->
+<configuration>
+
+    <!-- ============================================================================
+         1. NỀN TẢNG TỪ SPRING BOOT
+         Nạp các conversion word %clr (màu), %wEx (stack trace), %correlationId (trace)
+         và level mặc định cho vài logger ồn của Tomcat, Hibernate Validator, Actuator.
+         ============================================================================ -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- ============================================================================
+         2. THAM SỐ
+         ============================================================================ -->
+
+    <!-- Tên service: dùng trong từng dòng log và trong tên file. -->
+    <springProperty name="APP_NAME" source="spring.application.name" defaultValue="application"/>
+
+    <!-- Package gốc chung của mọi service trong platform. -->
+    <property name="APP_PACKAGE" value="com.home_platform"/>
+
+    <property name="LOG_DIR" value="${LOG_PATH:-logs}"/>
+    <property name="LOG_ARCHIVE_DIR" value="${LOG_DIR}/archive"/>
+
+    <property name="LOG_MAX_FILE_SIZE" value="${LOGBACK_ROLLINGPOLICY_MAX_FILE_SIZE:-50MB}"/>
+    <property name="LOG_MAX_HISTORY" value="${LOGBACK_ROLLINGPOLICY_MAX_HISTORY:-30}"/>
+    <property name="LOG_TOTAL_SIZE_CAP" value="${LOGBACK_ROLLINGPOLICY_TOTAL_SIZE_CAP:-3GB}"/>
+    <property name="LOG_CLEAN_HISTORY_ON_START" value="${LOGBACK_ROLLINGPOLICY_CLEAN_HISTORY_ON_START:-false}"/>
+    <property name="LOG_ERROR_MAX_HISTORY" value="${LOG_ERROR_MAX_HISTORY:-90}"/>
+
+    <property name="LOG_JSON_FORMAT" value="${LOG_JSON_FORMAT:-ecs}"/>
+    <property name="LOG_ASYNC_QUEUE_SIZE" value="${LOG_ASYNC_QUEUE_SIZE:-8192}"/>
+
+    <!-- ============================================================================
+         3. ĐỊNH DẠNG DÒNG LOG (TEXT)
+         Thứ tự các trường:
+           thời gian (ISO-8601 kèm múi giờ)  level  PID  [service]  [thread]  [trace]  logger : nội dung
+         Stack trace (%wEx) nằm ở các dòng kế tiếp.
+
+         LOG_CORRELATION_PATTERN do Spring Boot đặt khi service có tracing: lúc đó mỗi dòng
+         tự có thêm [traceId-spanId] để lần theo một request qua nhiều service. Chưa có
+         tracing thì phần này rỗng.
+
+         Không in tên method / số dòng (%M, %L): Logback phải dựng stack trace cho từng
+         bản ghi để lấy thông tin đó, rất tốn CPU.
+         ============================================================================ -->
+    <property name="TEXT_CONSOLE_PATTERN"
+              value="%clr(%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}){faint} %clr(%5p){} %clr(${PID:-}){magenta} %clr(--- [${APP_NAME}] [%15.15t] ${LOG_CORRELATION_PATTERN:-}){faint}%clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"/>
+
+    <!-- Giống console nhưng không có mã màu và in đủ tên thread. -->
+    <property name="TEXT_FILE_PATTERN"
+              value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p ${PID:-} --- [${APP_NAME}] [%t] ${LOG_CORRELATION_PATTERN:-}%-40.40logger{39} : %m%n%wEx"/>
+
+    <!-- ============================================================================
+         4. APPENDER GHI FILE, DÙNG Ở MỌI PROFILE
+         File cắt theo ngày và theo cỡ; file cũ nén gzip, chuyển vào archive/ và bị xoá
+         khi quá số ngày giữ hoặc khi tổng dung lượng vượt trần.
+         ============================================================================ -->
+
+    <!-- Toàn bộ log dạng text. -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/${APP_NAME}.log</file>
+        <encoder>
+            <pattern>${TEXT_FILE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_ARCHIVE_DIR}/${APP_NAME}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>${LOG_CLEAN_HISTORY_ON_START}</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <!-- Chỉ ERROR: file nhỏ, giữ lâu hơn, dùng để tra sự cố và gắn cảnh báo. -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/${APP_NAME}-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <encoder>
+            <pattern>${TEXT_FILE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_ARCHIVE_DIR}/${APP_NAME}-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${LOG_ERROR_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>${LOG_CLEAN_HISTORY_ON_START}</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <!-- Ghi file qua hàng đợi để luồng xử lý request không phải chờ ổ đĩa.
+         Khi hàng đợi còn dưới 20% chỗ trống, Logback bỏ bớt TRACE/DEBUG/INFO và luôn giữ
+         WARN/ERROR (discardingThreshold mặc định). neverBlock=false: khi hàng đợi đầy hẳn,
+         luồng ghi log chờ chứ không làm mất WARN/ERROR. -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <queueSize>${LOG_ASYNC_QUEUE_SIZE}</queueSize>
+        <neverBlock>false</neverBlock>
+        <includeCallerData>false</includeCallerData>
+        <maxFlushTime>5000</maxFlushTime>
+    </appender>
+
+    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE"/>
+        <queueSize>1024</queueSize>
+        <neverBlock>false</neverBlock>
+        <includeCallerData>false</includeCallerData>
+        <maxFlushTime>5000</maxFlushTime>
+    </appender>
+
+    <!-- ============================================================================
+         5. MỌI PROFILE TRỪ PROD (uat, test, chạy trên máy lập trình viên)
+         Console dạng text để người đọc trực tiếp; code của platform ghi tới DEBUG.
+         ============================================================================ -->
+    <springProfile name="!prod">
+
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${TEXT_CONSOLE_PATTERN}</pattern>
+                <charset>${CONSOLE_LOG_CHARSET}</charset>
+            </encoder>
+        </appender>
+
+        <logger name="${APP_PACKAGE}" level="DEBUG"/>
+        <!-- In câu SQL chạy qua JdbcTemplate. -->
+        <logger name="org.springframework.jdbc.core.JdbcTemplate" level="DEBUG"/>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR_FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- ============================================================================
+         6. PROD
+         Console và một file riêng ở dạng JSON để hệ thống gom log (ELK, Loki, ...) đọc
+         thẳng, không phải tách chuỗi. Mỗi bản ghi có sẵn tên service, level, logger,
+         thread, stack trace và mọi giá trị MDC (kể cả traceId / spanId).
+         File text và file error vẫn ghi để tra trực tiếp trên máy chủ.
+         ============================================================================ -->
+    <springProfile name="prod">
+
+        <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+                <format>${LOG_JSON_FORMAT}</format>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_DIR}/${APP_NAME}.json.log</file>
+            <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+                <format>${LOG_JSON_FORMAT}</format>
+                <charset>UTF-8</charset>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_ARCHIVE_DIR}/${APP_NAME}.%d{yyyy-MM-dd}.%i.json.log.gz</fileNamePattern>
+                <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+                <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+                <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+                <cleanHistoryOnStart>${LOG_CLEAN_HISTORY_ON_START}</cleanHistoryOnStart>
+            </rollingPolicy>
+        </appender>
+
+        <appender name="ASYNC_JSON_FILE" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="JSON_FILE"/>
+            <queueSize>${LOG_ASYNC_QUEUE_SIZE}</queueSize>
+            <neverBlock>false</neverBlock>
+            <includeCallerData>false</includeCallerData>
+            <maxFlushTime>5000</maxFlushTime>
+        </appender>
+
+        <logger name="${APP_PACKAGE}" level="INFO"/>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR_FILE"/>
+            <appender-ref ref="ASYNC_JSON_FILE"/>
+        </root>
+    </springProfile>
+
+</configuration>
