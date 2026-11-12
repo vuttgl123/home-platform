@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+logs/
+
+### Local connection settings ###
+src/main/resources/application-uat.yaml
+src/main/resources/application-prod.yaml
