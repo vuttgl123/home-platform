@@ -1,16 +1,26 @@
 package com.home_platform.registry.place;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.history.ChangeAction;
 import com.home_platform.common.history.EntityHistory;
 import com.home_platform.common.id.IdGenerator;
+import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
+import com.home_platform.common.web.NotFoundException;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.placetype.PlaceTypeService;
+import com.home_platform.registry.support.Geohash;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +33,8 @@ public class PlaceService {
 
 	public static final String ENTITY_TYPE = "PLACE";
 
+	private static final int GEOHASH_PRECISION = 9;
+
 	private final PlaceRepository repository;
 
 	private final PlaceTypeService placeTypes;
@@ -33,9 +45,15 @@ public class PlaceService {
 
 	private final IdGenerator idGenerator;
 
+	private final PlaceAddressRepository addresses;
+
+	private final Clock clock;
+
 	PlaceService(PlaceRepository repository, PlaceTypeService placeTypes, AttributeValidation attributeValidation,
-			EntityHistory history, IdGenerator idGenerator) {
+			EntityHistory history, IdGenerator idGenerator, PlaceAddressRepository addresses, Clock clock) {
 		this.repository = repository;
+		this.addresses = addresses;
+		this.clock = clock;
 		this.placeTypes = placeTypes;
 		this.attributeValidation = attributeValidation;
 		this.history = history;
@@ -50,7 +68,44 @@ public class PlaceService {
 	public PlaceView view(long workspaceId, long id) {
 		Place place = get(workspaceId, id);
 		List<Long> ids = place.pathIds();
-		return new PlaceView(place, this.repository.refs(workspaceId, ids.subList(0, ids.size() - 1)));
+		Map<Long, PlaceAddress> byPlace = this.addresses.findAll(workspaceId, ids)
+			.stream()
+			.collect(Collectors.toMap(PlaceAddress::placeId, Function.identity()));
+		Long from = null;
+		for (int i = ids.size() - 1; i >= 0 && from == null; i--) {
+			from = byPlace.containsKey(ids.get(i)) ? ids.get(i) : null;
+		}
+		return new PlaceView(place, this.repository.refs(workspaceId, ids.subList(0, ids.size() - 1)),
+				byPlace.get(id), (from != null) ? byPlace.get(from) : null, from);
+	}
+
+	/** Địa chỉ của chính địa điểm; {@code null} nếu không có. */
+	public PlaceAddress address(long workspaceId, long placeId) {
+		return this.addresses.find(workspaceId, placeId).orElse(null);
+	}
+
+	/** Đặt (tạo hoặc thay) địa chỉ. Là một lần sửa địa điểm: kiểm tra và tăng {@code version}. */
+	@Transactional
+	public Place setAddress(WorkspaceContext ctx, long id, PlaceAddressRequest request) {
+		Place current = get(ctx.workspaceId(), id);
+		PlaceAddress address = toAddress(id, request.address());
+		Place stored = this.repository.update(ctx, current.withVersion(request.version()));
+		this.addresses.upsert(ctx.workspaceId(), address);
+		record(ctx, stored, address, ChangeAction.UPDATE, request.note());
+		return stored;
+	}
+
+	/** Gỡ địa chỉ. Là một lần sửa địa điểm: kiểm tra và tăng {@code version}. */
+	@Transactional
+	public Place removeAddress(WorkspaceContext ctx, long id, int version, String note) {
+		Place current = get(ctx.workspaceId(), id);
+		if (address(ctx.workspaceId(), id) == null) {
+			throw new NotFoundException("Place " + id + " has no address");
+		}
+		Place stored = this.repository.update(ctx, current.withVersion(version));
+		this.addresses.delete(ctx.workspaceId(), id);
+		record(ctx, stored, null, ChangeAction.UPDATE, note);
+		return stored;
 	}
 
 	@Transactional
@@ -68,7 +123,11 @@ public class PlaceService {
 				request.name(), request.description(), request.status(), attributes, request.coverFileId(), null, 0,
 				null, 0, 0, null);
 		Place stored = this.repository.insert(ctx, place);
-		record(ctx, stored, ChangeAction.CREATE, request.note());
+		PlaceAddress address = (request.address() != null) ? toAddress(id, request.address()) : null;
+		if (address != null) {
+			this.addresses.upsert(ctx.workspaceId(), address);
+		}
+		record(ctx, stored, address, ChangeAction.CREATE, request.note());
 		return stored;
 	}
 
@@ -87,7 +146,7 @@ public class PlaceService {
 			.withStatus(request.status())
 			.withAttributes(attributes)
 			.withCoverFileId(request.coverFileId()));
-		record(ctx, stored, ChangeAction.UPDATE, request.note());
+		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.UPDATE, request.note());
 		return stored;
 	}
 
@@ -95,8 +154,31 @@ public class PlaceService {
 		return this.attributeValidation.validate(ctx.workspaceId(), FieldTarget.PLACE, placeTypeId, values);
 	}
 
-	private void record(WorkspaceContext ctx, Place place, ChangeAction action, String note) {
-		this.history.record(ctx, ENTITY_TYPE, place.id(), place.version(), action, PlaceSnapshot.of(place), note);
+	private void record(WorkspaceContext ctx, Place place, PlaceAddress address, ChangeAction action, String note) {
+		this.history.record(ctx, ENTITY_TYPE, place.id(), place.version(), action, PlaceSnapshot.of(place, address),
+				note);
+	}
+
+	/**
+	 * Địa chỉ sẽ lưu: toạ độ đi theo cặp, làm tròn 6 chữ số thập phân như cột {@code DECIMAL(9,6)},
+	 * và {@code geohash} 9 ký tự (khoảng 5 m) tính từ toạ độ.
+	 */
+	private PlaceAddress toAddress(long placeId, AddressRequest request) {
+		if ((request.latitude() == null) != (request.longitude() == null)) {
+			throw new BadRequestException("latitude and longitude must be given together");
+		}
+		BigDecimal latitude = round(request.latitude());
+		BigDecimal longitude = round(request.longitude());
+		String geohash = (latitude != null)
+				? Geohash.encode(latitude.doubleValue(), longitude.doubleValue(), GEOHASH_PRECISION) : null;
+		Instant now = this.clock.instant().truncatedTo(ChronoUnit.MILLIS);
+		return new PlaceAddress(0, placeId, request.countryCode(), request.provinceCode(), request.provinceName(),
+				request.districtCode(), request.districtName(), request.wardCode(), request.wardName(),
+				request.street(), request.fullAddress(), latitude, longitude, geohash, now, now);
+	}
+
+	private static BigDecimal round(BigDecimal value) {
+		return (value != null) ? value.setScale(6, RoundingMode.HALF_UP) : null;
 	}
 
 	static ConflictException tooDeep() {
