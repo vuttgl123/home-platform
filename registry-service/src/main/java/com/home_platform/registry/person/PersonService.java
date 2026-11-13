@@ -1,5 +1,6 @@
 package com.home_platform.registry.person;
 
+import java.util.List;
 import java.util.Map;
 
 import com.home_platform.common.context.WorkspaceContext;
@@ -108,6 +109,11 @@ public class PersonService {
 		Person stored = this.repository.restore(ctx, id, request.version());
 		record(ctx, stored, ChangeAction.RESTORE, request.note());
 		return stored;
+	}
+
+	/** Tên của các người (kể cả đã xoá) theo {@code id}. */
+	public Map<Long, String> names(long workspaceId, List<Long> ids) {
+		return this.repository.names(workspaceId, ids);
 	}
 
 	public CursorPage<Person> list(long workspaceId, CursorRequest page) {

@@ -1,6 +1,8 @@
 package com.home_platform.registry.person;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -15,6 +17,20 @@ public class PersonRepository extends WorkspaceRepository<Person> {
 
 	PersonRepository(RepositorySupport support) {
 		super(support, "reg_person", Person.class);
+	}
+
+	/** Tên của các người (kể cả đã xoá) theo {@code id}. */
+	public Map<Long, String> names(long workspaceId, List<Long> ids) {
+		Map<Long, String> names = new HashMap<>();
+		if (ids.isEmpty()) {
+			return names;
+		}
+		jdbc().sql("SELECT id, full_name FROM reg_person WHERE workspace_id = :workspaceId AND id IN (:ids)")
+			.param("workspaceId", workspaceId)
+			.param("ids", ids)
+			.query((rs, rowNum) -> names.put(rs.getLong("id"), rs.getString("full_name")))
+			.list();
+		return names;
 	}
 
 	/** Người chưa xoá, theo tên. Index (workspace_id, full_name). */

@@ -76,6 +76,13 @@ public class PlaceService {
 		return this.repository.getById(workspaceId, id);
 	}
 
+	/** Tên của các địa điểm (kể cả đã xoá) theo {@code id}; id không có thì không có trong kết quả. */
+	public Map<Long, String> names(long workspaceId, List<Long> ids) {
+		return this.repository.refs(workspaceId, ids)
+			.stream()
+			.collect(Collectors.toMap(PlaceRef::id, PlaceRef::name, (a, b) -> a));
+	}
+
 	public PlaceView view(long workspaceId, long id) {
 		Place place = get(workspaceId, id);
 		List<Long> ids = place.pathIds();
