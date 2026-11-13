@@ -66,6 +66,8 @@ Logic nghiệp vụ đầy đủ: `docs/superpowers/specs/2026-11-13-business-ru
 | `/places` (đọc) | `GET` (cấp cao nhất), `GET /{id}/children`, `GET /{id}/subtree`, `GET /by-type/{typeId}`, `GET /by-area?province=&ward=`, `GET /search?name=` hoặc `?code=`; phân trang bằng `cursor`, `limit` |
 | `/places/{id}/versions` | Lịch sử version; `GET /{no}` xem nội dung; `POST /{no}/restore` khôi phục nội dung (không đổi chỗ đứng) |
 | `GET /activity` | Hoạt động gần đây của không gian, mới nhất trước; lọc `entityType` |
+| `/people` | Hồ sơ người: `POST`, `GET /{id}` (kèm nơi đang ở), `PUT /{id}`, `DELETE /{id}` (khi không còn cư trú hiện tại hay sắp tới), `POST /{id}/restore`, `GET` (theo tên), `GET /search?name=` \| `?phone=` \| `?idNumber=`, `/{id}/versions` như địa điểm. Hai người chưa xoá không trùng cặp loại và số giấy tờ |
+| `/occupancies` | Cư trú: `POST`, `GET /{id}`, `PUT /{id}` (sửa nhập nhầm), `POST /{id}/end` (chuyển đi), `DELETE /{id}`; `GET ?placeId=&status=CURRENT\|UPCOMING\|PAST`, `?subtreeOf=` (đang ở trong cả toà nhà), `?personId=`. Một người không có hai dòng giao thời gian ở cùng một chỗ |
 
 Mọi lệnh ghi lên địa điểm cần `version` đã đọc (trong body, hoặc tham số URL với `DELETE`); `version` đã
 đổi thì nhận 409 và phải đọc lại. Có thể gửi kèm `note` (tối đa 255 ký tự) để ghi vào version.
