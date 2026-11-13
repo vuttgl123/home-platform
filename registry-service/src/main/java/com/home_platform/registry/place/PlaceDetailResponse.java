@@ -4,6 +4,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.home_platform.registry.support.PlainNumbers;
+import tools.jackson.databind.annotation.JsonSerialize;
+
 /**
  * Một địa điểm đầy đủ.
  *
@@ -12,7 +15,7 @@ import java.util.Map;
  * @param effectiveAddress địa chỉ của nó hoặc của tổ tiên gần nhất có địa chỉ
  */
 public record PlaceDetailResponse(long id, Long parentId, long placeTypeId, String path, int depth, String code,
-		String name, String description, PlaceStatus status, Map<String, Object> attributes, Long coverFileId,
+		String name, String description, PlaceStatus status, @JsonSerialize(contentUsing = PlainNumbers.class) Map<String, Object> attributes, Long coverFileId,
 		Instant createdAt, long createdBy, Instant updatedAt, long updatedBy, int version, Instant deletedAt,
 		List<PlaceRef> ancestors, AddressResponse address, EffectiveAddressResponse effectiveAddress) {
 }

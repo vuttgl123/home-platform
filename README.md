@@ -62,6 +62,13 @@ Logic nghiệp vụ đầy đủ: `docs/superpowers/specs/2026-11-13-business-ru
 | `/place-types` | Loại địa điểm: `GET`, `GET /{id}`, `POST`, `PUT /{id}`, `POST /{id}/archive`, `POST /{id}/unarchive`, `DELETE /{id}` (chỉ khi chưa địa điểm nào dùng) |
 | `/item-categories` | Nhóm đồ, cùng bộ thao tác như loại địa điểm |
 | `/field-defs` | Mục thông tin tuỳ biến: `GET ?target=PLACE&typeId=`, `GET /{id}`, `POST`, `PUT /{id}`, `POST /{id}/archive`, `POST /{id}/unarchive`. Không xoá |
+| `/places` | Địa điểm lồng tới 20 cấp: `POST` (kèm địa chỉ tuỳ chọn), `GET /{id}` (kèm tổ tiên, địa chỉ, địa chỉ hiệu lực), `PUT /{id}`, `POST /{id}/move`, `PUT /{id}/address`, `DELETE /{id}/address`, `DELETE /{id}`, `POST /{id}/restore` |
+| `/places` (đọc) | `GET` (cấp cao nhất), `GET /{id}/children`, `GET /{id}/subtree`, `GET /by-type/{typeId}`, `GET /by-area?province=&ward=`, `GET /search?name=` hoặc `?code=`; phân trang bằng `cursor`, `limit` |
+| `/places/{id}/versions` | Lịch sử version; `GET /{no}` xem nội dung; `POST /{no}/restore` khôi phục nội dung (không đổi chỗ đứng) |
+| `GET /activity` | Hoạt động gần đây của không gian, mới nhất trước; lọc `entityType` |
+
+Mọi lệnh ghi lên địa điểm cần `version` đã đọc (trong body, hoặc tham số URL với `DELETE`); `version` đã
+đổi thì nhận 409 và phải đọc lại. Có thể gửi kèm `note` (tối đa 255 ký tự) để ghi vào version.
 
 Service của địa điểm, người, đồ đạc kiểm tra cột `attributes` bằng
 `AttributeValidation.validate(workspaceId, target, typeId, attributes)` trước khi ghi, rồi lưu
@@ -81,7 +88,8 @@ giá trị nó trả về.
   phải đổi.
 - **JSON:** mọi giá trị `long` ra API dưới dạng chuỗi (`"id": "114540094935228416"`), `int`
   vẫn là số. Dùng `long` cho `id` và số rất lớn, `int` cho số đếm. Thời điểm ghi dạng ISO-8601
-  giờ UTC. JSON lưu trong database (cột `@JsonColumn`, `snapshot`) giữ số là số.
+  giờ UTC. JSON lưu trong database (cột `@JsonColumn`, `snapshot`) giữ số là số; số trong
+  `attributes` cũng giữ dạng số khi trả ra API (thành phần đánh dấu `@JsonSerialize(contentUsing = PlainNumbers.class)`).
 - **Repository:** mỗi bảng có khoá `(workspace_id, id)` là một record cộng một lớp kế thừa
   `WorkspaceRepository<Record>`:
 

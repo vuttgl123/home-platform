@@ -128,6 +128,28 @@ class PlaceIT extends PlaceTestData {
 	}
 
 	@Test
+	void largeNumberAttributesRoundTrip() throws Exception {
+		long type = type("T");
+		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PLACE, 0L, "price", "Giá",
+				FieldDataType.NUMBER, null, null, null));
+		long id = place("""
+				{"placeTypeId": "%d", "name": "Căn hộ", "attributes": {"price": 3500000000}}""".formatted(type));
+
+		String body = getPlace(id).andExpect(jsonPath("$.attributes.price").isNumber())
+			.andExpect(jsonPath("$.attributes.price").value(3500000000L))
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
+		String attributes = new com.fasterxml.jackson.databind.ObjectMapper()
+			.writeValueAsString(com.jayway.jsonpath.JsonPath.read(body, "$.attributes"));
+		putPlace(id, """
+				{"version": 1, "placeTypeId": "%d", "name": "Căn hộ", "status": "ACTIVE", "attributes": %s}"""
+			.formatted(type, attributes)).andExpect(status().isOk());
+		this.mvc.perform(asA(get("/places/" + id + "/versions/1")))
+			.andExpect(jsonPath("$.snapshot.attributes.price").isNumber());
+	}
+
+	@Test
 	void createRecordsVersionOne() throws Exception {
 		long id = place(null, type("T"), "Toà A");
 

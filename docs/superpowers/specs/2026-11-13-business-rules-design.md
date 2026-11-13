@@ -144,6 +144,7 @@ Một mục áp dụng cho một đích (`target`) và một phạm vi (`type_id
 3. Mục `is_required` mà thiếu, `null` hoặc chuỗi rỗng thì trả 400.
 4. Mục đã lưu trữ: giữ nguyên giá trị, không kiểm tra.
 5. Giá trị `null` nghĩa là bỏ trống; khoá đó không được lưu.
+6. Khi trả ra API, số trong `attributes` giữ dạng số, không theo quy ước "`long` thành chuỗi" (quy ước đó dành cho `id`). Nếu không, client gửi lại nguyên dữ liệu vừa đọc sẽ bị luật 2 từ chối. **(tôi chọn, bổ sung khi xây dựng)**
 
 Mọi lỗi liệt kê theo từng khoá trong danh sách `errors` (field là `attributes.<khoá>`). **(tôi chọn)** cho cả năm quy tắc.
 
