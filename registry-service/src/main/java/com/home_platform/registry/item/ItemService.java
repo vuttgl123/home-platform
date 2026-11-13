@@ -1,5 +1,6 @@
 package com.home_platform.registry.item;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -9,11 +10,13 @@ import com.home_platform.common.history.ChangeAction;
 import com.home_platform.common.history.EntityHistory;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
+import com.home_platform.common.web.NotFoundException;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.itemcategory.ItemCategory;
 import com.home_platform.registry.itemcategory.ItemCategoryService;
 import com.home_platform.registry.place.PlaceService;
+import com.home_platform.registry.support.BusinessDate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,8 +39,11 @@ public class ItemService {
 
 	final EntityHistory history;
 
+	final BusinessDate businessDate;
+
 	ItemService(ItemRepository repository, PlaceService places, ItemCategoryService categories,
-			AttributeValidation attributeValidation, EntityHistory history) {
+			AttributeValidation attributeValidation, EntityHistory history, BusinessDate businessDate) {
+		this.businessDate = businessDate;
 		this.repository = repository;
 		this.places = places;
 		this.categories = categories;
@@ -93,6 +99,106 @@ public class ItemService {
 			.withCoverFileId(request.coverFileId()));
 		record(ctx, stored, ChangeAction.UPDATE, request.note());
 		return stored;
+	}
+
+	/** Chuyển sang địa điểm khác chưa xoá; vị trí cũ xem được trong version trước. */
+	@Transactional
+	public Item move(WorkspaceContext ctx, long id, ItemMoveRequest request) {
+		Item current = requireNotRemoved(get(ctx.workspaceId(), id));
+		this.places.get(ctx.workspaceId(), request.placeId());
+		Item stored = this.repository.update(ctx,
+				current.withVersion(request.version()).withPlaceId(request.placeId()));
+		record(ctx, stored, ChangeAction.UPDATE, request.note());
+		return stored;
+	}
+
+	/** Gỡ: món vẫn ở lại địa điểm, trong danh sách "đã gỡ". */
+	@Transactional
+	public Item remove(WorkspaceContext ctx, long id, ItemRemoveRequest request) {
+		Item current = requireNotRemoved(get(ctx.workspaceId(), id));
+		return removeItem(ctx, current, request.version(), request.removedAt(), null, request.note());
+	}
+
+	/**
+	 * Thay món cũ bằng món mới trong một transaction: tạo món mới, rồi gỡ món cũ và trỏ nó tới
+	 * món mới. Món mới không hợp lệ thì không có gì được ghi.
+	 * @return món cũ đã gỡ và món mới
+	 */
+	@Transactional
+	public Item[] replace(WorkspaceContext ctx, long id, ItemReplaceRequest request) {
+		Item old = requireNotRemoved(get(ctx.workspaceId(), id));
+		if (old.version() != request.version()) {
+			throw new ConflictException("Item " + id + " was changed by someone else");
+		}
+		LocalDate removedAt = removalDate(old, request.removedAt());
+		ItemRequest replacement = request.replacement();
+		Item fresh = create(ctx,
+				(replacement.placeId() != null) ? replacement : replacement.atPlace(old.placeId()));
+		Item removed = removeItem(ctx, old, request.version(), removedAt, fresh.id(),
+				"Replaced by item " + fresh.id());
+		return new Item[] { removed, fresh };
+	}
+
+	/**
+	 * Đưa lại một món đã gỡ.
+	 * @throws ConflictException nếu món chưa gỡ, hoặc đã bị thay bằng món khác
+	 */
+	@Transactional
+	public Item putBack(WorkspaceContext ctx, long id, ItemVersionRequest request) {
+		Item current = get(ctx.workspaceId(), id);
+		if (!current.removed()) {
+			throw new ConflictException("Item " + id + " is not removed");
+		}
+		if (current.replacedByItemId() != null) {
+			throw new ConflictException("Item " + id + " was replaced by item " + current.replacedByItemId());
+		}
+		Item stored = this.repository.update(ctx,
+				current.withVersion(request.version()).withRemovedAt(null).withStatus(ItemStatus.IN_USE));
+		record(ctx, stored, ChangeAction.UPDATE, request.note());
+		return stored;
+	}
+
+	/** Xoá mềm; dành cho món nhập nhầm. Món không còn dùng thì gỡ. */
+	@Transactional
+	public void delete(WorkspaceContext ctx, long id, int version, String note) {
+		get(ctx.workspaceId(), id);
+		Item stored = this.repository.softDelete(ctx, id, version);
+		record(ctx, stored, ChangeAction.DELETE, note);
+	}
+
+	/**
+	 * Bỏ xoá.
+	 * @throws ConflictException nếu địa điểm của món đang bị xoá
+	 */
+	@Transactional
+	public Item restore(WorkspaceContext ctx, long id, ItemVersionRequest request) {
+		Item deleted = this.repository.findByIdIncludingDeleted(ctx.workspaceId(), id)
+			.orElseThrow(() -> NotFoundException.of("Item", id));
+		if (deleted.deletedAt() != null && !this.places.isAlive(ctx.workspaceId(), deleted.placeId())) {
+			throw new ConflictException("Restore place " + deleted.placeId() + " first");
+		}
+		Item stored = this.repository.restore(ctx, id, request.version());
+		record(ctx, stored, ChangeAction.RESTORE, request.note());
+		return stored;
+	}
+
+	private Item removeItem(WorkspaceContext ctx, Item current, int version, LocalDate removedAt, Long replacedBy,
+			String note) {
+		Item stored = this.repository.update(ctx, current.withVersion(version)
+			.withRemovedAt(removalDate(current, removedAt))
+			.withStatus(ItemStatus.REMOVED)
+			.withReplacedByItemId(replacedBy));
+		record(ctx, stored, ChangeAction.UPDATE, note);
+		return stored;
+	}
+
+	/** Ngày gỡ: mặc định hôm nay, không trước ngày đưa vào. */
+	private LocalDate removalDate(Item item, LocalDate requested) {
+		LocalDate removedAt = (requested != null) ? requested : this.businessDate.today();
+		if (item.placedAt() != null && removedAt.isBefore(item.placedAt())) {
+			throw new BadRequestException("removedAt must not be before placedAt");
+		}
+		return removedAt;
 	}
 
 	/** Gắn tên địa điểm và tên nhóm (lấy theo lô) vào từng món. */

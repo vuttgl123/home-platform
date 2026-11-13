@@ -20,6 +20,12 @@ public record ItemRequest(Long placeId, Long categoryId, @Size(max = 50) String 
 		ItemStatus status, LocalDate placedAt, @Size(max = 10000) String description, Map<String, Object> attributes,
 		Long coverFileId, @Size(max = 255) String note) {
 
+	/** Cùng món, đặt ở {@code placeId}. */
+	ItemRequest atPlace(long placeId) {
+		return new ItemRequest(placeId, this.categoryId, this.code, this.name, this.quantity, this.unit, this.status,
+				this.placedAt, this.description, this.attributes, this.coverFileId, this.note);
+	}
+
 	public ItemRequest {
 		code = Text.trimToNull(code);
 		name = Text.trimToNull(name);

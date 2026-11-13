@@ -76,6 +76,11 @@ public class PlaceService {
 		return this.repository.getById(workspaceId, id);
 	}
 
+	/** Địa điểm có tồn tại và chưa bị xoá không. */
+	public boolean isAlive(long workspaceId, long id) {
+		return this.repository.findById(workspaceId, id).isPresent();
+	}
+
 	/** Tên của các địa điểm (kể cả đã xoá) theo {@code id}; id không có thì không có trong kết quả. */
 	public Map<Long, String> names(long workspaceId, List<Long> ids) {
 		return this.repository.refs(workspaceId, ids)

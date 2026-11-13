@@ -3,12 +3,14 @@ package com.home_platform.registry.item;
 import com.home_platform.common.context.WorkspaceContext;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,6 +42,44 @@ class ItemController {
 	ItemDetailResponse update(WorkspaceContext ctx, @PathVariable long id,
 			@Valid @RequestBody ItemUpdateRequest request) {
 		return detail(ctx, this.service.update(ctx, id, request).id());
+	}
+
+	@PostMapping("/{id}/move")
+	ItemDetailResponse move(WorkspaceContext ctx, @PathVariable long id, @Valid @RequestBody ItemMoveRequest request) {
+		return detail(ctx, this.service.move(ctx, id, request).id());
+	}
+
+	@PostMapping("/{id}/remove")
+	ItemDetailResponse remove(WorkspaceContext ctx, @PathVariable long id,
+			@Valid @RequestBody ItemRemoveRequest request) {
+		return detail(ctx, this.service.remove(ctx, id, request).id());
+	}
+
+	@PostMapping("/{id}/replace")
+	ItemReplaceResponse replace(WorkspaceContext ctx, @PathVariable long id,
+			@Valid @RequestBody ItemReplaceRequest request) {
+		Item[] items = this.service.replace(ctx, id, request);
+		return new ItemReplaceResponse(detail(ctx, items[0].id()), detail(ctx, items[1].id()));
+	}
+
+	/** Đưa lại một món đã gỡ. */
+	@PostMapping("/{id}/put-back")
+	ItemDetailResponse putBack(WorkspaceContext ctx, @PathVariable long id,
+			@Valid @RequestBody ItemVersionRequest request) {
+		return detail(ctx, this.service.putBack(ctx, id, request).id());
+	}
+
+	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void delete(WorkspaceContext ctx, @PathVariable long id, @RequestParam int version,
+			@RequestParam(required = false) String note) {
+		this.service.delete(ctx, id, version, note);
+	}
+
+	@PostMapping("/{id}/restore")
+	ItemDetailResponse restore(WorkspaceContext ctx, @PathVariable long id,
+			@Valid @RequestBody ItemVersionRequest request) {
+		return detail(ctx, this.service.restore(ctx, id, request).id());
 	}
 
 	ItemDetailResponse detail(WorkspaceContext ctx, long id) {
