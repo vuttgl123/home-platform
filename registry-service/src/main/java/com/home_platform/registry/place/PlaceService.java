@@ -17,7 +17,10 @@ import com.home_platform.common.history.EntityHistory;
 import com.home_platform.common.id.IdGenerator;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import com.home_platform.common.web.NotFoundException;
+import com.home_platform.registry.catalog.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.placetype.PlaceTypeService;
@@ -148,6 +151,51 @@ public class PlaceService {
 		Place stored = this.repository.restore(ctx, id, request.version());
 		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.RESTORE, request.note());
 		return stored;
+	}
+
+	public CursorPage<Place> topLevel(long workspaceId, CursorRequest page) {
+		return this.repository.topLevel(workspaceId, page);
+	}
+
+	/** @throws NotFoundException nếu cha không có hoặc đã xoá */
+	public CursorPage<Place> children(long workspaceId, long parentId, CursorRequest page) {
+		get(workspaceId, parentId);
+		return this.repository.children(workspaceId, parentId, page);
+	}
+
+	/** Mọi hậu duệ chưa xoá, không gồm gốc. */
+	public CursorPage<Place> subtree(long workspaceId, long rootId, CursorRequest page) {
+		return this.repository.subtree(workspaceId, get(workspaceId, rootId).path(), page);
+	}
+
+	public CursorPage<Place> byType(long workspaceId, long placeTypeId, CursorRequest page) {
+		return this.repository.byType(workspaceId, placeTypeId, page);
+	}
+
+	/** Tên bắt đầu bằng {@code prefix}; {@code %} và {@code _} trong prefix được hiểu theo nghĩa đen. */
+	public CursorPage<Place> searchByName(long workspaceId, String prefix, CursorRequest page) {
+		String cleaned = Text.trimToNull(prefix);
+		if (cleaned == null) {
+			throw new BadRequestException("name must not be blank");
+		}
+		String escaped = cleaned.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+		return this.repository.searchByName(workspaceId, escaped + "%", page);
+	}
+
+	public CursorPage<Place> findByCode(long workspaceId, String code, CursorRequest page) {
+		String cleaned = Text.trimToNull(code);
+		if (cleaned == null) {
+			throw new BadRequestException("code must not be blank");
+		}
+		return this.repository.findByCode(workspaceId, cleaned, page);
+	}
+
+	public CursorPage<Place> byArea(long workspaceId, String provinceCode, String wardCode, CursorRequest page) {
+		String province = Text.trimToNull(provinceCode);
+		if (province == null) {
+			throw new BadRequestException("province must not be blank");
+		}
+		return this.repository.byArea(workspaceId, province, Text.trimToNull(wardCode), page);
 	}
 
 	/** Địa chỉ của chính địa điểm; {@code null} nếu không có. */

@@ -1,6 +1,9 @@
 package com.home_platform.registry.place;
 
 import com.home_platform.common.context.WorkspaceContext;
+import com.home_platform.common.web.BadRequestException;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,6 +28,44 @@ class PlaceController {
 	PlaceController(PlaceService service, PlaceMapper mapper) {
 		this.service = service;
 		this.mapper = mapper;
+	}
+
+	@GetMapping
+	CursorPage<PlaceResponse> topLevel(WorkspaceContext ctx, CursorRequest page) {
+		return this.service.topLevel(ctx.workspaceId(), page).map(this.mapper::toResponse);
+	}
+
+	@GetMapping("/{id}/children")
+	CursorPage<PlaceResponse> children(WorkspaceContext ctx, @PathVariable long id, CursorRequest page) {
+		return this.service.children(ctx.workspaceId(), id, page).map(this.mapper::toResponse);
+	}
+
+	@GetMapping("/{id}/subtree")
+	CursorPage<PlaceResponse> subtree(WorkspaceContext ctx, @PathVariable long id, CursorRequest page) {
+		return this.service.subtree(ctx.workspaceId(), id, page).map(this.mapper::toResponse);
+	}
+
+	@GetMapping("/by-type/{typeId}")
+	CursorPage<PlaceResponse> byType(WorkspaceContext ctx, @PathVariable long typeId, CursorRequest page) {
+		return this.service.byType(ctx.workspaceId(), typeId, page).map(this.mapper::toResponse);
+	}
+
+	@GetMapping("/by-area")
+	CursorPage<PlaceResponse> byArea(WorkspaceContext ctx, @RequestParam String province,
+			@RequestParam(required = false) String ward, CursorRequest page) {
+		return this.service.byArea(ctx.workspaceId(), province, ward, page).map(this.mapper::toResponse);
+	}
+
+	/** Tìm theo tên bắt đầu bằng ({@code name}) hoặc đúng mã ({@code code}); đúng một trong hai. */
+	@GetMapping("/search")
+	CursorPage<PlaceResponse> search(WorkspaceContext ctx, @RequestParam(required = false) String name,
+			@RequestParam(required = false) String code, CursorRequest page) {
+		if ((name == null) == (code == null)) {
+			throw new BadRequestException("Give exactly one of name or code");
+		}
+		CursorPage<Place> found = (name != null) ? this.service.searchByName(ctx.workspaceId(), name, page)
+				: this.service.findByCode(ctx.workspaceId(), code, page);
+		return found.map(this.mapper::toResponse);
 	}
 
 	@PostMapping
