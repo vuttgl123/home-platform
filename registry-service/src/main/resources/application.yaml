@@ -10,6 +10,11 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
 
+platform:
+  history:
+    # Bảng version của địa điểm, người, đồ đạc; bật bean EntityHistory.
+    table: reg_entity_version
+
 server:
   port: 8082
 
