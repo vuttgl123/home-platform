@@ -1,6 +1,6 @@
 # Thiết kế cấu trúc frontend
 
-Ngày: 2026-11-13 · Trạng thái: **chờ duyệt**
+Ngày: 2026-11-13 · Trạng thái: **đã duyệt ngày 2026-11-13**
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 
