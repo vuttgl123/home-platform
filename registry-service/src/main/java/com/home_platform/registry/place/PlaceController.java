@@ -1,6 +1,7 @@
 package com.home_platform.registry.place;
 
 import com.home_platform.common.context.WorkspaceContext;
+import com.home_platform.common.history.EntityVersion;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
@@ -96,6 +97,23 @@ class PlaceController {
 	PlaceDetailResponse restore(WorkspaceContext ctx, @PathVariable long id,
 			@Valid @RequestBody PlaceRestoreRequest request) {
 		return detail(ctx, this.service.restore(ctx, id, request).id());
+	}
+
+	@GetMapping("/{id}/versions")
+	CursorPage<PlaceVersionSummaryResponse> versions(WorkspaceContext ctx, @PathVariable long id, CursorRequest page) {
+		return this.service.versions(ctx.workspaceId(), id, page).map(this.mapper::toVersionSummary);
+	}
+
+	@GetMapping("/{id}/versions/{versionNo}")
+	PlaceVersionResponse version(WorkspaceContext ctx, @PathVariable long id, @PathVariable int versionNo) {
+		EntityVersion version = this.service.version(ctx.workspaceId(), id, versionNo);
+		return this.mapper.toVersion(version, this.service.snapshotOf(version));
+	}
+
+	@PostMapping("/{id}/versions/{versionNo}/restore")
+	PlaceDetailResponse restoreVersion(WorkspaceContext ctx, @PathVariable long id, @PathVariable int versionNo,
+			@Valid @RequestBody PlaceVersionRestoreRequest request) {
+		return detail(ctx, this.service.restoreVersion(ctx, id, versionNo, request).id());
 	}
 
 	@PostMapping("/{id}/move")

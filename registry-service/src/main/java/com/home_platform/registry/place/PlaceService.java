@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.history.ChangeAction;
 import com.home_platform.common.history.EntityHistory;
+import com.home_platform.common.history.EntityVersion;
+import com.home_platform.common.history.EntityVersionSummary;
 import com.home_platform.common.id.IdGenerator;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
@@ -196,6 +198,70 @@ public class PlaceService {
 			throw new BadRequestException("province must not be blank");
 		}
 		return this.repository.byArea(workspaceId, province, Text.trimToNull(wardCode), page);
+	}
+
+	/**
+	 * Các version của một địa điểm, mới nhất trước; thấy cả khi địa điểm đã bị xoá.
+	 * @throws NotFoundException nếu địa điểm chưa từng có
+	 */
+	public CursorPage<EntityVersionSummary> versions(long workspaceId, long id, CursorRequest page) {
+		this.repository.findByIdIncludingDeleted(workspaceId, id).orElseThrow(() -> NotFoundException.of("Place", id));
+		return this.history.list(workspaceId, ENTITY_TYPE, id, page);
+	}
+
+	public EntityVersion version(long workspaceId, long id, int versionNo) {
+		return this.history.get(workspaceId, ENTITY_TYPE, id, versionNo);
+	}
+
+	public PlaceSnapshot snapshotOf(EntityVersion version) {
+		return this.history.snapshotAs(version, PlaceSnapshot.class);
+	}
+
+	/**
+	 * Khôi phục nội dung của một version cũ, như một lần sửa bình thường: version mới mang nội
+	 * dung cũ, không version nào bị ghi đè. Chỉ nội dung và địa chỉ; không đổi chỗ đứng. Nội dung
+	 * cũ phải hợp lệ như một lần sửa (loại còn dùng được, {@code attributes} hợp với mục tuỳ biến
+	 * hiện tại); nếu không thì không ghi gì.
+	 * @throws ConflictException nếu địa điểm đang bị xoá
+	 */
+	@Transactional
+	public Place restoreVersion(WorkspaceContext ctx, long id, int versionNo, PlaceVersionRestoreRequest request) {
+		long workspaceId = ctx.workspaceId();
+		Place current = this.repository.findById(workspaceId, id)
+			.orElseThrow(() -> this.repository.findByIdIncludingDeleted(workspaceId, id).isPresent()
+					? new ConflictException("Restore place " + id + " before restoring an old version")
+					: NotFoundException.of("Place", id));
+		PlaceSnapshot old = snapshotOf(version(workspaceId, id, versionNo));
+		if (old.placeTypeId() != current.placeTypeId()) {
+			this.placeTypes.requireActive(workspaceId, old.placeTypeId());
+		}
+		Map<String, Object> attributes = validAttributes(ctx, old.placeTypeId(), old.attributes());
+		PlaceAddress address = (old.address() != null) ? fromSnapshot(id, old.address()) : null;
+		Place stored = this.repository.update(ctx, current.withVersion(request.version())
+			.withPlaceTypeId(old.placeTypeId())
+			.withCode(old.code())
+			.withName(old.name())
+			.withDescription(old.description())
+			.withStatus(old.status())
+			.withAttributes(attributes)
+			.withCoverFileId(old.coverFileId()));
+		if (address != null) {
+			this.addresses.upsert(workspaceId, address);
+		}
+		else {
+			this.addresses.delete(workspaceId, id);
+		}
+		String note = "Restored from version " + versionNo + ((request.note() != null) ? ": " + request.note() : "");
+		record(ctx, stored, address, ChangeAction.UPDATE, (note.length() > 255) ? note.substring(0, 255) : note);
+		return stored;
+	}
+
+	private PlaceAddress fromSnapshot(long placeId, AddressSnapshot address) {
+		Instant now = this.clock.instant().truncatedTo(ChronoUnit.MILLIS);
+		return new PlaceAddress(0, placeId, address.countryCode(), address.provinceCode(), address.provinceName(),
+				address.districtCode(), address.districtName(), address.wardCode(), address.wardName(),
+				address.street(), address.fullAddress(), address.latitude(), address.longitude(), address.geohash(),
+				now, now);
 	}
 
 	/** Địa chỉ của chính địa điểm; {@code null} nếu không có. */

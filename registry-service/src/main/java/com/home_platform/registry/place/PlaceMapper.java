@@ -2,6 +2,8 @@ package com.home_platform.registry.place;
 
 import java.util.List;
 
+import com.home_platform.common.history.EntityVersion;
+import com.home_platform.common.history.EntityVersionSummary;
 import com.home_platform.common.mapping.PlatformMapperConfig;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -21,6 +23,11 @@ public interface PlaceMapper {
 	}
 
 	PlaceResponse toResponse(Place place);
+
+	PlaceVersionSummaryResponse toVersionSummary(EntityVersionSummary summary);
+
+	@Mapping(target = "snapshot", source = "content")
+	PlaceVersionResponse toVersion(EntityVersion version, PlaceSnapshot content);
 
 	List<PlaceResponse> toResponses(List<Place> places);
 
