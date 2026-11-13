@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import com.home_platform.common.context.WorkspaceContext;
+import com.home_platform.common.history.EntityVersion;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
@@ -112,6 +113,23 @@ class ItemController {
 	ItemDetailResponse restore(WorkspaceContext ctx, @PathVariable long id,
 			@Valid @RequestBody ItemVersionRequest request) {
 		return detail(ctx, this.service.restore(ctx, id, request).id());
+	}
+
+	@GetMapping("/{id}/versions")
+	CursorPage<ItemVersionSummaryResponse> versions(WorkspaceContext ctx, @PathVariable long id, CursorRequest page) {
+		return this.service.versions(ctx.workspaceId(), id, page).map(this.mapper::toVersionSummary);
+	}
+
+	@GetMapping("/{id}/versions/{versionNo}")
+	ItemVersionResponse version(WorkspaceContext ctx, @PathVariable long id, @PathVariable int versionNo) {
+		EntityVersion version = this.service.version(ctx.workspaceId(), id, versionNo);
+		return this.mapper.toVersion(version, this.service.snapshotOf(version));
+	}
+
+	@PostMapping("/{id}/versions/{versionNo}/restore")
+	ItemDetailResponse restoreVersion(WorkspaceContext ctx, @PathVariable long id, @PathVariable int versionNo,
+			@Valid @RequestBody ItemVersionRequest request) {
+		return detail(ctx, this.service.restoreVersion(ctx, id, versionNo, request).id());
 	}
 
 	ItemDetailResponse detail(WorkspaceContext ctx, long id) {

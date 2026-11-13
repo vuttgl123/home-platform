@@ -8,6 +8,8 @@ import java.util.Objects;
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.history.ChangeAction;
 import com.home_platform.common.history.EntityHistory;
+import com.home_platform.common.history.EntityVersion;
+import com.home_platform.common.history.EntityVersionSummary;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
 import com.home_platform.common.web.CursorPage;
@@ -182,6 +184,52 @@ public class ItemService {
 		}
 		Item stored = this.repository.restore(ctx, id, request.version());
 		record(ctx, stored, ChangeAction.RESTORE, request.note());
+		return stored;
+	}
+
+	/** Các version của một món, mới nhất trước; thấy cả khi món đã bị xoá. */
+	public CursorPage<EntityVersionSummary> versions(long workspaceId, long id, CursorRequest page) {
+		this.repository.findByIdIncludingDeleted(workspaceId, id).orElseThrow(() -> NotFoundException.of("Item", id));
+		return this.history.list(workspaceId, ENTITY_TYPE, id, page);
+	}
+
+	public EntityVersion version(long workspaceId, long id, int versionNo) {
+		return this.history.get(workspaceId, ENTITY_TYPE, id, versionNo);
+	}
+
+	public ItemSnapshot snapshotOf(EntityVersion version) {
+		return this.history.snapshotAs(version, ItemSnapshot.class);
+	}
+
+	/**
+	 * Khôi phục nội dung một version cũ như một lần sửa bình thường. Không đổi chỗ đặt, không bỏ
+	 * gỡ; nếu version cũ là lúc món bị gỡ thì giữ trạng thái hiện tại.
+	 * @throws ConflictException nếu món đang bị xoá hoặc đã gỡ
+	 */
+	@Transactional
+	public Item restoreVersion(WorkspaceContext ctx, long id, int versionNo, ItemVersionRequest request) {
+		long workspaceId = ctx.workspaceId();
+		Item current = requireNotRemoved(this.repository.findById(workspaceId, id)
+			.orElseThrow(() -> this.repository.findByIdIncludingDeleted(workspaceId, id).isPresent()
+					? new ConflictException("Restore item " + id + " before restoring an old version")
+					: NotFoundException.of("Item", id)));
+		ItemSnapshot old = snapshotOf(version(workspaceId, id, versionNo));
+		if (old.categoryId() != null && !Objects.equals(old.categoryId(), current.categoryId())) {
+			this.categories.requireActive(workspaceId, old.categoryId());
+		}
+		Item stored = this.repository.update(ctx, current.withVersion(request.version())
+			.withCategoryId(old.categoryId())
+			.withCode(old.code())
+			.withName(old.name())
+			.withQuantity(old.quantity())
+			.withUnit(old.unit())
+			.withStatus((old.status() == ItemStatus.REMOVED) ? current.status() : old.status())
+			.withPlacedAt(old.placedAt())
+			.withDescription(old.description())
+			.withAttributes(validAttributes(ctx, old.categoryId(), old.attributes()))
+			.withCoverFileId(old.coverFileId()));
+		String note = "Restored from version " + versionNo + ((request.note() != null) ? ": " + request.note() : "");
+		record(ctx, stored, ChangeAction.UPDATE, (note.length() > 255) ? note.substring(0, 255) : note);
 		return stored;
 	}
 
