@@ -2,7 +2,11 @@ package com.home_platform.common.autoconfigure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Clock;
+import java.time.ZoneOffset;
+
 import com.home_platform.common.id.IdGenerator;
+import com.home_platform.common.json.StorageJson;
 import com.home_platform.common.web.ApiExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -22,6 +26,14 @@ class PlatformCommonAutoConfigurationTests {
 		this.runner.run(context -> {
 			assertThat(context).hasSingleBean(IdGenerator.class);
 			assertThat(context).hasSingleBean(ApiExceptionHandler.class);
+		});
+	}
+
+	@Test
+	void providesUtcClockAndStorageJson() {
+		this.runner.run(context -> {
+			assertThat(context.getBean(Clock.class).getZone()).isEqualTo(ZoneOffset.UTC);
+			assertThat(context).hasSingleBean(StorageJson.class);
 		});
 	}
 

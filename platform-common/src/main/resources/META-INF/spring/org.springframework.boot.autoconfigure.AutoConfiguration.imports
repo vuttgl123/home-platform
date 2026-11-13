@@ -1,1 +1,4 @@
 com.home_platform.common.autoconfigure.PlatformCommonAutoConfiguration
+com.home_platform.common.autoconfigure.PlatformWebAutoConfiguration
+com.home_platform.common.autoconfigure.PlatformJdbcAutoConfiguration
+com.home_platform.common.autoconfigure.PlatformOpenApiAutoConfiguration

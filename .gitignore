@@ -38,3 +38,4 @@ logs/
 ### Local connection settings ###
 **/src/main/resources/application-uat.yaml
 **/src/main/resources/application-prod.yaml
+**/src/test/resources/application-uat.yaml

@@ -13,4 +13,9 @@ public class NotFoundException extends ErrorResponseException {
 		super(HttpStatus.NOT_FOUND, ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, detail), null);
 	}
 
+	/** Thông báo theo mẫu quen thuộc: {@code of("Place", 42)} cho ra "Place 42 not found". */
+	public static NotFoundException of(String what, long id) {
+		return new NotFoundException(what + " " + id + " not found");
+	}
+
 }
