@@ -68,6 +68,7 @@ Logic nghiệp vụ đầy đủ: `docs/superpowers/specs/2026-11-13-business-ru
 | `GET /activity` | Hoạt động gần đây của không gian, mới nhất trước; lọc `entityType` |
 | `/people` | Hồ sơ người: `POST`, `GET /{id}` (kèm nơi đang ở), `PUT /{id}`, `DELETE /{id}` (khi không còn cư trú hiện tại hay sắp tới), `POST /{id}/restore`, `GET` (theo tên), `GET /search?name=` \| `?phone=` \| `?idNumber=`, `/{id}/versions` như địa điểm. Hai người chưa xoá không trùng cặp loại và số giấy tờ |
 | `/occupancies` | Cư trú: `POST`, `GET /{id}`, `PUT /{id}` (sửa nhập nhầm), `POST /{id}/end` (chuyển đi), `DELETE /{id}`; `GET ?placeId=&status=CURRENT\|UPCOMING\|PAST`, `?subtreeOf=` (đang ở trong cả toà nhà), `?personId=`. Một người không có hai dòng giao thời gian ở cùng một chỗ |
+| `/items` | Đồ đạc: `POST`, `GET /{id}`, `PUT /{id}`, `POST /{id}/move`, `/remove` (gỡ, vẫn nằm trong danh sách đã gỡ), `/replace` (gỡ món cũ và tạo món mới trong một bước), `/put-back` (đưa lại), `/restore`, `DELETE /{id}`; `GET ?placeId=&removed=`, `?subtreeOf=`, `?categoryId=`; `GET /search?name=` \| `?code=`; `/{id}/versions` như địa điểm. Món đã gỡ chỉ đọc được, trừ đưa lại và xoá |
 
 Mọi lệnh ghi lên địa điểm cần `version` đã đọc (trong body, hoặc tham số URL với `DELETE`); `version` đã
 đổi thì nhận 409 và phải đọc lại. Có thể gửi kèm `note` (tối đa 255 ký tự) để ghi vào version.

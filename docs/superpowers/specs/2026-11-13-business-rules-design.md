@@ -234,7 +234,7 @@ Một dòng nghĩa là: người X có quan hệ R với địa điểm Y từ n
 
 **Thay**: trong một transaction, tạo món mới (ở cùng địa điểm, hoặc địa điểm khác nếu client chỉ định), gỡ món cũ như trên và đặt `replaced_by_item_id` của món cũ là `id` món mới. Cả hai đều có version. **(bạn)**
 
-**Đưa lại** món đã gỡ: bỏ `removed_at`, `status` về IN_USE; không làm được nếu món đó đã bị thay. **(tôi chọn)**
+**Đưa lại** món đã gỡ: bỏ `removed_at`, `status` về IN_USE; không làm được nếu món đó đã bị thay, hoặc nếu địa điểm của nó đã bị xoá (địa điểm xoá được khi chỉ còn đồ đã gỡ; phải khôi phục địa điểm trước). **(tôi chọn; vế sau bổ sung khi xây dựng)**
 
 Món đã gỡ chỉ đọc được, ngoại trừ "đưa lại" và xoá. **(tôi chọn)**
 

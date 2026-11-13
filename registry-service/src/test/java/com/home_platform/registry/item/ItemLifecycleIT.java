@@ -137,6 +137,18 @@ class ItemLifecycleIT extends ItemTestData {
 	}
 
 	@Test
+	void putBackNeedsThePlaceAlive() throws Exception {
+		long shed = place(null, "Shed");
+		long id = item(shed, "Cuốc");
+		action(id, "remove", "{\"version\": 1}").andExpect(status().isOk());
+		this.places.delete(CTX_A, shed, 1, null);
+
+		action(id, "put-back", "{\"version\": 2}").andExpect(status().isConflict())
+			.andExpect(jsonPath("$.detail").value("Restore place " + shed + " first"));
+		getItem(id).andExpect(jsonPath("$.status").value("REMOVED"));
+	}
+
+	@Test
 	void deletesAndRestores() throws Exception {
 		long id = item(this.room, "Ghế");
 
