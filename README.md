@@ -51,6 +51,22 @@ Khi khởi động, mỗi service tự chạy các file migration của mình (F
 Kiểm tra nhanh: `curl localhost:8082/actuator/health`. Tài liệu API của mỗi service nằm ở
 `/swagger-ui.html` (dạng máy đọc: `/v3/api-docs`).
 
+## Nghiệp vụ đã có
+
+Logic nghiệp vụ đầy đủ: `docs/superpowers/specs/2026-11-13-business-rules-design.md`. Đã làm
+(registry, cổng 8082; mọi API cần header `X-Workspace-Id`, `X-User-Id`):
+
+| Đường dẫn | Việc |
+|---|---|
+| `POST /setup` | Tạo loại địa điểm, nhóm đồ và mục tuỳ biến mặc định cho không gian mới. Client gọi ngay sau khi tạo không gian; gọi lại không làm gì |
+| `/place-types` | Loại địa điểm: `GET`, `GET /{id}`, `POST`, `PUT /{id}`, `POST /{id}/archive`, `POST /{id}/unarchive`, `DELETE /{id}` (chỉ khi chưa địa điểm nào dùng) |
+| `/item-categories` | Nhóm đồ, cùng bộ thao tác như loại địa điểm |
+| `/field-defs` | Mục thông tin tuỳ biến: `GET ?target=PLACE&typeId=`, `GET /{id}`, `POST`, `PUT /{id}`, `POST /{id}/archive`, `POST /{id}/unarchive`. Không xoá |
+
+Service của địa điểm, người, đồ đạc kiểm tra cột `attributes` bằng
+`AttributeValidation.validate(workspaceId, target, typeId, attributes)` trước khi ghi, rồi lưu
+giá trị nó trả về.
+
 ## Quy ước
 
 - **Package:** gốc của mỗi service là `com.home_platform.<service>`. Code chia theo nghiệp vụ,

@@ -85,6 +85,7 @@ public class PlaceTypeService {
 	}
 
 	/**
+	 * Xoá hẳn loại cùng các mục tuỳ biến của riêng nó.
 	 * @throws ConflictException nếu còn địa điểm (kể cả đã xoá mềm) thuộc loại này
 	 */
 	@Transactional
@@ -94,7 +95,9 @@ public class PlaceTypeService {
 			throw new ConflictException("PlaceType " + id + " is used by places; archive it instead");
 		}
 		this.repository.deletePermanently(ctx.workspaceId(), id);
+		this.repository.deleteOwnFields(ctx.workspaceId(), id);
 		this.catalogCache.evict(CatalogCache.PLACE_TYPES, ctx.workspaceId());
+		this.catalogCache.evict(CatalogCache.FIELD_DEFS, ctx.workspaceId());
 	}
 
 	private PlaceType setStatus(WorkspaceContext ctx, long id, CatalogStatus status) {

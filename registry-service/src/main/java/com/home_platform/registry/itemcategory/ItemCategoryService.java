@@ -85,6 +85,7 @@ public class ItemCategoryService {
 	}
 
 	/**
+	 * Xoá hẳn nhóm cùng các mục tuỳ biến của riêng nó.
 	 * @throws ConflictException nếu còn món đồ (kể cả đã xoá mềm) thuộc nhóm này
 	 */
 	@Transactional
@@ -94,7 +95,9 @@ public class ItemCategoryService {
 			throw new ConflictException("ItemCategory " + id + " is used by items; archive it instead");
 		}
 		this.repository.deletePermanently(ctx.workspaceId(), id);
+		this.repository.deleteOwnFields(ctx.workspaceId(), id);
 		this.catalogCache.evict(CatalogCache.ITEM_CATEGORIES, ctx.workspaceId());
+		this.catalogCache.evict(CatalogCache.FIELD_DEFS, ctx.workspaceId());
 	}
 
 	private ItemCategory setStatus(WorkspaceContext ctx, long id, CatalogStatus status) {

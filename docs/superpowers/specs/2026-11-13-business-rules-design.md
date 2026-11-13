@@ -103,6 +103,7 @@ Một thao tác tạo dữ liệu mặc định cho không gian mới. Chỉ ch�
 - `code` không đổi được sau khi tạo; `name`, `description`, `sort_order` sửa được. **(tôi chọn)** Mã là khoá ổn định cho việc tích hợp sau này.
 - Lưu trữ (`ARCHIVED`) và bỏ lưu trữ. Loại đã lưu trữ không chọn được khi tạo địa điểm hay đổi loại.
 - Xoá hẳn chỉ khi chưa có địa điểm nào (kể cả đã xoá mềm) dùng loại này; ngược lại trả 409 và gợi ý lưu trữ. **(tôi chọn)**
+- Xoá hẳn một loại thì xoá luôn các mục tuỳ biến của riêng loại đó. Lúc đó chưa bản ghi nào dùng loại nên không có giá trị nào bị mất; nếu giữ lại, các mục sẽ trỏ tới loại không còn và chặn mãi việc tạo mục chung cùng khoá. **(tôi chọn, bổ sung khi xây dựng)**
 - Danh sách theo `sort_order`, rồi `name`; không phân trang (một không gian có vài chục loại).
 - Bảng này không có `version` nên hai người sửa cùng lúc thì người sau thắng. **(bạn, do thiết kế bảng)**
 - Đọc qua cache Caffeine theo `workspace_id`; mọi lệnh ghi xoá cache của không gian đó. **(bạn: dữ liệu ít đổi vào cache)**
@@ -218,7 +219,7 @@ Một dòng nghĩa là: người X có quan hệ R với địa điểm Y từ n
 ### 5.8 Nhóm đồ (`reg_item_category`)
 
 - Tạo: `name` bắt buộc, tối đa 100, trùng trong không gian (không phân biệt hoa thường, dấu) trả 409.
-- Sửa `name`, `sort_order`. Lưu trữ, bỏ lưu trữ. Xoá hẳn chỉ khi chưa món đồ nào dùng. Cache như loại địa điểm. **(tôi chọn, giống 5.2)**
+- Sửa `name`, `sort_order`. Lưu trữ, bỏ lưu trữ. Xoá hẳn chỉ khi chưa món đồ nào dùng, và xoá luôn các mục tuỳ biến của riêng nhóm đó. Cache như loại địa điểm. **(tôi chọn, giống 5.2)**
 
 ### 5.9 Đồ đạc (`reg_item`)
 

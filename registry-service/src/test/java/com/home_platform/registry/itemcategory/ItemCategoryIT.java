@@ -14,6 +14,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.home_platform.common.web.ConflictException;
 import com.home_platform.registry.RegistryIT;
+import com.home_platform.registry.fielddef.FieldDataType;
+import com.home_platform.registry.fielddef.FieldDefCreateRequest;
+import com.home_platform.registry.fielddef.FieldDefService;
+import com.home_platform.registry.fielddef.FieldTarget;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +27,9 @@ class ItemCategoryIT extends RegistryIT {
 
 	@Autowired
 	ItemCategoryService categories;
+
+	@Autowired
+	FieldDefService fieldDefs;
 
 	@Test
 	void createsListsUpdatesAndDeletes() throws Exception {
@@ -103,6 +110,20 @@ class ItemCategoryIT extends RegistryIT {
 		this.mvc.perform(asA(delete("/item-categories/" + id)))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.detail").value("ItemCategory " + id + " is used by items; archive it instead"));
+	}
+
+	@Test
+	void deletingACategoryRemovesItsOwnFields() throws Exception {
+		long id = Long.parseLong(create("""
+				{"name": "Điện tử"}"""));
+		long field = this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.ITEM, id, "warranty",
+				"Bảo hành", FieldDataType.DATE, null, null, null)).id();
+		this.fieldDefs.listAll(WS_A);
+
+		this.mvc.perform(asA(delete("/item-categories/" + id))).andExpect(status().isNoContent());
+
+		this.mvc.perform(asA(get("/field-defs/" + field))).andExpect(status().isNotFound());
+		assertThat(this.fieldDefs.listAll(WS_A)).isEmpty();
 	}
 
 	@Test

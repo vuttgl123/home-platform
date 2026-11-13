@@ -14,6 +14,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.home_platform.registry.RegistryIT;
+import com.home_platform.registry.fielddef.FieldDataType;
+import com.home_platform.registry.fielddef.FieldDefCreateRequest;
+import com.home_platform.registry.fielddef.FieldDefService;
+import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.common.web.ConflictException;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
@@ -25,6 +29,9 @@ class PlaceTypeIT extends RegistryIT {
 
 	@Autowired
 	PlaceTypeService placeTypes;
+
+	@Autowired
+	FieldDefService fieldDefs;
 
 	@Test
 	void createsAndReadsBack() throws Exception {
@@ -144,6 +151,22 @@ class PlaceTypeIT extends RegistryIT {
 		this.mvc.perform(asA(delete("/place-types/" + used)))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.detail").value("PlaceType " + used + " is used by places; archive it instead"));
+	}
+
+	@Test
+	void deletingATypeRemovesItsOwnFields() throws Exception {
+		long id = Long.parseLong(create("""
+				{"code": "VILLA", "name": "Biệt thự"}"""));
+		long field = this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PLACE, id, "pool", "Hồ bơi",
+				FieldDataType.BOOLEAN, null, null, null)).id();
+		this.fieldDefs.listAll(WS_A);
+
+		this.mvc.perform(asA(delete("/place-types/" + id))).andExpect(status().isNoContent());
+
+		this.mvc.perform(asA(get("/field-defs/" + field))).andExpect(status().isNotFound());
+		assertThat(this.fieldDefs.listAll(WS_A)).isEmpty();
+		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PLACE, 0L, "pool", "Hồ bơi",
+				FieldDataType.BOOLEAN, null, null, null));
 	}
 
 	@Test
