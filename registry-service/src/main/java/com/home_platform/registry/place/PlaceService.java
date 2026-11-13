@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -77,6 +78,36 @@ public class PlaceService {
 		}
 		return new PlaceView(place, this.repository.refs(workspaceId, ids.subList(0, ids.size() - 1)),
 				byPlace.get(id), (from != null) ? byPlace.get(from) : null, from);
+	}
+
+	/**
+	 * Đưa một địa điểm cùng cả cây con sang cha khác, hoặc lên cấp cao nhất. Chỉ địa điểm được
+	 * chuyển có version mới; các hậu duệ được tăng {@code version} nhưng không ghi snapshot.
+	 */
+	@Transactional
+	public Place move(WorkspaceContext ctx, long id, PlaceMoveRequest request) {
+		Place current = get(ctx.workspaceId(), id);
+		if (current.version() != request.version()) {
+			throw new ConflictException("Place " + id + " was changed by someone else");
+		}
+		if (Objects.equals(request.parentId(), current.parentId())) {
+			return current;
+		}
+		Place parent = (request.parentId() != null) ? get(ctx.workspaceId(), request.parentId()) : null;
+		if (parent != null && parent.path().startsWith(current.path())) {
+			throw new ConflictException("A place cannot be moved into itself or its descendants");
+		}
+		int depth = (parent != null) ? parent.depth() + 1 : 0;
+		String path = ((parent != null) ? parent.path() : "/") + id + "/";
+		int deepest = this.repository.maxDepthUnder(ctx.workspaceId(), current.path());
+		if (deepest - current.depth() + depth > Place.MAX_DEPTH) {
+			throw tooDeep();
+		}
+		Instant now = this.clock.instant().truncatedTo(ChronoUnit.MILLIS);
+		this.repository.moveDescendants(ctx, current.path(), path, depth - current.depth(), now);
+		Place stored = this.repository.update(ctx, current.withParentId(request.parentId()).withPath(path).withDepth(depth));
+		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.UPDATE, request.note());
+		return stored;
 	}
 
 	/** Địa chỉ của chính địa điểm; {@code null} nếu không có. */

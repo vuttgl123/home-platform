@@ -44,6 +44,11 @@ class PlaceController {
 		return detail(ctx, this.service.update(ctx, id, request).id());
 	}
 
+	@PostMapping("/{id}/move")
+	PlaceDetailResponse move(WorkspaceContext ctx, @PathVariable long id, @Valid @RequestBody PlaceMoveRequest request) {
+		return detail(ctx, this.service.move(ctx, id, request).id());
+	}
+
 	@PutMapping("/{id}/address")
 	PlaceDetailResponse setAddress(WorkspaceContext ctx, @PathVariable long id,
 			@Valid @RequestBody PlaceAddressRequest request) {
