@@ -1,6 +1,6 @@
 # Logic nghiệp vụ của home-platform
 
-Ngày: 2026-11-13 · Trạng thái: **chờ duyệt**
+Ngày: 2026-11-13 · Trạng thái: **đã duyệt ngày 2026-11-13**
 
 Ký hiệu: **(bạn)** là điều bạn đã quyết (phần lớn từ thiết kế database ngày 2026-11-11); **(tôi chọn)** là quyết định của tôi, bạn có thể bác. Bạn đã giao cho tôi tự viết theo những gì đã chốt, nên mọi chỗ không ghi **(bạn)** đều là đề xuất.
 
