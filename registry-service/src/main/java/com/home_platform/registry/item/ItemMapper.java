@@ -10,4 +10,7 @@ public interface ItemMapper {
 	@Mapping(target = ".", source = "item")
 	ItemDetailResponse toDetail(ItemView view);
 
+	@Mapping(target = ".", source = "item")
+	ItemResponse toResponse(ItemView view);
+
 }

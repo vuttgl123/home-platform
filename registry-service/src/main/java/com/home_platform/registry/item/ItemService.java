@@ -10,7 +10,10 @@ import com.home_platform.common.history.ChangeAction;
 import com.home_platform.common.history.EntityHistory;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import com.home_platform.common.web.NotFoundException;
+import com.home_platform.registry.catalog.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.itemcategory.ItemCategory;
@@ -199,6 +202,43 @@ public class ItemService {
 			throw new BadRequestException("removedAt must not be before placedAt");
 		}
 		return removedAt;
+	}
+
+	/** @throws NotFoundException nếu địa điểm không có hoặc đã xoá */
+	public CursorPage<ItemView> atPlace(long workspaceId, long placeId, boolean removed, CursorRequest page) {
+		this.places.get(workspaceId, placeId);
+		return withViews(workspaceId, this.repository.atPlace(workspaceId, placeId, removed, page));
+	}
+
+	/** Đồ chưa gỡ trong cả cây con, ví dụ cả một toà nhà. */
+	public CursorPage<ItemView> inSubtree(long workspaceId, long rootPlaceId, CursorRequest page) {
+		String rootPath = this.places.get(workspaceId, rootPlaceId).path();
+		return withViews(workspaceId, this.repository.inSubtree(workspaceId, rootPath, page));
+	}
+
+	public CursorPage<ItemView> byCategory(long workspaceId, long categoryId, CursorRequest page) {
+		this.categories.get(workspaceId, categoryId);
+		return withViews(workspaceId, this.repository.byCategory(workspaceId, categoryId, page));
+	}
+
+	public CursorPage<ItemView> searchByName(long workspaceId, String prefix, CursorRequest page) {
+		String cleaned = Text.trimToNull(prefix);
+		if (cleaned == null) {
+			throw new BadRequestException("name must not be blank");
+		}
+		return withViews(workspaceId, this.repository.searchByName(workspaceId, Text.likePrefix(cleaned), page));
+	}
+
+	public CursorPage<ItemView> findByCode(long workspaceId, String code, CursorRequest page) {
+		String cleaned = Text.trimToNull(code);
+		if (cleaned == null) {
+			throw new BadRequestException("code must not be blank");
+		}
+		return withViews(workspaceId, this.repository.findByCode(workspaceId, cleaned, page));
+	}
+
+	private CursorPage<ItemView> withViews(long workspaceId, CursorPage<Item> page) {
+		return new CursorPage<>(views(workspaceId, page.items()), page.nextCursor());
 	}
 
 	/** Gắn tên địa điểm và tên nhóm (lấy theo lô) vào từng món. */

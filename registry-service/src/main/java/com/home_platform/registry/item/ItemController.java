@@ -1,6 +1,12 @@
 package com.home_platform.registry.item;
 
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import com.home_platform.common.context.WorkspaceContext;
+import com.home_platform.common.web.BadRequestException;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,6 +31,32 @@ class ItemController {
 	ItemController(ItemService service, ItemMapper mapper) {
 		this.service = service;
 		this.mapper = mapper;
+	}
+
+	/** Đúng một trong ba: ở một địa điểm (chưa gỡ, hoặc đã gỡ với {@code removed=true}), trong cả cây con, theo nhóm. */
+	@GetMapping
+	CursorPage<ItemResponse> list(WorkspaceContext ctx, @RequestParam(required = false) Long placeId,
+			@RequestParam(defaultValue = "false") boolean removed, @RequestParam(required = false) Long subtreeOf,
+			@RequestParam(required = false) Long categoryId, CursorRequest page) {
+		if (Stream.of(placeId, subtreeOf, categoryId).filter(Objects::nonNull).count() != 1) {
+			throw new BadRequestException("Give exactly one of placeId, subtreeOf or categoryId");
+		}
+		CursorPage<ItemView> found = (placeId != null) ? this.service.atPlace(ctx.workspaceId(), placeId, removed, page)
+				: (subtreeOf != null) ? this.service.inSubtree(ctx.workspaceId(), subtreeOf, page)
+						: this.service.byCategory(ctx.workspaceId(), categoryId, page);
+		return found.map(this.mapper::toResponse);
+	}
+
+	/** Tìm theo tên bắt đầu bằng ({@code name}, gồm cả đồ đã gỡ) hoặc đúng mã ({@code code}); đúng một trong hai. */
+	@GetMapping("/search")
+	CursorPage<ItemResponse> search(WorkspaceContext ctx, @RequestParam(required = false) String name,
+			@RequestParam(required = false) String code, CursorRequest page) {
+		if ((name == null) == (code == null)) {
+			throw new BadRequestException("Give exactly one of name or code");
+		}
+		CursorPage<ItemView> found = (name != null) ? this.service.searchByName(ctx.workspaceId(), name, page)
+				: this.service.findByCode(ctx.workspaceId(), code, page);
+		return found.map(this.mapper::toResponse);
 	}
 
 	@PostMapping
