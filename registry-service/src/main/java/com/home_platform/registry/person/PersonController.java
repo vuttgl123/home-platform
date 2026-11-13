@@ -8,6 +8,8 @@ import com.home_platform.common.history.EntityVersion;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
+import com.home_platform.registry.occupancy.OccupancyMapper;
+import com.home_platform.registry.occupancy.OccupancyService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,9 +31,24 @@ class PersonController {
 
 	private final PersonMapper mapper;
 
-	PersonController(PersonService service, PersonMapper mapper) {
+	private final OccupancyService occupancies;
+
+	private final OccupancyMapper occupancyMapper;
+
+	PersonController(PersonService service, PersonMapper mapper, OccupancyService occupancies,
+			OccupancyMapper occupancyMapper) {
 		this.service = service;
 		this.mapper = mapper;
+		this.occupancies = occupancies;
+		this.occupancyMapper = occupancyMapper;
+	}
+
+	/** Người kèm những nơi đang ở. */
+	private PersonDetailResponse detail(WorkspaceContext ctx, Person person) {
+		return this.mapper.toDetail(person, this.occupancies.currentOfPerson(ctx.workspaceId(), person.id())
+			.stream()
+			.map(this.occupancyMapper::toResponse)
+			.toList());
 	}
 
 	@GetMapping
@@ -67,24 +84,24 @@ class PersonController {
 	@PostMapping("/{id}/versions/{versionNo}/restore")
 	PersonDetailResponse restoreVersion(WorkspaceContext ctx, @PathVariable long id, @PathVariable int versionNo,
 			@Valid @RequestBody PersonVersionRestoreRequest request) {
-		return this.mapper.toDetail(this.service.restoreVersion(ctx, id, versionNo, request));
+		return detail(ctx, this.service.restoreVersion(ctx, id, versionNo, request));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	PersonDetailResponse create(WorkspaceContext ctx, @Valid @RequestBody PersonRequest request) {
-		return this.mapper.toDetail(this.service.create(ctx, request));
+		return detail(ctx, this.service.create(ctx, request));
 	}
 
 	@GetMapping("/{id}")
 	PersonDetailResponse get(WorkspaceContext ctx, @PathVariable long id) {
-		return this.mapper.toDetail(this.service.get(ctx.workspaceId(), id));
+		return detail(ctx, this.service.get(ctx.workspaceId(), id));
 	}
 
 	@PutMapping("/{id}")
 	PersonDetailResponse update(WorkspaceContext ctx, @PathVariable long id,
 			@Valid @RequestBody PersonUpdateRequest request) {
-		return this.mapper.toDetail(this.service.update(ctx, id, request));
+		return detail(ctx, this.service.update(ctx, id, request));
 	}
 
 	@DeleteMapping("/{id}")
@@ -97,7 +114,7 @@ class PersonController {
 	@PostMapping("/{id}/restore")
 	PersonDetailResponse restore(WorkspaceContext ctx, @PathVariable long id,
 			@Valid @RequestBody PersonRestoreRequest request) {
-		return this.mapper.toDetail(this.service.restore(ctx, id, request));
+		return detail(ctx, this.service.restore(ctx, id, request));
 	}
 
 }

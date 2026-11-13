@@ -1,6 +1,12 @@
 package com.home_platform.registry.occupancy;
 
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import com.home_platform.common.context.WorkspaceContext;
+import com.home_platform.common.web.BadRequestException;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,6 +31,22 @@ class OccupancyController {
 	OccupancyController(OccupancyService service, OccupancyMapper mapper) {
 		this.service = service;
 		this.mapper = mapper;
+	}
+
+	/** Đúng một trong ba: tại một địa điểm (theo trạng thái, mặc định đang ở), trong cả cây con, của một người. */
+	@GetMapping
+	CursorPage<OccupancyResponse> list(WorkspaceContext ctx, @RequestParam(required = false) Long placeId,
+			@RequestParam(required = false) OccupancyStatus status, @RequestParam(required = false) Long subtreeOf,
+			@RequestParam(required = false) Long personId, CursorRequest page) {
+		if (Stream.of(placeId, subtreeOf, personId).filter(Objects::nonNull).count() != 1) {
+			throw new BadRequestException("Give exactly one of placeId, subtreeOf or personId");
+		}
+		CursorPage<OccupancyView> found = (placeId != null)
+				? this.service.atPlace(ctx.workspaceId(), placeId,
+						(status != null) ? status : OccupancyStatus.CURRENT, page)
+				: (subtreeOf != null) ? this.service.currentInSubtree(ctx.workspaceId(), subtreeOf, page)
+						: this.service.ofPerson(ctx.workspaceId(), personId, page);
+		return found.map(this.mapper::toResponse);
 	}
 
 	@PostMapping

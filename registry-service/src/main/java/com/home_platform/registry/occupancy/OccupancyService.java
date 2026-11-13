@@ -1,10 +1,14 @@
 package com.home_platform.registry.occupancy;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import com.home_platform.registry.person.PersonService;
 import com.home_platform.registry.place.PlaceService;
 import com.home_platform.registry.support.BusinessDate;
@@ -40,11 +44,50 @@ public class OccupancyService {
 	}
 
 	public OccupancyView view(long workspaceId, long id) {
-		Occupancy occupancy = get(workspaceId, id);
-		return new OccupancyView(occupancy,
-				this.places.names(workspaceId, java.util.List.of(occupancy.placeId())).get(occupancy.placeId()),
-				this.people.names(workspaceId, java.util.List.of(occupancy.personId())).get(occupancy.personId()),
-				OccupancyStatus.of(occupancy.startDate(), occupancy.endDate(), this.businessDate.today()));
+		return views(workspaceId, List.of(get(workspaceId, id))).get(0);
+	}
+
+	/** @throws com.home_platform.common.web.NotFoundException nếu địa điểm không có hoặc đã xoá */
+	public CursorPage<OccupancyView> atPlace(long workspaceId, long placeId, OccupancyStatus status,
+			CursorRequest page) {
+		this.places.get(workspaceId, placeId);
+		return withViews(workspaceId,
+				this.repository.atPlace(workspaceId, placeId, status, this.businessDate.today(), page));
+	}
+
+	/** Người đang ở tại địa điểm gốc hoặc bất kỳ hậu duệ chưa xoá nào, ví dụ cả một toà nhà. */
+	public CursorPage<OccupancyView> currentInSubtree(long workspaceId, long rootPlaceId, CursorRequest page) {
+		String rootPath = this.places.get(workspaceId, rootPlaceId).path();
+		return withViews(workspaceId,
+				this.repository.currentInSubtree(workspaceId, rootPath, this.businessDate.today(), page));
+	}
+
+	/** Mọi nơi một người đã và đang ở, mới nhất trước. */
+	public CursorPage<OccupancyView> ofPerson(long workspaceId, long personId, CursorRequest page) {
+		this.people.get(workspaceId, personId);
+		return withViews(workspaceId, this.repository.ofPerson(workspaceId, personId, page));
+	}
+
+	public List<OccupancyView> currentOfPerson(long workspaceId, long personId) {
+		return views(workspaceId,
+				this.repository.currentOfPerson(workspaceId, personId, this.businessDate.today()));
+	}
+
+	private CursorPage<OccupancyView> withViews(long workspaceId, CursorPage<Occupancy> page) {
+		return new CursorPage<>(views(workspaceId, page.items()), page.nextCursor());
+	}
+
+	/** Gắn tên địa điểm, tên người (lấy theo lô) và trạng thái hôm nay vào từng dòng. */
+	private List<OccupancyView> views(long workspaceId, List<Occupancy> rows) {
+		Map<Long, String> placeNames = this.places.names(workspaceId,
+				rows.stream().map(Occupancy::placeId).distinct().toList());
+		Map<Long, String> personNames = this.people.names(workspaceId,
+				rows.stream().map(Occupancy::personId).distinct().toList());
+		LocalDate today = this.businessDate.today();
+		return rows.stream()
+			.map(row -> new OccupancyView(row, placeNames.get(row.placeId()), personNames.get(row.personId()),
+					OccupancyStatus.of(row.startDate(), row.endDate(), today)))
+			.toList();
 	}
 
 	/** @throws com.home_platform.common.web.NotFoundException nếu địa điểm hoặc người không có hay đã xoá */
