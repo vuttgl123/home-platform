@@ -53,8 +53,20 @@ Kiểm tra nhanh: `curl localhost:8082/actuator/health`. Tài liệu API của m
 
 ## Nghiệp vụ đã có
 
-Logic nghiệp vụ đầy đủ: `docs/superpowers/specs/2026-11-13-business-rules-design.md`. Đã làm
-(registry, cổng 8082; mọi API cần header `X-Workspace-Id`, `X-User-Id`):
+Logic nghiệp vụ đầy đủ: `docs/superpowers/specs/2026-11-13-business-rules-design.md`.
+
+**Identity** (cổng 8081; người gọi lấy từ header `X-User-Id`):
+
+| Đường dẫn | Việc |
+|---|---|
+| `POST /users` | Tạo người dùng (email lưu chữ thường, không trùng); chưa cần đăng nhập |
+| `GET /users/me`, `PUT /users/me` | Xem và đổi tên hiển thị của người gọi |
+| `/workspaces` | `POST` (người gọi thành chủ, vai trò OWNER), `GET` (các không gian của tôi, theo tên), `GET /{id}`, `PUT /{id}` (đổi tên). Không gian mà người gọi không phải thành viên trả 404 |
+
+Luồng tạo không gian: `POST /workspaces` ở identity, rồi `POST /setup` ở registry với `X-Workspace-Id`
+là `id` vừa nhận.
+
+**Registry** (cổng 8082; mọi API cần header `X-Workspace-Id`, `X-User-Id`):
 
 | Đường dẫn | Việc |
 |---|---|
