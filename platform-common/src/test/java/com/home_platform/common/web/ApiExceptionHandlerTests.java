@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -112,6 +113,15 @@ class ApiExceptionHandlerTests {
 			.andExpect(content().string(not(containsString("uk_reg"))));
 	}
 
+	@Test
+	void otherConstraintViolationIsReportedAs400WithoutSqlText() throws Exception {
+		this.mvc.perform(get("/integrity"))
+			.andExpect(status().isBadRequest())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.detail").value("Invalid data"))
+			.andExpect(content().string(not(containsString("column"))));
+	}
+
 	record Person(@NotBlank String name, @Min(0) int age) {
 	}
 
@@ -131,6 +141,11 @@ class ApiExceptionHandlerTests {
 		@GetMapping("/search")
 		int search(@RequestParam @Min(1) int size) {
 			return size;
+		}
+
+		@GetMapping("/integrity")
+		void integrity() {
+			throw new DataIntegrityViolationException("Data truncation: Data too long for column 'name' at row 1");
 		}
 
 		@GetMapping("/duplicate")

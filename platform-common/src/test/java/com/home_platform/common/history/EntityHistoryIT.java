@@ -68,6 +68,14 @@ class EntityHistoryIT extends CommonIT {
 	}
 
 	@Test
+	void snapshotThatIsNotAnObjectHasNoChangedFields() {
+		this.history.record(CTX_A, "PLACE", 10, 1, ChangeAction.CREATE, java.util.List.of(1), null);
+		this.history.record(CTX_A, "PLACE", 10, 2, ChangeAction.UPDATE, java.util.List.of(2), null);
+
+		assertThat(this.history.get(WS_A, "PLACE", 10, 2).changedFields()).isNull();
+	}
+
+	@Test
 	void updateWithoutAPreviousVersionHasNoChangedFields() {
 		this.history.record(CTX_A, "PLACE", 10, 5, ChangeAction.UPDATE, new PlaceSnapshot(10, "A", null, null), null);
 

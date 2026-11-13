@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.web.ConflictException;
@@ -35,6 +36,12 @@ import org.springframework.jdbc.core.simple.JdbcClient;
  */
 public abstract class WorkspaceRepository<T extends Record> {
 
+	/** Kiểu được chấp nhận cho từng cột chuẩn (dạng nguyên thuỷ hoặc dạng cho phép null). */
+	private static final Map<String, Set<Class<?>>> STANDARD_TYPES = Map.of(CrudSql.CREATED_AT, Set.of(Instant.class),
+			CrudSql.UPDATED_AT, Set.of(Instant.class), CrudSql.DELETED_AT, Set.of(Instant.class), CrudSql.CREATED_BY,
+			Set.of(long.class, Long.class), CrudSql.UPDATED_BY, Set.of(long.class, Long.class), CrudSql.VERSION,
+			Set.of(int.class, Integer.class));
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final RepositorySupport support;
@@ -51,6 +58,7 @@ public abstract class WorkspaceRepository<T extends Record> {
 
 	protected WorkspaceRepository(RepositorySupport support, String table, Class<T> type) {
 		requireKey(type);
+		requireStandardTypes(type);
 		this.support = support;
 		this.table = table;
 		this.metadata = EntityMetadata.of(type, support.json());
@@ -256,6 +264,25 @@ public abstract class WorkspaceRepository<T extends Record> {
 	/** {@code DATETIME(3)} giữ tới mili giây; cắt trước để record trả về khớp với dòng đã lưu. */
 	private Instant now() {
 		return this.support.clock().instant().truncatedTo(ChronoUnit.MILLIS);
+	}
+
+	/**
+	 * Cột chuẩn được repository tự điền nên phải đúng kiểu; sai kiểu thì báo ngay lúc khởi động
+	 * thay vì hỏng ở lần ghi đầu tiên.
+	 */
+	private static void requireStandardTypes(Class<? extends Record> type) {
+		for (RecordComponent component : type.getRecordComponents()) {
+			Set<Class<?>> allowed = STANDARD_TYPES.get(component.getName());
+			if (allowed != null && !allowed.contains(component.getType())) {
+				String expected = allowed.stream()
+					.filter(Class::isPrimitive)
+					.findFirst()
+					.orElse(Instant.class)
+					.getSimpleName();
+				throw new IllegalArgumentException(
+						type.getSimpleName() + "." + component.getName() + " must be " + expected);
+			}
+		}
 	}
 
 	private static void requireKey(Class<? extends Record> type) {

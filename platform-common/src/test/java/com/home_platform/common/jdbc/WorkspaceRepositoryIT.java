@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.TimeZone;
@@ -98,6 +99,25 @@ class WorkspaceRepositoryIT extends CommonIT {
 		finally {
 			TimeZone.setDefault(original);
 		}
+	}
+
+	@Test
+	void instantParameterInHandWrittenSqlMatchesStoredUtc() {
+		this.docs.insert(CTX_A, room());
+		String sql = "SELECT COUNT(*) FROM tmp_sample_doc WHERE workspace_id = :workspaceId AND created_at = :t";
+
+		long matches = this.jdbc.sql(sql).param("workspaceId", WS_A).param("t", NOW).query(Long.class).single();
+		Timestamp read = this.jdbc.sql("SELECT created_at FROM tmp_sample_doc WHERE workspace_id = :workspaceId")
+			.param("workspaceId", WS_A)
+			.query(Timestamp.class)
+			.single();
+		long sessionOffset = this.jdbc.sql("SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())")
+			.query(Long.class)
+			.single();
+
+		assertThat(matches).isEqualTo(1);
+		assertThat(read.toInstant()).isEqualTo(NOW);
+		assertThat(sessionOffset).isZero();
 	}
 
 	@Test

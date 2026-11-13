@@ -130,6 +130,9 @@ public class EntityHistory {
 	 */
 	public CursorPage<EntityVersionSummary> list(long workspaceId, String entityType, long entityId,
 			CursorRequest page) {
+		if (page.limit() < 1) {
+			throw new IllegalArgumentException("limit must be positive: " + page.limit());
+		}
 		JdbcClient.StatementSpec statement = (page.cursor() != null)
 				? this.jdbc.sql(this.listAfter).param("cursorVersion", decode(page.cursor()))
 				: this.jdbc.sql(this.listFirst);
@@ -181,8 +184,12 @@ public class EntityHistory {
 	/**
 	 * Tên các trường cấp một có giá trị khác nhau giữa hai snapshot, kể cả trường chỉ có ở một
 	 * bên. Cả hai cây đều được đọc lại từ chuỗi JSON nên cách biểu diễn số giống nhau.
+	 * Snapshot không phải object thì không có "trường" để so: trả {@code null}.
 	 */
 	private static List<String> changedFields(JsonNode previous, JsonNode current) {
+		if (!previous.isObject() || !current.isObject()) {
+			return null;
+		}
 		Set<String> changed = new LinkedHashSet<>();
 		for (Map.Entry<String, JsonNode> field : current.properties()) {
 			if (!field.getValue().equals(previous.get(field.getKey()))) {

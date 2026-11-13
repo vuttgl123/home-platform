@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -73,6 +74,18 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	ProblemDetail handleDuplicateKey(DuplicateKeyException ex) {
 		log.warn("Duplicate key: {}", ex.getMessage());
 		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Duplicate value");
+	}
+
+	/**
+	 * Dữ liệu vi phạm một ràng buộc khác của database: chuỗi dài quá cột, khoá ngoại không tồn
+	 * tại, {@code NULL} vào cột bắt buộc. Đây là lỗi của dữ liệu client gửi lên nên trả 400;
+	 * thông báo của database chỉ ghi vào log. Nghiệp vụ muốn thông báo rõ hơn thì tự kiểm tra
+	 * trước (ví dụ bằng {@code @Valid}) hoặc tự bắt và ném {@link BadRequestException}.
+	 */
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
+		log.warn("Data integrity violation: {}", ex.getMessage());
+		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Invalid data");
 	}
 
 	/**

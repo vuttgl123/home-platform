@@ -65,6 +65,9 @@ public class PlatformOperationCustomizer implements GlobalOperationCustomizer {
 	}
 
 	private void addPaging(Operation operation) {
+		if (hasParameter(operation, "cursor")) {
+			return;
+		}
 		operation.addParametersItem(new Parameter().in("query")
 			.name("cursor")
 			.required(false)

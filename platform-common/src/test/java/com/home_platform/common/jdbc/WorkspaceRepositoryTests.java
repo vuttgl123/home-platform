@@ -1,5 +1,6 @@
 package com.home_platform.common.jdbc;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
@@ -26,6 +27,34 @@ class WorkspaceRepositoryTests {
 		assertThatThrownBy(() -> new WorkspaceRepository<>(this.support, "t", BoxedKey.class) {
 		}).isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("BoxedKey must declare long workspaceId and long id");
+	}
+
+	@Test
+	void wrongTypeOfStandardColumnIsRejected() {
+		assertThatThrownBy(() -> new WorkspaceRepository<>(this.support, "t", LongVersion.class) {
+		}).isInstanceOf(IllegalArgumentException.class).hasMessage("LongVersion.version must be int");
+		assertThatThrownBy(() -> new WorkspaceRepository<>(this.support, "t", IntCreatedBy.class) {
+		}).isInstanceOf(IllegalArgumentException.class).hasMessage("IntCreatedBy.createdBy must be long");
+		assertThatThrownBy(() -> new WorkspaceRepository<>(this.support, "t", TextDeletedAt.class) {
+		}).isInstanceOf(IllegalArgumentException.class).hasMessage("TextDeletedAt.deletedAt must be Instant");
+	}
+
+	@Test
+	void boxedStandardColumnsAreAccepted() {
+		assertThatCode(() -> new WorkspaceRepository<>(this.support, "t", Boxed.class) {
+		}).doesNotThrowAnyException();
+	}
+
+	record LongVersion(long workspaceId, long id, long version) {
+	}
+
+	record IntCreatedBy(long workspaceId, long id, int createdBy) {
+	}
+
+	record TextDeletedAt(long workspaceId, long id, String deletedAt) {
+	}
+
+	record Boxed(long workspaceId, long id, Long createdBy, Long updatedBy, Integer version) {
 	}
 
 	record NoKey(long id, String name) {

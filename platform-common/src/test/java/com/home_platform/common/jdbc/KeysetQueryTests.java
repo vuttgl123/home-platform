@@ -74,6 +74,14 @@ class KeysetQueryTests {
 	}
 
 	@Test
+	void parameterNameUsedTwiceIsRejected() {
+		KeysetQuery<SampleDoc> query = this.docs.keyset().where("parent_id = :p", Map.of("p", 1L));
+
+		assertThatThrownBy(() -> query.where("rating = :p", Map.of("p", 2))).isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("p");
+	}
+
+	@Test
 	void reservedParameterNamesAreRejected() {
 		assertThatThrownBy(() -> this.docs.keyset().where("x = :limit", Map.of("limit", 1)))
 			.isInstanceOf(IllegalArgumentException.class);

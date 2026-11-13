@@ -90,7 +90,10 @@ Kiểm tra nhanh: `curl localhost:8082/actuator/health`. Tài liệu API của m
   tham số đầu tiên. Repository không tự mở transaction: service đặt `@Transactional`.
 - **Lỗi:** ném `NotFoundException.of("Place", id)`, `ConflictException`, `BadRequestException`;
   mọi lỗi được trả về ở dạng Problem Details (`application/problem+json`). Lỗi `@Valid` trả 400
-  kèm danh sách từng trường; trùng khoá duy nhất trả 409.
+  kèm danh sách từng trường; trùng khoá duy nhất trả 409; vi phạm ràng buộc khác của database
+  (chuỗi dài quá cột, khoá ngoại sai) trả 400.
+- **Thời gian:** mọi cột `DATETIME(3)` lưu giờ UTC. Kết nối database được đặt sẵn ở UTC, nên SQL
+  viết tay truyền thẳng `Instant` hay dùng `NOW()` đều đúng, bất kể múi giờ của máy chạy.
 - **Danh sách dài:** controller nhận một tham số `CursorRequest` (tham số URL `cursor` và
   `limit`, mặc định 20, tối đa 100), repository dựng truy vấn bằng `keyset()`, trả về
   `CursorPage`. Cột sắp xếp là hằng số trong code, `NOT NULL`, nên có index phục vụ.

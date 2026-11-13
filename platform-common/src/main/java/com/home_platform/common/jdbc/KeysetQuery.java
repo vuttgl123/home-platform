@@ -68,12 +68,15 @@ public final class KeysetQuery<T extends Record> {
 	 * @param condition đoạn SQL dùng tham số có tên, ví dụ {@code "parent_id = :parentId"}
 	 * @param params giá trị của các tham số trong đoạn SQL đó
 	 * @throws IllegalArgumentException nếu dùng tên tham số dành riêng ({@code workspaceId},
-	 * {@code cursorSort}, {@code cursorId}, {@code limit})
+	 * {@code cursorSort}, {@code cursorId}, {@code limit}) hoặc tên đã dùng ở điều kiện trước
 	 */
 	public KeysetQuery<T> where(String condition, Map<String, ?> params) {
 		for (String name : params.keySet()) {
 			if (RESERVED.contains(name)) {
 				throw new IllegalArgumentException("Parameter name " + name + " is reserved by KeysetQuery");
+			}
+			if (this.params.containsKey(name)) {
+				throw new IllegalArgumentException("Parameter name " + name + " is already used by another condition");
 			}
 		}
 		this.conditions.add("(" + condition + ")");
