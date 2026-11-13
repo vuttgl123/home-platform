@@ -180,8 +180,7 @@ public class PlaceService {
 		if (cleaned == null) {
 			throw new BadRequestException("name must not be blank");
 		}
-		String escaped = cleaned.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
-		return this.repository.searchByName(workspaceId, escaped + "%", page);
+		return this.repository.searchByName(workspaceId, Text.likePrefix(cleaned), page);
 	}
 
 	public CursorPage<Place> findByCode(long workspaceId, String code, CursorRequest page) {

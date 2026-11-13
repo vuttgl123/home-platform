@@ -5,9 +5,14 @@ import java.util.Map;
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.history.ChangeAction;
 import com.home_platform.common.history.EntityHistory;
+import com.home_platform.common.history.EntityVersion;
+import com.home_platform.common.history.EntityVersionSummary;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import com.home_platform.common.web.NotFoundException;
+import com.home_platform.registry.catalog.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.support.BusinessDate;
@@ -103,6 +108,76 @@ public class PersonService {
 		Person stored = this.repository.restore(ctx, id, request.version());
 		record(ctx, stored, ChangeAction.RESTORE, request.note());
 		return stored;
+	}
+
+	public CursorPage<Person> list(long workspaceId, CursorRequest page) {
+		return this.repository.list(workspaceId, page);
+	}
+
+	public CursorPage<Person> searchByName(long workspaceId, String prefix, CursorRequest page) {
+		return this.repository.searchByName(workspaceId, Text.likePrefix(required(Text.trimToNull(prefix), "name")),
+				page);
+	}
+
+	/** Bỏ khoảng trắng và dấu chấm trong từ khoá như khi lưu, rồi tìm theo tiền tố. */
+	public CursorPage<Person> searchByPhone(long workspaceId, String prefix, CursorRequest page) {
+		return this.repository.searchByPhone(workspaceId,
+				Text.likePrefix(required(PersonFields.phone(prefix), "phone")), page);
+	}
+
+	public CursorPage<Person> findByIdNumber(long workspaceId, String idNumber, CursorRequest page) {
+		return this.repository.findByIdNumber(workspaceId, required(Text.trimToNull(idNumber), "idNumber"), page);
+	}
+
+	/** Các version của một người, mới nhất trước; thấy cả khi người đó đã bị xoá. */
+	public CursorPage<EntityVersionSummary> versions(long workspaceId, long id, CursorRequest page) {
+		this.repository.findByIdIncludingDeleted(workspaceId, id).orElseThrow(() -> NotFoundException.of("Person", id));
+		return this.history.list(workspaceId, ENTITY_TYPE, id, page);
+	}
+
+	public EntityVersion version(long workspaceId, long id, int versionNo) {
+		return this.history.get(workspaceId, ENTITY_TYPE, id, versionNo);
+	}
+
+	public PersonSnapshot snapshotOf(EntityVersion version) {
+		return this.history.snapshotAs(version, PersonSnapshot.class);
+	}
+
+	/**
+	 * Khôi phục nội dung một version cũ như một lần sửa bình thường. Nội dung cũ phải hợp lệ lúc
+	 * này (giấy tờ không trùng người khác, {@code attributes} hợp với mục tuỳ biến hiện tại).
+	 * @throws ConflictException nếu người đó đang bị xoá
+	 */
+	@Transactional
+	public Person restoreVersion(WorkspaceContext ctx, long id, int versionNo, PersonVersionRestoreRequest request) {
+		long workspaceId = ctx.workspaceId();
+		Person current = this.repository.findById(workspaceId, id)
+			.orElseThrow(() -> this.repository.findByIdIncludingDeleted(workspaceId, id).isPresent()
+					? new ConflictException("Restore person " + id + " before restoring an old version")
+					: NotFoundException.of("Person", id));
+		PersonSnapshot old = snapshotOf(version(workspaceId, id, versionNo));
+		requireUniqueDocument(workspaceId, id, old.idType(), old.idNumber());
+		Person stored = this.repository.update(ctx, current.withVersion(request.version())
+			.withFullName(old.fullName())
+			.withPhone(old.phone())
+			.withEmail(old.email())
+			.withIdType(old.idType())
+			.withIdNumber(old.idNumber())
+			.withDateOfBirth(old.dateOfBirth())
+			.withGender(old.gender())
+			.withNote(old.note())
+			.withAttributes(validAttributes(ctx, old.attributes()))
+			.withAvatarFileId(old.avatarFileId()));
+		String note = "Restored from version " + versionNo + ((request.note() != null) ? ": " + request.note() : "");
+		record(ctx, stored, ChangeAction.UPDATE, (note.length() > 255) ? note.substring(0, 255) : note);
+		return stored;
+	}
+
+	private static String required(String value, String name) {
+		if (value == null) {
+			throw new BadRequestException(name + " must not be blank");
+		}
+		return value;
 	}
 
 	/**

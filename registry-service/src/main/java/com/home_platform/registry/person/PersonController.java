@@ -1,6 +1,13 @@
 package com.home_platform.registry.person;
 
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import com.home_platform.common.context.WorkspaceContext;
+import com.home_platform.common.history.EntityVersion;
+import com.home_platform.common.web.BadRequestException;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,6 +32,42 @@ class PersonController {
 	PersonController(PersonService service, PersonMapper mapper) {
 		this.service = service;
 		this.mapper = mapper;
+	}
+
+	@GetMapping
+	CursorPage<PersonResponse> list(WorkspaceContext ctx, CursorRequest page) {
+		return this.service.list(ctx.workspaceId(), page).map(this.mapper::toResponse);
+	}
+
+	/** Đúng một trong ba: tên bắt đầu bằng, số điện thoại bắt đầu bằng, đúng số giấy tờ. */
+	@GetMapping("/search")
+	CursorPage<PersonResponse> search(WorkspaceContext ctx, @RequestParam(required = false) String name,
+			@RequestParam(required = false) String phone, @RequestParam(required = false) String idNumber,
+			CursorRequest page) {
+		if (Stream.of(name, phone, idNumber).filter(Objects::nonNull).count() != 1) {
+			throw new BadRequestException("Give exactly one of name, phone or idNumber");
+		}
+		CursorPage<Person> found = (name != null) ? this.service.searchByName(ctx.workspaceId(), name, page)
+				: (phone != null) ? this.service.searchByPhone(ctx.workspaceId(), phone, page)
+						: this.service.findByIdNumber(ctx.workspaceId(), idNumber, page);
+		return found.map(this.mapper::toResponse);
+	}
+
+	@GetMapping("/{id}/versions")
+	CursorPage<PersonVersionSummaryResponse> versions(WorkspaceContext ctx, @PathVariable long id, CursorRequest page) {
+		return this.service.versions(ctx.workspaceId(), id, page).map(this.mapper::toVersionSummary);
+	}
+
+	@GetMapping("/{id}/versions/{versionNo}")
+	PersonVersionResponse version(WorkspaceContext ctx, @PathVariable long id, @PathVariable int versionNo) {
+		EntityVersion version = this.service.version(ctx.workspaceId(), id, versionNo);
+		return this.mapper.toVersion(version, this.service.snapshotOf(version));
+	}
+
+	@PostMapping("/{id}/versions/{versionNo}/restore")
+	PersonDetailResponse restoreVersion(WorkspaceContext ctx, @PathVariable long id, @PathVariable int versionNo,
+			@Valid @RequestBody PersonVersionRestoreRequest request) {
+		return this.mapper.toDetail(this.service.restoreVersion(ctx, id, versionNo, request));
 	}
 
 	@PostMapping
