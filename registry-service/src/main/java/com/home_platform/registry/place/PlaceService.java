@@ -21,6 +21,7 @@ import com.home_platform.common.web.NotFoundException;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.placetype.PlaceTypeService;
+import com.home_platform.registry.support.BusinessDate;
 import com.home_platform.registry.support.Geohash;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,8 +51,12 @@ public class PlaceService {
 
 	private final Clock clock;
 
+	private final BusinessDate businessDate;
+
 	PlaceService(PlaceRepository repository, PlaceTypeService placeTypes, AttributeValidation attributeValidation,
-			EntityHistory history, IdGenerator idGenerator, PlaceAddressRepository addresses, Clock clock) {
+			EntityHistory history, IdGenerator idGenerator, PlaceAddressRepository addresses, Clock clock,
+			BusinessDate businessDate) {
+		this.businessDate = businessDate;
 		this.repository = repository;
 		this.addresses = addresses;
 		this.clock = clock;
@@ -107,6 +112,41 @@ public class PlaceService {
 		this.repository.moveDescendants(ctx, current.path(), path, depth - current.depth(), now);
 		Place stored = this.repository.update(ctx, current.withParentId(request.parentId()).withPath(path).withDepth(depth));
 		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.UPDATE, request.note());
+		return stored;
+	}
+
+	/**
+	 * Xoá mềm. Chỉ được khi không còn địa điểm con, người đang hoặc sắp ở, đồ đạc chưa gỡ.
+	 * @throws ConflictException nếu còn một trong ba thứ đó, kèm số lượng từng thứ
+	 */
+	@Transactional
+	public void delete(WorkspaceContext ctx, long id, int version, String note) {
+		get(ctx.workspaceId(), id);
+		int children = this.repository.countChildren(ctx.workspaceId(), id);
+		int occupancies = this.repository.countCurrentOccupancies(ctx.workspaceId(), id, this.businessDate.today());
+		int items = this.repository.countCurrentItems(ctx.workspaceId(), id);
+		if (children + occupancies + items > 0) {
+			throw new ConflictException("Place " + id + " still has " + children + " child places, " + occupancies
+					+ " occupancies and " + items + " items");
+		}
+		Place stored = this.repository.softDelete(ctx, id, version);
+		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.DELETE, note);
+	}
+
+	/**
+	 * Bỏ xoá.
+	 * @throws ConflictException nếu chưa bị xoá, nếu cha đang bị xoá, hoặc {@code version} lệch
+	 */
+	@Transactional
+	public Place restore(WorkspaceContext ctx, long id, PlaceRestoreRequest request) {
+		Place deleted = this.repository.findByIdIncludingDeleted(ctx.workspaceId(), id)
+			.orElseThrow(() -> NotFoundException.of("Place", id));
+		if (deleted.deletedAt() != null && deleted.parentId() != null
+				&& this.repository.findById(ctx.workspaceId(), deleted.parentId()).isEmpty()) {
+			throw new ConflictException("Restore the parent place " + deleted.parentId() + " first");
+		}
+		Place stored = this.repository.restore(ctx, id, request.version());
+		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.RESTORE, request.note());
 		return stored;
 	}
 

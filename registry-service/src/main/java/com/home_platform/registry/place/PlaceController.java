@@ -44,6 +44,19 @@ class PlaceController {
 		return detail(ctx, this.service.update(ctx, id, request).id());
 	}
 
+	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void delete(WorkspaceContext ctx, @PathVariable long id, @RequestParam int version,
+			@RequestParam(required = false) String note) {
+		this.service.delete(ctx, id, version, note);
+	}
+
+	@PostMapping("/{id}/restore")
+	PlaceDetailResponse restore(WorkspaceContext ctx, @PathVariable long id,
+			@Valid @RequestBody PlaceRestoreRequest request) {
+		return detail(ctx, this.service.restore(ctx, id, request).id());
+	}
+
 	@PostMapping("/{id}/move")
 	PlaceDetailResponse move(WorkspaceContext ctx, @PathVariable long id, @Valid @RequestBody PlaceMoveRequest request) {
 		return detail(ctx, this.service.move(ctx, id, request).id());

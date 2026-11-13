@@ -1,6 +1,7 @@
 package com.home_platform.registry.place;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,32 @@ public class PlaceRepository extends WorkspaceRepository<Place> {
 
 	PlaceRepository(RepositorySupport support) {
 		super(support, "reg_place", Place.class);
+	}
+
+	/** Số địa điểm con chưa xoá. */
+	public int countChildren(long workspaceId, long placeId) {
+		return count("SELECT COUNT(*) FROM reg_place WHERE workspace_id = :workspaceId AND parent_id = :placeId "
+				+ "AND deleted_at IS NULL", workspaceId, placeId, null);
+	}
+
+	/** Số dòng cư trú chưa xoá đang hoặc sắp có hiệu lực: chưa có ngày kết thúc, hoặc kết thúc từ hôm nay trở đi. */
+	public int countCurrentOccupancies(long workspaceId, long placeId, LocalDate today) {
+		return count("SELECT COUNT(*) FROM reg_occupancy WHERE workspace_id = :workspaceId AND place_id = :placeId "
+				+ "AND deleted_at IS NULL AND (end_date IS NULL OR end_date >= :today)", workspaceId, placeId, today);
+	}
+
+	/** Số món đồ chưa xoá và chưa gỡ. */
+	public int countCurrentItems(long workspaceId, long placeId) {
+		return count("SELECT COUNT(*) FROM reg_item WHERE workspace_id = :workspaceId AND place_id = :placeId "
+				+ "AND deleted_at IS NULL AND removed_at IS NULL", workspaceId, placeId, null);
+	}
+
+	private int count(String sql, long workspaceId, long placeId, LocalDate today) {
+		var statement = jdbc().sql(sql).param("workspaceId", workspaceId).param("placeId", placeId);
+		if (today != null) {
+			statement = statement.param("today", today);
+		}
+		return statement.query(Integer.class).single();
 	}
 
 	/** {@code depth} lớn nhất trong cây có gốc mang {@code path} (kể cả gốc và dòng đã xoá). */

@@ -15,6 +15,10 @@ platform:
     # Bảng version của địa điểm, người, đồ đạc; bật bean EntityHistory.
     table: reg_entity_version
 
+registry:
+  # Múi giờ để tính ngày "hôm nay" (ai đang ở, món nào còn).
+  business-zone: Asia/Ho_Chi_Minh
+
 server:
   port: 8082
 
