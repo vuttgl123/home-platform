@@ -85,6 +85,9 @@ là `id` vừa nhận.
 Mọi lệnh ghi lên địa điểm cần `version` đã đọc (trong body, hoặc tham số URL với `DELETE`); `version` đã
 đổi thì nhận 409 và phải đọc lại. Có thể gửi kèm `note` (tối đa 255 ký tự) để ghi vào version.
 
+**Media** (cổng 8083): chưa làm. Đã có sẵn record của hai bảng, luật tải lên và interface kho file;
+việc còn lại và các quyết định cần có nằm ở `docs/superpowers/todo/media.md`.
+
 Service của địa điểm, người, đồ đạc kiểm tra cột `attributes` bằng
 `AttributeValidation.validate(workspaceId, target, typeId, attributes)` trước khi ghi, rồi lưu
 giá trị nó trả về.
