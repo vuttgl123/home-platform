@@ -5,7 +5,9 @@ import com.home_platform.common.history.EntityVersion;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
+import com.home_platform.registry.catalog.Text;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -89,8 +91,8 @@ class PlaceController {
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void delete(WorkspaceContext ctx, @PathVariable long id, @RequestParam int version,
-			@RequestParam(required = false) String note) {
-		this.service.delete(ctx, id, version, note);
+			@RequestParam(required = false) @Size(max = 255) String note) {
+		this.service.delete(ctx, id, version, Text.trimToNull(note));
 	}
 
 	@PostMapping("/{id}/restore")
@@ -129,8 +131,8 @@ class PlaceController {
 
 	@DeleteMapping("/{id}/address")
 	PlaceDetailResponse removeAddress(WorkspaceContext ctx, @PathVariable long id, @RequestParam int version,
-			@RequestParam(required = false) String note) {
-		return detail(ctx, this.service.removeAddress(ctx, id, version, note).id());
+			@RequestParam(required = false) @Size(max = 255) String note) {
+		return detail(ctx, this.service.removeAddress(ctx, id, version, Text.trimToNull(note)).id());
 	}
 
 	private PlaceDetailResponse detail(WorkspaceContext ctx, long id) {

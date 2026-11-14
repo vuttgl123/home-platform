@@ -103,6 +103,26 @@ class PlaceDeleteIT extends PlaceTestData {
 	}
 
 	@Test
+	void overlongDeleteNoteNamesTheField() throws Exception {
+		long id = place(null, type("T"), "A");
+
+		this.mvc.perform(asA(delete("/places/" + id)).param("version", "1").param("note", "x".repeat(256)))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].field").value("note"));
+		getPlace(id).andExpect(status().isOk()).andExpect(jsonPath("$.version").value(1));
+	}
+
+	@Test
+	void blankDeleteNoteIsStoredAsNull() throws Exception {
+		long id = place(null, type("T"), "A");
+
+		this.mvc.perform(asA(delete("/places/" + id)).param("version", "1").param("note", " "))
+			.andExpect(status().isNoContent());
+
+		assertThat(version(id, 2).note()).isNull();
+	}
+
+	@Test
 	void staleVersionIsAConflict() throws Exception {
 		long id = place(null, type("T"), "A");
 

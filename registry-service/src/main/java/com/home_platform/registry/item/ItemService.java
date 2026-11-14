@@ -145,9 +145,10 @@ public class ItemService {
 	}
 
 	/**
-	 * Đưa lại một món đã gỡ.
-	 * @throws ConflictException nếu món chưa gỡ, đã bị thay bằng món khác, hoặc địa điểm của nó đã
-	 * bị xoá (địa điểm xoá được khi chỉ còn đồ đã gỡ)
+	 * Đưa lại một món đã gỡ. Món đã bị thay chỉ đưa lại được khi món thay nó đã bị xoá (thay nhầm);
+	 * khi đó nó không còn trỏ tới món kia nữa.
+	 * @throws ConflictException nếu món chưa gỡ, đã bị thay bằng một món còn đó, hoặc địa điểm của
+	 * nó đã bị xoá (địa điểm xoá được khi chỉ còn đồ đã gỡ)
 	 */
 	@Transactional
 	public Item putBack(WorkspaceContext ctx, long id, ItemVersionRequest request) {
@@ -155,14 +156,18 @@ public class ItemService {
 		if (!current.removed()) {
 			throw new ConflictException("Item " + id + " is not removed");
 		}
-		if (current.replacedByItemId() != null) {
+		if (current.replacedByItemId() != null
+				&& this.repository.findById(ctx.workspaceId(), current.replacedByItemId()).isPresent()) {
 			throw new ConflictException("Item " + id + " was replaced by item " + current.replacedByItemId());
 		}
 		if (this.places.findForShare(ctx.workspaceId(), current.placeId()).isEmpty()) {
 			throw new ConflictException("Restore place " + current.placeId() + " first");
 		}
 		Item stored = this.repository.update(ctx,
-				current.withVersion(request.version()).withRemovedAt(null).withStatus(ItemStatus.IN_USE));
+				current.withVersion(request.version())
+					.withRemovedAt(null)
+					.withStatus(ItemStatus.IN_USE)
+					.withReplacedByItemId(null));
 		record(ctx, stored, ChangeAction.UPDATE, request.note());
 		return stored;
 	}

@@ -26,6 +26,13 @@ public class ItemCategoryRepository extends WorkspaceRepository<ItemCategory> {
 			.list();
 	}
 
+	public boolean anyExists(long workspaceId) {
+		return jdbc().sql("SELECT EXISTS (SELECT 1 FROM reg_item_category WHERE workspace_id = :workspaceId)")
+			.param("workspaceId", workspaceId)
+			.query(Integer.class)
+			.single() == 1;
+	}
+
 	/**
 	 * Xoá các mục tuỳ biến của riêng nhóm này. Chỉ gọi khi xoá hẳn nhóm: lúc đó chưa bản ghi
 	 * nào dùng nhóm, nên không bản ghi nào giữ giá trị của các mục này. Bảng mục tuỳ biến không có

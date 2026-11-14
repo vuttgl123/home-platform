@@ -42,6 +42,13 @@ public class FieldDefRepository extends WorkspaceRepository<FieldDef> {
 		return statement.query(rowMapper()).list();
 	}
 
+	public boolean anyExists(long workspaceId) {
+		return jdbc().sql("SELECT EXISTS (SELECT 1 FROM reg_field_def WHERE workspace_id = :workspaceId)")
+			.param("workspaceId", workspaceId)
+			.query(Integer.class)
+			.single() == 1;
+	}
+
 	/**
 	 * Đã có mục (mọi trạng thái) cùng đích và cùng khoá ở một phạm vi chồng lên phạm vi
 	 * {@code typeId} chưa: phạm vi chung (0) chồng lên mọi phạm vi riêng và ngược lại.

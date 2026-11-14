@@ -161,6 +161,16 @@ class PersonIT extends PersonTestData {
 	}
 
 	@Test
+	void overlongDeleteNoteNamesTheField() throws Exception {
+		long id = named("A");
+
+		this.mvc.perform(asA(delete("/people/" + id)).param("version", "1").param("note", "x".repeat(256)))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].field").value("note"));
+		getPerson(id).andExpect(status().isOk()).andExpect(jsonPath("$.version").value(1));
+	}
+
+	@Test
 	void restoreChecksDocumentDuplicates() throws Exception {
 		long first = person("""
 				{"fullName": "A", "idType": "CCCD", "idNumber": "001"}""");

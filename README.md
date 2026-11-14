@@ -70,7 +70,7 @@ là `id` vừa nhận.
 
 | Đường dẫn | Việc |
 |---|---|
-| `POST /setup` | Tạo loại địa điểm, nhóm đồ và mục tuỳ biến mặc định cho không gian mới. Client gọi ngay sau khi tạo không gian; gọi lại không làm gì |
+| `POST /setup` | Tạo loại địa điểm, nhóm đồ và mục tuỳ biến mặc định cho không gian mới. Client gọi ngay sau khi tạo không gian; gọi lại, hoặc gọi khi không gian đã có bất kỳ danh mục nào, thì không làm gì |
 | `/place-types` | Loại địa điểm: `GET`, `GET /{id}`, `POST`, `PUT /{id}`, `POST /{id}/archive`, `POST /{id}/unarchive`, `DELETE /{id}` (chỉ khi chưa địa điểm nào dùng) |
 | `/item-categories` | Nhóm đồ, cùng bộ thao tác như loại địa điểm |
 | `/field-defs` | Mục thông tin tuỳ biến: `GET ?target=PLACE&typeId=`, `GET /{id}`, `POST`, `PUT /{id}`, `POST /{id}/archive`, `POST /{id}/unarchive`. Không xoá |
@@ -80,7 +80,7 @@ là `id` vừa nhận.
 | `GET /activity` | Hoạt động gần đây của không gian, mới nhất trước; lọc `entityType` |
 | `/people` | Hồ sơ người: `POST`, `GET /{id}` (kèm nơi đang ở), `PUT /{id}`, `DELETE /{id}` (khi không còn cư trú hiện tại hay sắp tới), `POST /{id}/restore`, `GET` (theo tên), `GET /search?name=` \| `?phone=` \| `?idNumber=`, `/{id}/versions` như địa điểm. Hai người chưa xoá không trùng cặp loại và số giấy tờ (database giữ luật này bằng khoá duy nhất `uk_reg_person_live_document`) |
 | `/occupancies` | Cư trú: `POST`, `GET /{id}`, `PUT /{id}` (sửa nhập nhầm; địa điểm và người của dòng phải chưa xoá), `POST /{id}/end` (chuyển đi), `DELETE /{id}`; `GET ?placeId=&status=CURRENT\|UPCOMING\|PAST`, `?subtreeOf=` (đang ở trong cả toà nhà), `?personId=`. Một người không có hai dòng giao thời gian ở cùng một chỗ |
-| `/items` | Đồ đạc: `POST`, `GET /{id}`, `PUT /{id}`, `POST /{id}/move`, `/remove` (gỡ, vẫn nằm trong danh sách đã gỡ), `/replace` (gỡ món cũ và tạo món mới trong một bước), `/put-back` (đưa lại), `/restore`, `DELETE /{id}`; `GET ?placeId=&removed=`, `?subtreeOf=`, `?categoryId=`; `GET /search?name=` \| `?code=`; `/{id}/versions` như địa điểm. Món đã gỡ chỉ đọc được, trừ đưa lại và xoá |
+| `/items` | Đồ đạc: `POST`, `GET /{id}`, `PUT /{id}`, `POST /{id}/move`, `/remove` (gỡ, vẫn nằm trong danh sách đã gỡ), `/replace` (gỡ món cũ và tạo món mới trong một bước), `/put-back` (đưa lại; món đã bị thay chỉ đưa lại được khi món thay nó đã bị xoá), `/restore`, `DELETE /{id}`; `GET ?placeId=&removed=`, `?subtreeOf=`, `?categoryId=`; `GET /search?name=` \| `?code=`; `/{id}/versions` như địa điểm. Món đã gỡ chỉ đọc được, trừ đưa lại và xoá |
 
 Mọi lệnh ghi lên địa điểm cần `version` đã đọc (trong body, hoặc tham số URL với `DELETE`); `version` đã
 đổi thì nhận 409 và phải đọc lại. Có thể gửi kèm `note` (tối đa 255 ký tự) để ghi vào version.

@@ -52,6 +52,10 @@ public class FieldDefService {
 		return this.repository.list(workspaceId, target, typeId);
 	}
 
+	public boolean anyExists(long workspaceId) {
+		return this.repository.anyExists(workspaceId);
+	}
+
 	public FieldDef get(long workspaceId, long id) {
 		return this.repository.getById(workspaceId, id);
 	}

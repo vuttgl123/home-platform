@@ -18,9 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Khởi tạo một không gian mới với các loại địa điểm, nhóm đồ và mục tuỳ biến mặc định.
  *
- * <p>Chỉ làm khi không gian chưa có loại địa điểm nào, nên gọi lại nhiều lần vẫn an toàn và
- * không tạo lại thứ người dùng đã cố ý xoá. Hai lần gọi đồng thời trên cùng không gian: lần
- * thua nhận 409 do trùng mã; gọi lại thì không làm gì.
+ * <p>Chỉ làm khi không gian chưa có loại địa điểm, nhóm đồ hay mục tuỳ biến nào: đó là không gian
+ * vừa tạo. Có bất kỳ thứ gì thì không làm gì, nên gọi lại nhiều lần vẫn an toàn, không tạo lại
+ * thứ người dùng đã cố ý xoá, và không vấp vào thứ người dùng đã tự tạo trùng tên mặc định. Hai lần
+ * gọi đồng thời trên cùng không gian: lần thua nhận 409 do trùng mã; gọi lại thì không làm gì.
  */
 @Service
 public class SetupService {
@@ -37,10 +38,12 @@ public class SetupService {
 		this.fieldDefs = fieldDefs;
 	}
 
-	/** @return {@code true} nếu đã tạo dữ liệu mặc định, {@code false} nếu không gian đã có loại địa điểm */
+	/** @return {@code true} nếu đã tạo dữ liệu mặc định, {@code false} nếu không gian đã có danh mục nào đó */
 	@Transactional
 	public boolean setup(WorkspaceContext ctx) {
-		if (this.placeTypes.anyExists(ctx.workspaceId())) {
+		long workspaceId = ctx.workspaceId();
+		if (this.placeTypes.anyExists(workspaceId) || this.itemCategories.anyExists(workspaceId)
+				|| this.fieldDefs.anyExists(workspaceId)) {
 			return false;
 		}
 		Map<String, Long> typeIds = new HashMap<>();

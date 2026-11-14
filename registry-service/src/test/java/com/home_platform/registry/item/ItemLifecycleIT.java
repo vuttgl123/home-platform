@@ -137,6 +137,30 @@ class ItemLifecycleIT extends ItemTestData {
 	}
 
 	@Test
+	void itemWhoseReplacementWasDeletedCanBePutBack() throws Exception {
+		long old = item(this.room, "Tivi");
+		String body = action(old, "replace", """
+				{"version": 1, "replacement": {"name": "Tivi mới"}}""").andReturn().getResponse().getContentAsString();
+		String fresh = JsonPath.read(body, "$.replacement.id");
+		this.mvc.perform(asA(delete("/items/" + fresh)).param("version", "1")).andExpect(status().isNoContent());
+
+		action(old, "put-back", "{\"version\": 2}").andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("IN_USE"))
+			.andExpect(jsonPath("$.replacedByItemId").value(nullValue()))
+			.andExpect(jsonPath("$.version").value(3));
+	}
+
+	@Test
+	void overlongDeleteNoteNamesTheField() throws Exception {
+		long id = item(this.room, "Ghế");
+
+		this.mvc.perform(asA(delete("/items/" + id)).param("version", "1").param("note", "x".repeat(256)))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[0].field").value("note"));
+		getItem(id).andExpect(status().isOk()).andExpect(jsonPath("$.version").value(1));
+	}
+
+	@Test
 	void putBackNeedsThePlaceAlive() throws Exception {
 		long shed = place(null, "Shed");
 		long id = item(shed, "Cuốc");

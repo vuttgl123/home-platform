@@ -79,6 +79,31 @@ class SetupIT extends RegistryIT {
 	}
 
 	@Test
+	void setupDoesNothingWhenACategoryAlreadyExists() throws Exception {
+		this.mvc.perform(asA(post("/item-categories")).contentType(MediaType.APPLICATION_JSON).content("""
+				{"name": "Khác"}""")).andExpect(status().isCreated());
+
+		setup(false);
+
+		this.mvc.perform(asA(get("/place-types"))).andExpect(jsonPath("$", hasSize(0)));
+		this.mvc.perform(asA(get("/item-categories"))).andExpect(jsonPath("$", hasSize(1)));
+	}
+
+	@Test
+	void setupDoesNotBringBackDeletedPlaceTypes() throws Exception {
+		setup(true);
+		String types = this.mvc.perform(asA(get("/place-types"))).andReturn().getResponse().getContentAsString();
+		List<String> ids = JsonPath.read(types, "$[*].id");
+		for (String id : ids) {
+			this.mvc.perform(asA(delete("/place-types/" + id))).andExpect(status().isNoContent());
+		}
+
+		setup(false);
+
+		this.mvc.perform(asA(get("/place-types"))).andExpect(jsonPath("$", hasSize(0)));
+	}
+
+	@Test
 	void otherWorkspaceIsUnaffected() throws Exception {
 		setup(true);
 

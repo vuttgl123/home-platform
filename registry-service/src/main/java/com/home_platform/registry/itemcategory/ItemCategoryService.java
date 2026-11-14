@@ -37,6 +37,10 @@ public class ItemCategoryService {
 		return this.repository.getById(workspaceId, id);
 	}
 
+	public boolean anyExists(long workspaceId) {
+		return this.repository.anyExists(workspaceId);
+	}
+
 	/**
 	 * Nhóm dùng được cho món đồ mới.
 	 * @throws com.home_platform.common.web.NotFoundException nếu không có

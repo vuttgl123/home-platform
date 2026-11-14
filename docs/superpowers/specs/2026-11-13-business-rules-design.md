@@ -89,7 +89,7 @@ Chưa có đăng nhập nên phần này nhỏ: đủ để biết ai sở hữu
 
 ### 5.1 Khởi tạo không gian
 
-Một thao tác tạo dữ liệu mặc định cho không gian mới. Chỉ chạy khi không gian chưa có loại địa điểm nào; nếu đã có thì không làm gì và trả thành công. Nhờ vậy gọi lại nhiều lần vẫn an toàn, và không tạo lại thứ người dùng đã cố ý xoá. **(tôi chọn)**
+Một thao tác tạo dữ liệu mặc định cho không gian mới. Chỉ chạy khi không gian chưa có loại địa điểm, nhóm đồ hay mục tuỳ biến nào; nếu đã có bất kỳ thứ gì thì không làm gì và trả thành công. **(sửa 2026-11-14: trước đây chỉ xét loại địa điểm, nên không gian đã có nhóm đồ trùng tên mặc định bị 409 ở mọi lần gọi)** Nhờ vậy gọi lại nhiều lần vẫn an toàn, và không tạo lại thứ người dùng đã cố ý xoá. **(tôi chọn)**
 
 - Loại địa điểm: `BUILDING` Toà nhà, `FLOOR` Tầng, `ROOM` Phòng, `APARTMENT` Căn hộ, `HOUSE` Nhà ở, `HOTEL` Khách sạn, `OTHER` Khác.
 - Nhóm đồ: Nội thất, Điện tử, Điện lạnh, Thiết bị vệ sinh, Đồ gia dụng, Khác.
@@ -234,7 +234,7 @@ Một dòng nghĩa là: người X có quan hệ R với địa điểm Y từ n
 
 **Thay**: trong một transaction, tạo món mới (ở cùng địa điểm, hoặc địa điểm khác nếu client chỉ định), gỡ món cũ như trên và đặt `replaced_by_item_id` của món cũ là `id` món mới. Cả hai đều có version. **(bạn)**
 
-**Đưa lại** món đã gỡ: bỏ `removed_at`, `status` về IN_USE; không làm được nếu món đó đã bị thay, hoặc nếu địa điểm của nó đã bị xoá (địa điểm xoá được khi chỉ còn đồ đã gỡ; phải khôi phục địa điểm trước). **(tôi chọn; vế sau bổ sung khi xây dựng)**
+**Đưa lại** món đã gỡ: bỏ `removed_at`, `status` về IN_USE; không làm được nếu món đó đã bị thay bằng một món còn đó (món thay đã bị xoá vì nhập nhầm thì đưa lại được, và `replaced_by_item_id` về trống; **sửa 2026-11-14**), hoặc nếu địa điểm của nó đã bị xoá (địa điểm xoá được khi chỉ còn đồ đã gỡ; phải khôi phục địa điểm trước). **(tôi chọn; vế sau bổ sung khi xây dựng)**
 
 Món đã gỡ chỉ đọc được, ngoại trừ "đưa lại" và xoá. **(tôi chọn)**
 
