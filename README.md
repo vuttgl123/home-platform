@@ -169,6 +169,10 @@ giá trị nó trả về.
   controller không gọi thẳng repository, hàm public của repository nhận `workspaceId` trước.
 - **Test repository:** kế thừa `AbstractRepositoryIT` (test-jar của `platform-common`): chạy
   trên database thật, `workspace_id` âm (`WS_A`, `WS_B`), mọi dữ liệu được rollback.
+- **Test hai lệnh ghi cùng lúc:** kế thừa `CommittedDataIT` (registry). Khác các test trên, nó
+  **commit dữ liệu thật** vì hai transaction phải thấy nhau: chỉ dùng `workspace_id = -9001` và xoá
+  sạch không gian đó trước và sau mỗi test. `holdOpen(...)` giữ một lệnh ở trạng thái "đã ghi, chưa
+  commit", `inBackground(...)` chạy lệnh thứ hai, rồi `commit()`; xem `ConcurrentWritesIT`.
 - **Thay đổi cấu trúc database:** thêm file `V<số>__<mô_tả>.sql` vào `db/migration` của service
   sở hữu bảng. Không sửa file đã chạy.
 - **Chạy nhiều instance của một service:** đặt `platform.id.node-id` (0 đến 1023) khác nhau cho
