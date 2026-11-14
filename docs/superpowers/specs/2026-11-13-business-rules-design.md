@@ -199,7 +199,7 @@ Mọi lỗi liệt kê theo từng khoá trong danh sách `errors` (field là `a
 ### 5.6 Người (`reg_person`)
 
 - Tạo: `full_name` bắt buộc, tối đa 150. `phone` tối đa 20, bỏ khoảng trắng và dấu chấm. `email` đúng dạng nếu có. `gender` là MALE, FEMALE hoặc OTHER nếu có. `date_of_birth` không ở tương lai. `id_type` (ví dụ CCCD, PASSPORT) và `id_number` đi cùng nhau: có một thì phải có cả hai. **(tôi chọn)**
-- Hai người chưa xoá trong cùng không gian không được trùng cặp (`id_type`, `id_number`); trùng thì trả 409 kèm `id` người đã có. **(tôi chọn)** Kiểm tra ở ứng dụng, chưa có khoá duy nhất trong database.
+- Hai người chưa xoá trong cùng không gian không được trùng cặp (`id_type`, `id_number`); trùng thì trả 409 kèm `id` người đã có. **(tôi chọn)** Kiểm tra ở ứng dụng để có thông báo kèm `id`; khoá duy nhất `uk_reg_person_live_document` (migration `V2`) chặn trường hợp hai lệnh chạy cùng lúc, khi đó trả 409 "Another person already has this document". **(bổ sung 2026-11-14 sau đợt review)**
 - `attributes` kiểm tra theo mục 5.3 (`target` PERSON).
 - Sửa mọi trường trên. Version `CREATE`, `UPDATE`, `DELETE`, `RESTORE` như địa điểm.
 - Xoá: chỉ khi người đó không còn cư trú hiện tại hay sắp tới; ngược lại 409. **(tôi chọn)**

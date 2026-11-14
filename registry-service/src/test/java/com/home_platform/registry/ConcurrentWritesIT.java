@@ -17,6 +17,7 @@ import com.home_platform.registry.occupancy.Occupancy;
 import com.home_platform.registry.occupancy.OccupancyCreateRequest;
 import com.home_platform.registry.occupancy.OccupancyService;
 import com.home_platform.registry.occupancy.Relation;
+import com.home_platform.registry.person.Person;
 import com.home_platform.registry.person.PersonRequest;
 import com.home_platform.registry.person.PersonService;
 import com.home_platform.registry.place.Place;
@@ -209,6 +210,19 @@ class ConcurrentWritesIT extends CommittedDataIT {
 		assertThat(rows("reg_occupancy")).isEqualTo(1);
 	}
 
+	@Test
+	void sameDocumentCreatedTogetherLeavesOnePerson() throws Exception {
+		OpenTransaction<Person> first = holdOpen(() -> this.people.create(CTX, withDocument("An")));
+		Future<Person> second = inBackground(() -> this.people.create(CTX, withDocument("Bình")));
+		letItBlock();
+		first.commit();
+
+		assertThatThrownBy(second::get).cause()
+			.isInstanceOfSatisfying(ConflictException.class, ex -> assertThat(ex.getBody().getDetail())
+				.isEqualTo("Another person already has this document"));
+		assertThat(rows("reg_person")).isEqualTo(1);
+	}
+
 	private long place(Long parentId, String name) {
 		return this.places.create(CTX, newPlace(parentId, name)).id();
 	}
@@ -221,6 +235,10 @@ class ConcurrentWritesIT extends CommittedDataIT {
 		return this.people
 			.create(CTX, new PersonRequest(fullName, null, null, null, null, null, null, null, null, null, null))
 			.id();
+	}
+
+	private static PersonRequest withDocument(String fullName) {
+		return new PersonRequest(fullName, null, null, "CCCD", "001", null, null, null, null, null, null);
 	}
 
 	/** Cư trú từ hôm nay, chưa có ngày cuối. */

@@ -45,6 +45,7 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 				entry("reg_person.idx_reg_person_name", List.of("workspace_id", "full_name")),
 				entry("reg_person.idx_reg_person_phone", List.of("workspace_id", "phone")),
 				entry("reg_person.idx_reg_person_id_number", List.of("workspace_id", "id_number")),
+				entry("reg_person.uk_reg_person_live_document", List.of("workspace_id", "live_document")),
 				entry("reg_occupancy.idx_reg_occupancy_place",
 						List.of("workspace_id", "place_id", "end_date", "start_date")),
 				entry("reg_occupancy.idx_reg_occupancy_person", List.of("workspace_id", "person_id", "start_date")),
@@ -59,6 +60,16 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 			String[] parts = key.split("\\.");
 			assertThat(index(parts[0], parts[1])).as(key).isEqualTo(columns);
 		});
+	}
+
+	/** Điều kiện để thêm được khoá duy nhất {@code uk_reg_person_live_document}, và là luật nó giữ sau đó. */
+	@Test
+	void noTwoLivePeopleShareADocument() {
+		Integer duplicates = jdbc.queryForObject("""
+				SELECT COUNT(*) FROM (SELECT 1 FROM reg_person WHERE deleted_at IS NULL AND id_number IS NOT NULL
+				  GROUP BY workspace_id, id_type, id_number HAVING COUNT(*) > 1) d""", Integer.class);
+
+		assertThat(duplicates).isZero();
 	}
 
 	@Test

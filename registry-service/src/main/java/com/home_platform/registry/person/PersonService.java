@@ -3,6 +3,7 @@ package com.home_platform.registry.person;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.history.ChangeAction;
@@ -18,6 +19,7 @@ import com.home_platform.registry.catalog.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.support.BusinessDate;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +73,7 @@ public class PersonService {
 		Person person = new Person(0, 0, request.fullName(), request.phone(), request.email(), request.idType(),
 				request.idNumber(), request.dateOfBirth(), request.gender(), request.note(),
 				validAttributes(ctx, request.attributes()), request.avatarFileId(), null, 0, null, 0, 0, null);
-		Person stored = this.repository.insert(ctx, person);
+		Person stored = rejectingSharedDocument(() -> this.repository.insert(ctx, person));
 		record(ctx, stored, ChangeAction.CREATE, request.versionNote());
 		return stored;
 	}
@@ -80,7 +82,7 @@ public class PersonService {
 	public Person update(WorkspaceContext ctx, long id, PersonUpdateRequest request) {
 		Person current = get(ctx.workspaceId(), id);
 		requireUniqueDocument(ctx.workspaceId(), id, request.idType(), request.idNumber());
-		Person stored = this.repository.update(ctx, current.withVersion(request.version())
+		Person changed = current.withVersion(request.version())
 			.withFullName(request.fullName())
 			.withPhone(request.phone())
 			.withEmail(request.email())
@@ -90,7 +92,8 @@ public class PersonService {
 			.withGender(request.gender())
 			.withNote(request.note())
 			.withAttributes(validAttributes(ctx, request.attributes()))
-			.withAvatarFileId(request.avatarFileId()));
+			.withAvatarFileId(request.avatarFileId());
+		Person stored = rejectingSharedDocument(() -> this.repository.update(ctx, changed));
 		record(ctx, stored, ChangeAction.UPDATE, request.versionNote());
 		return stored;
 	}
@@ -122,7 +125,7 @@ public class PersonService {
 		if (deleted.deletedAt() != null) {
 			requireUniqueDocument(ctx.workspaceId(), id, deleted.idType(), deleted.idNumber());
 		}
-		Person stored = this.repository.restore(ctx, id, request.version());
+		Person stored = rejectingSharedDocument(() -> this.repository.restore(ctx, id, request.version()));
 		record(ctx, stored, ChangeAction.RESTORE, request.note());
 		return stored;
 	}
@@ -179,7 +182,7 @@ public class PersonService {
 					: NotFoundException.of("Person", id));
 		PersonSnapshot old = snapshotOf(version(workspaceId, id, versionNo));
 		requireUniqueDocument(workspaceId, id, old.idType(), old.idNumber());
-		Person stored = this.repository.update(ctx, current.withVersion(request.version())
+		Person changed = current.withVersion(request.version())
 			.withFullName(old.fullName())
 			.withPhone(old.phone())
 			.withEmail(old.email())
@@ -189,7 +192,8 @@ public class PersonService {
 			.withGender(old.gender())
 			.withNote(old.note())
 			.withAttributes(validAttributes(ctx, old.attributes()))
-			.withAvatarFileId(old.avatarFileId()));
+			.withAvatarFileId(old.avatarFileId());
+		Person stored = rejectingSharedDocument(() -> this.repository.update(ctx, changed));
 		String note = "Restored from version " + versionNo + ((request.note() != null) ? ": " + request.note() : "");
 		record(ctx, stored, ChangeAction.UPDATE, (note.length() > 255) ? note.substring(0, 255) : note);
 		return stored;
@@ -218,6 +222,21 @@ public class PersonService {
 			.ifPresent(other -> {
 				throw new ConflictException("Person " + other.id() + " already has this document");
 			});
+	}
+
+	/**
+	 * Chạy một lệnh ghi lên bảng người. {@link #requireUniqueDocument} đã kiểm tra trước, nhưng hai
+	 * lệnh chạy cùng lúc đều có thể qua được bước đó; khi ấy khoá duy nhất
+	 * {@code uk_reg_person_live_document} của database từ chối lệnh đến sau.
+	 * @throws ConflictException nếu một người khác chưa xoá vừa được ghi với cùng giấy tờ
+	 */
+	private static Person rejectingSharedDocument(Supplier<Person> write) {
+		try {
+			return write.get();
+		}
+		catch (DuplicateKeyException ex) {
+			throw new ConflictException("Another person already has this document");
+		}
 	}
 
 	Map<String, Object> validAttributes(WorkspaceContext ctx, Map<String, Object> values) {
