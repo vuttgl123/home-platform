@@ -1,4 +1,4 @@
-package com.home_platform.registry.catalog;
+package com.home_platform.registry.support;
 
 /** Chuẩn hoá chuỗi nhận từ client. */
 public final class Text {

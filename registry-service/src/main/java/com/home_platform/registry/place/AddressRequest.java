@@ -3,7 +3,7 @@ package com.home_platform.registry.place;
 import java.math.BigDecimal;
 import java.util.Locale;
 
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;

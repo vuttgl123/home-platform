@@ -1,6 +1,6 @@
 package com.home_platform.registry.placetype;
 
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 

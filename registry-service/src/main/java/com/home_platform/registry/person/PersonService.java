@@ -15,7 +15,7 @@ import com.home_platform.common.web.ConflictException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.common.web.NotFoundException;
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.support.BusinessDate;
@@ -81,7 +81,19 @@ public class PersonService {
 	@Transactional
 	public Person update(WorkspaceContext ctx, long id, PersonUpdateRequest request) {
 		Person current = get(ctx.workspaceId(), id);
-		requireUniqueDocument(ctx.workspaceId(), id, request.idType(), request.idNumber());
+		Person stored = applyContent(ctx, current, request);
+		record(ctx, stored, ChangeAction.UPDATE, request.versionNote());
+		return stored;
+	}
+
+	/**
+	 * Đường ghi nội dung chung của {@link #update} và {@link #restoreVersion}: kiểm tra giấy tờ và
+	 * {@code attributes}, rồi ghi mọi trường sửa được. Không ghi version; hàm gọi tự ghi. Khôi phục
+	 * version đi qua đây bằng một {@link PersonUpdateRequest} dựng từ snapshot, nên thêm một trường
+	 * sửa được mà quên phần khôi phục thì không biên dịch được.
+	 */
+	private Person applyContent(WorkspaceContext ctx, Person current, PersonUpdateRequest request) {
+		requireUniqueDocument(ctx.workspaceId(), current.id(), request.idType(), request.idNumber());
 		Person changed = current.withVersion(request.version())
 			.withFullName(request.fullName())
 			.withPhone(request.phone())
@@ -93,9 +105,7 @@ public class PersonService {
 			.withNote(request.note())
 			.withAttributes(validAttributes(ctx, request.attributes()))
 			.withAvatarFileId(request.avatarFileId());
-		Person stored = rejectingSharedDocument(() -> this.repository.update(ctx, changed));
-		record(ctx, stored, ChangeAction.UPDATE, request.versionNote());
-		return stored;
+		return rejectingSharedDocument(() -> this.repository.update(ctx, changed));
 	}
 
 	/**
@@ -181,21 +191,12 @@ public class PersonService {
 					? new ConflictException("Restore person " + id + " before restoring an old version")
 					: NotFoundException.of("Person", id));
 		PersonSnapshot old = snapshotOf(version(workspaceId, id, versionNo));
-		requireUniqueDocument(workspaceId, id, old.idType(), old.idNumber());
-		Person changed = current.withVersion(request.version())
-			.withFullName(old.fullName())
-			.withPhone(old.phone())
-			.withEmail(old.email())
-			.withIdType(old.idType())
-			.withIdNumber(old.idNumber())
-			.withDateOfBirth(old.dateOfBirth())
-			.withGender(old.gender())
-			.withNote(old.note())
-			.withAttributes(validAttributes(ctx, old.attributes()))
-			.withAvatarFileId(old.avatarFileId());
-		Person stored = rejectingSharedDocument(() -> this.repository.update(ctx, changed));
-		String note = "Restored from version " + versionNo + ((request.note() != null) ? ": " + request.note() : "");
-		record(ctx, stored, ChangeAction.UPDATE, (note.length() > 255) ? note.substring(0, 255) : note);
+		String note = EntityHistory.restoredNote(versionNo, request.note());
+		Person stored = applyContent(ctx, current,
+				new PersonUpdateRequest(request.version(), old.fullName(), old.phone(), old.email(), old.idType(),
+						old.idNumber(), old.dateOfBirth(), old.gender(), old.note(), old.attributes(),
+						old.avatarFileId(), note));
+		record(ctx, stored, ChangeAction.UPDATE, note);
 		return stored;
 	}
 

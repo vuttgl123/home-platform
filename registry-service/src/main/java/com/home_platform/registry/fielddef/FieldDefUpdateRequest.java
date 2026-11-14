@@ -2,7 +2,7 @@ package com.home_platform.registry.fielddef;
 
 import java.util.List;
 
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 

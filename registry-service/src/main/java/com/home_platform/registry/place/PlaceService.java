@@ -23,7 +23,7 @@ import com.home_platform.common.web.ConflictException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.common.web.NotFoundException;
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.placetype.PlaceTypeService;
@@ -264,27 +264,17 @@ public class PlaceService {
 					? new ConflictException("Restore place " + id + " before restoring an old version")
 					: NotFoundException.of("Place", id));
 		PlaceSnapshot old = snapshotOf(version(workspaceId, id, versionNo));
-		if (old.placeTypeId() != current.placeTypeId()) {
-			this.placeTypes.requireActive(workspaceId, old.placeTypeId());
-		}
-		Map<String, Object> attributes = validAttributes(ctx, old.placeTypeId(), old.attributes());
+		String note = EntityHistory.restoredNote(versionNo, request.note());
+		Place stored = applyContent(ctx, current, new PlaceUpdateRequest(request.version(), old.placeTypeId(),
+				old.code(), old.name(), old.description(), old.status(), old.attributes(), old.coverFileId(), note));
 		PlaceAddress address = (old.address() != null) ? fromSnapshot(id, old.address()) : null;
-		Place stored = this.repository.update(ctx, current.withVersion(request.version())
-			.withPlaceTypeId(old.placeTypeId())
-			.withCode(old.code())
-			.withName(old.name())
-			.withDescription(old.description())
-			.withStatus(old.status())
-			.withAttributes(attributes)
-			.withCoverFileId(old.coverFileId()));
 		if (address != null) {
 			this.addresses.upsert(workspaceId, address);
 		}
 		else {
 			this.addresses.delete(workspaceId, id);
 		}
-		String note = "Restored from version " + versionNo + ((request.note() != null) ? ": " + request.note() : "");
-		record(ctx, stored, address, ChangeAction.UPDATE, (note.length() > 255) ? note.substring(0, 255) : note);
+		record(ctx, stored, address, ChangeAction.UPDATE, note);
 		return stored;
 	}
 
@@ -351,11 +341,23 @@ public class PlaceService {
 	@Transactional
 	public Place update(WorkspaceContext ctx, long id, PlaceUpdateRequest request) {
 		Place current = get(ctx.workspaceId(), id);
+		Place stored = applyContent(ctx, current, request);
+		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.UPDATE, request.note());
+		return stored;
+	}
+
+	/**
+	 * Đường ghi nội dung chung của {@link #update} và {@link #restoreVersion}: kiểm tra loại và
+	 * {@code attributes}, rồi ghi mọi trường sửa được. Không ghi version; hàm gọi tự ghi. Khôi phục
+	 * version đi qua đây bằng một {@link PlaceUpdateRequest} dựng từ snapshot, nên thêm một trường
+	 * sửa được mà quên phần khôi phục thì không biên dịch được.
+	 */
+	private Place applyContent(WorkspaceContext ctx, Place current, PlaceUpdateRequest request) {
 		if (current.placeTypeId() != request.placeTypeId()) {
 			this.placeTypes.requireActive(ctx.workspaceId(), request.placeTypeId());
 		}
 		Map<String, Object> attributes = validAttributes(ctx, request.placeTypeId(), request.attributes());
-		Place stored = this.repository.update(ctx, current.withVersion(request.version())
+		return this.repository.update(ctx, current.withVersion(request.version())
 			.withPlaceTypeId(request.placeTypeId())
 			.withCode(request.code())
 			.withName(request.name())
@@ -363,8 +365,6 @@ public class PlaceService {
 			.withStatus(request.status())
 			.withAttributes(attributes)
 			.withCoverFileId(request.coverFileId()));
-		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.UPDATE, request.note());
-		return stored;
 	}
 
 	private Map<String, Object> validAttributes(WorkspaceContext ctx, long placeTypeId, Map<String, Object> values) {

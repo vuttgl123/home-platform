@@ -2,7 +2,7 @@ package com.home_platform.registry.occupancy;
 
 import java.time.LocalDate;
 
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 

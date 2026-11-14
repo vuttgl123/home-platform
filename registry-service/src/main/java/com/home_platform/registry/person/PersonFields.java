@@ -2,7 +2,7 @@ package com.home_platform.registry.person;
 
 import java.util.Locale;
 
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 
 /** Chuẩn hoá các trường của người, dùng chung cho request tạo và sửa. */
 final class PersonFields {

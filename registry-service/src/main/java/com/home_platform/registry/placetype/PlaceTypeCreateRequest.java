@@ -2,7 +2,7 @@ package com.home_platform.registry.placetype;
 
 import java.util.Locale;
 
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

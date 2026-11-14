@@ -1,5 +1,6 @@
 package com.home_platform.common.history;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
@@ -17,6 +18,13 @@ class EntityHistoryTests {
 	private final EntityHistory history = new EntityHistory(
 			new RepositorySupport(mock(JdbcClient.class), () -> 1L, Clock.systemUTC(), new StorageJson()),
 			mock(ApplicationEventPublisher.class), "tmp_entity_version");
+
+	@Test
+	void restoredNoteIsCutToTheColumnLength() {
+		assertThat(EntityHistory.restoredNote(3, null)).isEqualTo("Restored from version 3");
+		assertThat(EntityHistory.restoredNote(3, "x")).isEqualTo("Restored from version 3: x");
+		assertThat(EntityHistory.restoredNote(3, "x".repeat(300))).hasSize(255).startsWith("Restored from version 3: xxx");
+	}
 
 	@Test
 	void nonPositiveLimitIsRejected() {

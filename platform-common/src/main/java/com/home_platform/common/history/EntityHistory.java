@@ -45,6 +45,9 @@ public class EntityHistory {
 
 	private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z0-9_]+");
 
+	/** Độ dài của cột {@code note}. */
+	private static final int NOTE_LENGTH = 255;
+
 	private static final String KEY = "workspace_id = :workspaceId AND entity_type = :entityType AND entity_id = :entityId";
 
 	private final JdbcClient jdbc;
@@ -202,6 +205,15 @@ public class EntityHistory {
 			.optional()
 			.orElseThrow(() -> new NotFoundException(
 					entityType + " " + entityId + " version " + versionNo + " not found"));
+	}
+
+	/**
+	 * Ghi chú của version sinh ra khi khôi phục nội dung một version cũ: "Restored from version 3",
+	 * thêm ": " và ghi chú của người dùng nếu có, cắt còn {@value #NOTE_LENGTH} ký tự của cột {@code note}.
+	 */
+	public static String restoredNote(int versionNo, String note) {
+		String text = "Restored from version " + versionNo + ((note != null) ? ": " + note : "");
+		return (text.length() > NOTE_LENGTH) ? text.substring(0, NOTE_LENGTH) : text;
 	}
 
 	/** Đổi {@code snapshot} của một version về kiểu Java, ví dụ để khôi phục về version đó. */

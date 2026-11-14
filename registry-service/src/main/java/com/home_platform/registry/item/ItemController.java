@@ -8,7 +8,7 @@ import com.home_platform.common.history.EntityVersion;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
@@ -93,8 +93,8 @@ class ItemController {
 	@PostMapping("/{id}/replace")
 	ItemReplaceResponse replace(WorkspaceContext ctx, @PathVariable long id,
 			@Valid @RequestBody ItemReplaceRequest request) {
-		Item[] items = this.service.replace(ctx, id, request);
-		return new ItemReplaceResponse(detail(ctx, items[0].id()), detail(ctx, items[1].id()));
+		ItemReplacement replaced = this.service.replace(ctx, id, request);
+		return new ItemReplaceResponse(detail(ctx, replaced.removed().id()), detail(ctx, replaced.replacement().id()));
 	}
 
 	/** Đưa lại một món đã gỡ. */

@@ -1,4 +1,4 @@
-package com.home_platform.registry.catalog;
+package com.home_platform.registry.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

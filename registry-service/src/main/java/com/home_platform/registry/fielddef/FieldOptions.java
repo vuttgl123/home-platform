@@ -7,7 +7,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import com.home_platform.common.web.BadRequestException;
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 
 /** Luật cho danh sách lựa chọn của một mục tuỳ biến. */
 final class FieldOptions {

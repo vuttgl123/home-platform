@@ -1,6 +1,7 @@
 package com.home_platform.registry.item;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,7 +16,7 @@ import com.home_platform.common.web.ConflictException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.common.web.NotFoundException;
-import com.home_platform.registry.catalog.Text;
+import com.home_platform.registry.support.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.itemcategory.ItemCategory;
@@ -34,17 +35,17 @@ public class ItemService {
 
 	public static final String ENTITY_TYPE = "ITEM";
 
-	final ItemRepository repository;
+	private final ItemRepository repository;
 
-	final PlaceService places;
+	private final PlaceService places;
 
-	final ItemCategoryService categories;
+	private final ItemCategoryService categories;
 
-	final AttributeValidation attributeValidation;
+	private final AttributeValidation attributeValidation;
 
-	final EntityHistory history;
+	private final EntityHistory history;
 
-	final BusinessDate businessDate;
+	private final BusinessDate businessDate;
 
 	ItemService(ItemRepository repository, PlaceService places, ItemCategoryService categories,
 			AttributeValidation attributeValidation, EntityHistory history, BusinessDate businessDate) {
@@ -87,11 +88,23 @@ public class ItemService {
 	@Transactional
 	public Item update(WorkspaceContext ctx, long id, ItemUpdateRequest request) {
 		Item current = requireNotRemoved(get(ctx.workspaceId(), id));
+		Item stored = applyContent(ctx, current, request);
+		record(ctx, stored, ChangeAction.UPDATE, request.note());
+		return stored;
+	}
+
+	/**
+	 * Đường ghi nội dung chung của {@link #update} và {@link #restoreVersion}: kiểm tra trạng thái,
+	 * nhóm và {@code attributes}, rồi ghi mọi trường sửa được. Không ghi version; hàm gọi tự ghi.
+	 * Khôi phục version đi qua đây bằng một {@link ItemUpdateRequest} dựng từ snapshot, nên thêm một
+	 * trường sửa được mà quên phần khôi phục thì không biên dịch được.
+	 */
+	private Item applyContent(WorkspaceContext ctx, Item current, ItemUpdateRequest request) {
 		requireSettableStatus(request.status());
 		if (request.categoryId() != null && !Objects.equals(request.categoryId(), current.categoryId())) {
 			this.categories.requireActive(ctx.workspaceId(), request.categoryId());
 		}
-		Item stored = this.repository.update(ctx, current.withVersion(request.version())
+		return this.repository.update(ctx, current.withVersion(request.version())
 			.withCategoryId(request.categoryId())
 			.withCode(request.code())
 			.withName(request.name())
@@ -102,8 +115,6 @@ public class ItemService {
 			.withDescription(request.description())
 			.withAttributes(validAttributes(ctx, request.categoryId(), request.attributes()))
 			.withCoverFileId(request.coverFileId()));
-		record(ctx, stored, ChangeAction.UPDATE, request.note());
-		return stored;
 	}
 
 	/** Chuyển sang địa điểm khác chưa xoá; vị trí cũ xem được trong version trước. */
@@ -127,10 +138,9 @@ public class ItemService {
 	/**
 	 * Thay món cũ bằng món mới trong một transaction: tạo món mới, rồi gỡ món cũ và trỏ nó tới
 	 * món mới. Món mới không hợp lệ thì không có gì được ghi.
-	 * @return món cũ đã gỡ và món mới
 	 */
 	@Transactional
-	public Item[] replace(WorkspaceContext ctx, long id, ItemReplaceRequest request) {
+	public ItemReplacement replace(WorkspaceContext ctx, long id, ItemReplaceRequest request) {
 		Item old = requireNotRemoved(get(ctx.workspaceId(), id));
 		if (old.version() != request.version()) {
 			throw new ConflictException("Item " + id + " was changed by someone else");
@@ -141,7 +151,7 @@ public class ItemService {
 				(replacement.placeId() != null) ? replacement : replacement.atPlace(old.placeId()));
 		Item removed = removeItem(ctx, old, request.version(), removedAt, fresh.id(),
 				"Replaced by item " + fresh.id());
-		return new Item[] { removed, fresh };
+		return new ItemReplacement(removed, fresh);
 	}
 
 	/**
@@ -223,22 +233,14 @@ public class ItemService {
 					? new ConflictException("Restore item " + id + " before restoring an old version")
 					: NotFoundException.of("Item", id)));
 		ItemSnapshot old = snapshotOf(version(workspaceId, id, versionNo));
-		if (old.categoryId() != null && !Objects.equals(old.categoryId(), current.categoryId())) {
-			this.categories.requireActive(workspaceId, old.categoryId());
-		}
-		Item stored = this.repository.update(ctx, current.withVersion(request.version())
-			.withCategoryId(old.categoryId())
-			.withCode(old.code())
-			.withName(old.name())
-			.withQuantity(old.quantity())
-			.withUnit(old.unit())
-			.withStatus((old.status() == ItemStatus.REMOVED) ? current.status() : old.status())
-			.withPlacedAt(old.placedAt())
-			.withDescription(old.description())
-			.withAttributes(validAttributes(ctx, old.categoryId(), old.attributes()))
-			.withCoverFileId(old.coverFileId()));
-		String note = "Restored from version " + versionNo + ((request.note() != null) ? ": " + request.note() : "");
-		record(ctx, stored, ChangeAction.UPDATE, (note.length() > 255) ? note.substring(0, 255) : note);
+		// Version cũ là lúc món bị gỡ thì giữ trạng thái hiện tại: khôi phục nội dung không gỡ món.
+		ItemStatus status = (old.status() == ItemStatus.REMOVED) ? current.status() : old.status();
+		String note = EntityHistory.restoredNote(versionNo, request.note());
+		Item stored = applyContent(ctx, current,
+				new ItemUpdateRequest(request.version(), old.categoryId(), old.code(), old.name(), old.quantity(),
+						old.unit(), status, old.placedAt(), old.description(), old.attributes(), old.coverFileId(),
+						note));
+		record(ctx, stored, ChangeAction.UPDATE, note);
 		return stored;
 	}
 
@@ -302,7 +304,7 @@ public class ItemService {
 	List<ItemView> views(long workspaceId, List<Item> items) {
 		Map<Long, String> placeNames = this.places.names(workspaceId,
 				items.stream().map(Item::placeId).distinct().toList());
-		Map<Long, String> categoryNames = new java.util.HashMap<>();
+		Map<Long, String> categoryNames = new HashMap<>();
 		if (items.stream().anyMatch(item -> item.categoryId() != null)) {
 			for (ItemCategory category : this.categories.list(workspaceId)) {
 				categoryNames.put(category.id(), category.name());
