@@ -100,6 +100,35 @@ class EntityHistoryIT extends CommonIT {
 		assertThat(second.nextCursor()).isNull();
 	}
 
+	/** Đồng hồ của test đứng yên nên mọi version cùng thời điểm: thứ tự do loại, id, số version quyết định. */
+	@Test
+	void listRecentIsNewestFirstAcrossEntities() {
+		this.history.record(CTX_A, "ITEM", 5, 1, ChangeAction.CREATE, Map.of("a", 1), null);
+		this.history.record(CTX_A, "PLACE", 10, 1, ChangeAction.CREATE, Map.of("a", 1), null);
+		this.history.record(CTX_A, "PLACE", 10, 2, ChangeAction.UPDATE, Map.of("a", 2), "đổi");
+		this.history.record(CTX_B, "PLACE", 10, 1, ChangeAction.CREATE, Map.of("a", 1), null);
+
+		CursorPage<EntityChange> first = this.history.listRecent(WS_A, null, new CursorRequest(null, 2));
+		assertThat(first.items()).extracting(EntityChange::entityType, EntityChange::entityId, EntityChange::versionNo)
+			.containsExactly(org.assertj.core.groups.Tuple.tuple("PLACE", 10L, 2),
+					org.assertj.core.groups.Tuple.tuple("PLACE", 10L, 1));
+		assertThat(first.items().get(0).action()).isEqualTo(ChangeAction.UPDATE);
+		assertThat(first.items().get(0).changedFields()).containsExactly("a");
+		assertThat(first.items().get(0).changedBy()).isEqualTo(USER);
+		assertThat(first.items().get(0).changedAt()).isEqualTo(NOW);
+		assertThat(first.items().get(0).note()).isEqualTo("đổi");
+		assertThat(first.nextCursor()).isNotNull();
+
+		CursorPage<EntityChange> second = this.history.listRecent(WS_A, null, new CursorRequest(first.nextCursor(), 2));
+		assertThat(second.items()).extracting(EntityChange::entityType).containsExactly("ITEM");
+		assertThat(second.nextCursor()).isNull();
+
+		assertThat(this.history.listRecent(WS_A, "ITEM", new CursorRequest(null, 20)).items()).hasSize(1);
+		assertThat(this.history.listRecent(WS_B, null, new CursorRequest(null, 20)).items()).hasSize(1);
+		assertThatThrownBy(() -> this.history.listRecent(WS_A, null, new CursorRequest("!!!", 20)))
+			.isInstanceOf(BadRequestException.class);
+	}
+
 	@Test
 	void badCursorIs400() {
 		assertThatThrownBy(() -> this.history.list(WS_A, "PLACE", 10, new CursorRequest("garbage", 2)))

@@ -26,14 +26,12 @@ public class PlaceAddressRepository {
 	PlaceAddressRepository(RepositorySupport support) {
 		this.jdbc = support.jdbc();
 		this.metadata = EntityMetadata.of(PlaceAddress.class, support.json());
-		String values = this.metadata.components().stream().map(c -> ":" + c).collect(Collectors.joining(", "));
 		String updates = this.metadata.components()
 			.stream()
 			.filter(c -> !List.of("workspaceId", "placeId", "createdAt").contains(c))
 			.map(c -> this.metadata.column(c) + " = new." + this.metadata.column(c))
 			.collect(Collectors.joining(", "));
-		this.upsert = "INSERT INTO reg_place_address (" + this.metadata.selectList() + ") VALUES (" + values
-				+ ") AS new ON DUPLICATE KEY UPDATE " + updates;
+		this.upsert = this.metadata.insertInto("reg_place_address") + " AS new ON DUPLICATE KEY UPDATE " + updates;
 	}
 
 	public Optional<PlaceAddress> find(long workspaceId, long placeId) {

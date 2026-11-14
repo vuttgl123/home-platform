@@ -2,11 +2,9 @@ package com.home_platform.registry.place;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.jdbc.RepositorySupport;
@@ -72,11 +70,9 @@ public class PlaceRepository extends WorkspaceRepository<Place> {
 	 * (workspace_id, province_code, ward_code) của bảng địa chỉ; cursor là {@code [id]}.
 	 */
 	public CursorPage<Place> byArea(long workspaceId, String provinceCode, String wardCode, CursorRequest page) {
-		String columns = Arrays.stream(columns().split(", ")).map(column -> "p." + column)
-			.collect(Collectors.joining(", "));
 		Long afterId = (page.cursor() != null) ? decodeId(page.cursor()) : null;
 		var statement = jdbc()
-			.sql("SELECT " + columns + " FROM reg_place_address a JOIN reg_place p "
+			.sql("SELECT " + metadata().selectList("p") + " FROM reg_place_address a JOIN reg_place p "
 					+ "ON p.workspace_id = a.workspace_id AND p.id = a.place_id "
 					+ "WHERE a.workspace_id = :workspaceId AND a.province_code = :provinceCode"
 					+ ((wardCode != null) ? " AND a.ward_code = :wardCode" : "")
@@ -91,12 +87,8 @@ public class PlaceRepository extends WorkspaceRepository<Place> {
 		if (afterId != null) {
 			statement = statement.param("afterId", afterId);
 		}
-		List<Place> rows = statement.query(rowMapper()).list();
-		if (rows.size() <= page.limit()) {
-			return new CursorPage<>(rows, null);
-		}
-		List<Place> items = List.copyOf(rows.subList(0, page.limit()));
-		return new CursorPage<>(items, CursorCodec.encode(List.of(String.valueOf(items.getLast().id()))));
+		return CursorPage.of(statement.query(rowMapper()).list(), page.limit(),
+				last -> List.of(String.valueOf(last.id())));
 	}
 
 	private static long decodeId(String cursor) {

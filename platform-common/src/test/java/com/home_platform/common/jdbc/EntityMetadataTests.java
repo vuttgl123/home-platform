@@ -30,6 +30,32 @@ class EntityMetadataTests {
 	}
 
 	@Test
+	void aliasedSelectListPrefixesEveryColumn() {
+		assertThat(EntityMetadata.of(SampleTag.class, this.json).selectList("t"))
+			.isEqualTo("t.workspace_id, t.id, t.code, t.name, t.created_at, t.updated_at");
+	}
+
+	@Test
+	void insertIntoListsColumnsAndNamedParameters() {
+		assertThat(EntityMetadata.of(SampleTag.class, this.json).insertInto("tmp_sample_tag"))
+			.isEqualTo("INSERT INTO tmp_sample_tag (workspace_id, id, code, name, created_at, updated_at) "
+					+ "VALUES (:workspaceId, :id, :code, :name, :createdAt, :updatedAt)");
+	}
+
+	@Test
+	void componentsAreNotCopiedPerCall() {
+		assertThat(this.docs.components()).isSameAs(this.docs.components());
+		assertThatThrownBy(() -> this.docs.components().add("x")).isInstanceOf(UnsupportedOperationException.class);
+	}
+
+	@Test
+	void componentOfColumnMapsBack() {
+		assertThat(this.docs.componentOfColumn("valid_from")).isEqualTo("validFrom");
+		assertThatThrownBy(() -> this.docs.componentOfColumn("nope")).isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("SampleDoc has no column nope");
+	}
+
+	@Test
 	void parametersUseJdbcFriendlyValues() {
 		SampleDoc doc = SampleDoc.named("A")
 			.withPinned(true)

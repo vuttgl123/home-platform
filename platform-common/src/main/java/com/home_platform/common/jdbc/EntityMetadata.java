@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.home_platform.common.json.StorageJson;
 import org.springframework.jdbc.core.RowMapper;
@@ -37,6 +38,8 @@ public final class EntityMetadata<T extends Record> {
 
 	private final String selectList;
 
+	private final List<String> components;
+
 	private EntityMetadata(Class<T> type, Constructor<T> constructor, List<Column> columns) {
 		this.type = type;
 		this.constructor = constructor;
@@ -49,6 +52,7 @@ public final class EntityMetadata<T extends Record> {
 		this.byComponent = Collections.unmodifiableMap(byComponent);
 		this.byColumn = Collections.unmodifiableMap(byColumn);
 		this.selectList = String.join(", ", byColumn.keySet());
+		this.components = List.copyOf(byComponent.keySet());
 	}
 
 	/**
@@ -82,7 +86,7 @@ public final class EntityMetadata<T extends Record> {
 
 	/** Tên các thành phần theo thứ tự khai báo. */
 	public List<String> components() {
-		return List.copyOf(this.byComponent.keySet());
+		return this.components;
 	}
 
 	public boolean has(String component) {
@@ -97,6 +101,36 @@ public final class EntityMetadata<T extends Record> {
 	/** Mọi cột của bảng, cách nhau bằng dấu phẩy, để đặt sau {@code SELECT}. */
 	public String selectList() {
 		return this.selectList;
+	}
+
+	/**
+	 * Như {@link #selectList()} với mỗi cột mang tiền tố {@code alias}, cho câu có {@code JOIN}:
+	 * {@code selectList("p")} cho ra {@code "p.workspace_id, p.id, ..."}. Tên cột trả về vẫn không
+	 * có tiền tố nên {@link #rowMapper()} đọc được.
+	 */
+	public String selectList(String alias) {
+		return this.byColumn.keySet().stream().map(column -> alias + "." + column).collect(Collectors.joining(", "));
+	}
+
+	/**
+	 * Câu {@code INSERT} ghi mọi cột của record vào {@code table}, tham số mang tên thành phần; dùng
+	 * với {@link #parameters(Record)}.
+	 */
+	public String insertInto(String table) {
+		String values = this.components.stream().map(c -> ":" + c).collect(Collectors.joining(", "));
+		return "INSERT INTO " + table + " (" + this.selectList + ") VALUES (" + values + ")";
+	}
+
+	/**
+	 * Tên thành phần ứng với một cột, ví dụ {@code "valid_from"} cho ra {@code "validFrom"}.
+	 * @throws IllegalArgumentException nếu record không có cột đó
+	 */
+	public String componentOfColumn(String column) {
+		Column found = this.byColumn.get(column);
+		if (found == null) {
+			throw new IllegalArgumentException(this.type.getSimpleName() + " has no column " + column);
+		}
+		return found.component();
 	}
 
 	/** Đổi một dòng thành record. Đọc theo tên cột nên thứ tự cột trong câu SELECT không quan trọng. */

@@ -1,12 +1,10 @@
 package com.home_platform.identity.workspace;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.home_platform.common.jdbc.EntityMetadata;
 import com.home_platform.common.jdbc.RepositorySupport;
@@ -31,24 +29,22 @@ public class WorkspaceRepository {
 
 	private final String memberColumns;
 
+	private final String insert;
+
 	private final RowMapper<MemberWorkspace> memberRowMapper;
 
 	WorkspaceRepository(RepositorySupport support) {
 		this.jdbc = support.jdbc();
 		this.metadata = EntityMetadata.of(Workspace.class, support.json());
-		this.memberColumns = Arrays.stream(this.metadata.selectList().split(", "))
-			.map(column -> "w." + column)
-			.collect(Collectors.joining(", ")) + ", m.role";
+		this.memberColumns = this.metadata.selectList("w") + ", m.role";
+		this.insert = this.metadata.insertInto("idn_workspace");
 		RowMapper<Workspace> workspaces = this.metadata.rowMapper();
 		this.memberRowMapper = (rs, rowNum) -> new MemberWorkspace(workspaces.mapRow(rs, rowNum),
 				MemberRole.valueOf(rs.getString("role")));
 	}
 
 	public void insert(Workspace workspace) {
-		String values = this.metadata.components().stream().map(c -> ":" + c).collect(Collectors.joining(", "));
-		this.jdbc.sql("INSERT INTO idn_workspace (" + this.metadata.selectList() + ") VALUES (" + values + ")")
-			.params(this.metadata.parameters(workspace))
-			.update();
+		this.jdbc.sql(this.insert).params(this.metadata.parameters(workspace)).update();
 	}
 
 	public void insertMember(long workspaceId, long userId, MemberRole role, Instant joinedAt) {
@@ -101,12 +97,8 @@ public class WorkspaceRepository {
 			.params(params)
 			.query(this.memberRowMapper)
 			.list();
-		if (rows.size() <= page.limit()) {
-			return new CursorPage<>(rows, null);
-		}
-		List<MemberWorkspace> items = List.copyOf(rows.subList(0, page.limit()));
-		Workspace last = items.getLast().workspace();
-		return new CursorPage<>(items, CursorCodec.encode(List.of(last.name(), String.valueOf(last.id()))));
+		return CursorPage.of(rows, page.limit(),
+				last -> List.of(last.workspace().name(), String.valueOf(last.workspace().id())));
 	}
 
 	/** Ghi lại tên, trạng thái và lúc sửa. */

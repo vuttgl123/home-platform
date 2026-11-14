@@ -1,5 +1,7 @@
 package com.home_platform.registry.history;
 
+import com.home_platform.common.history.EntityChange;
+import com.home_platform.common.history.EntityHistory;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.registry.catalog.Text;
@@ -9,15 +11,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class ActivityService {
 
-	private final ActivityRepository repository;
+	private final EntityHistory history;
 
-	ActivityService(ActivityRepository repository) {
-		this.repository = repository;
+	ActivityService(EntityHistory history) {
+		this.history = history;
 	}
 
 	/** @param entityType PLACE, PERSON, ITEM; {@code null} là mọi loại */
-	public CursorPage<ActivityEntry> list(long workspaceId, String entityType, CursorRequest page) {
-		return this.repository.list(workspaceId, Text.trimToNull(entityType), page);
+	public CursorPage<EntityChange> list(long workspaceId, String entityType, CursorRequest page) {
+		return this.history.listRecent(workspaceId, Text.trimToNull(entityType), page);
 	}
 
 }

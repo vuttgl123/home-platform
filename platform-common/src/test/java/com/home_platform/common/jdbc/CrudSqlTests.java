@@ -62,6 +62,15 @@ class CrudSqlTests {
 	}
 
 	@Test
+	void statementsAreBuiltOnce() {
+		assertThat(this.doc.insert()).isSameAs(this.doc.insert());
+		assertThat(this.doc.update()).isSameAs(this.doc.update());
+		assertThat(this.doc.selectById()).isSameAs(this.doc.selectById());
+		assertThat(this.doc.selectByIdForUpdate()).isSameAs(this.doc.selectByIdForUpdate());
+		assertThat(this.doc.softDelete()).isSameAs(this.doc.softDelete());
+	}
+
+	@Test
 	void tableNameMustBeAPlainIdentifier() {
 		assertThatThrownBy(() -> new CrudSql("t; DROP TABLE x", EntityMetadata.of(SampleTag.class, this.json)))
 			.isInstanceOf(IllegalArgumentException.class);

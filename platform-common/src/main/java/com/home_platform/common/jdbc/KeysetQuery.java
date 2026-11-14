@@ -110,12 +110,7 @@ public final class KeysetQuery<T extends Record> {
 		if (afterCursor) {
 			statement = statement.params(decode(page.cursor()));
 		}
-		List<T> rows = statement.query(this.rowMapper).list();
-		if (rows.size() <= page.limit()) {
-			return new CursorPage<>(rows, null);
-		}
-		List<T> items = rows.subList(0, page.limit());
-		return new CursorPage<>(List.copyOf(items), encode(items.get(items.size() - 1)));
+		return CursorPage.of(statement.query(this.rowMapper).list(), page.limit(), this::cursorOf);
 	}
 
 	/** Câu SQL sẽ chạy; {@code afterCursor} là có lấy từ sau một vị trí hay không. */
@@ -161,17 +156,17 @@ public final class KeysetQuery<T extends Record> {
 	}
 
 	/** Cursor là {@code [giá trị sắp xếp, id]}, hoặc {@code [id]} khi chỉ sắp theo {@code id}. */
-	private String encode(T last) {
+	private List<String> cursorOf(T last) {
 		String id = this.metadata.get(last, CrudSql.ID).toString();
 		if (this.sortColumn == null) {
-			return CursorCodec.encode(List.of(id));
+			return List.of(id);
 		}
-		Object value = this.metadata.get(last, componentOf(this.sortColumn));
+		Object value = this.metadata.get(last, this.metadata.componentOfColumn(this.sortColumn));
 		if (value == null) {
 			throw new IllegalStateException(
 					"Sort column " + this.table + "." + this.sortColumn + " is NULL; only NOT NULL columns can be sorted on");
 		}
-		return CursorCodec.encode(List.of(this.sortType.toText(value), id));
+		return List.of(this.sortType.toText(value), id);
 	}
 
 	private Map<String, Object> decode(String cursor) {
@@ -191,15 +186,6 @@ public final class KeysetQuery<T extends Record> {
 		catch (IllegalArgumentException ex) {
 			throw invalidCursor();
 		}
-	}
-
-	private String componentOf(String column) {
-		for (String component : this.metadata.components()) {
-			if (this.metadata.column(component).equals(column)) {
-				return component;
-			}
-		}
-		throw new IllegalArgumentException(this.metadata.type().getSimpleName() + " has no column " + column);
 	}
 
 	private static BadRequestException invalidCursor() {

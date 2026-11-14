@@ -4,11 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
- * Các câu SQL cố định của một bảng có khoá chính {@code (workspace_id, id)}, dựng một lần từ
- * cấu trúc của record. Tên tham số là tên thành phần của record.
+ * Các câu SQL cố định của một bảng có khoá chính {@code (workspace_id, id)}, dựng một lần trong
+ * hàm khởi tạo từ cấu trúc của record. Tên tham số là tên thành phần của record.
  */
 final class CrudSql {
 
@@ -37,20 +36,60 @@ final class CrudSql {
 
 	private final String table;
 
-	private final EntityMetadata<?> metadata;
-
 	private final boolean versioned;
 
 	private final boolean softDeletable;
+
+	private final String insert;
+
+	private final String selectById;
+
+	private final String selectByIdIncludingDeleted;
+
+	private final String selectByIdForShare;
+
+	private final String selectByIdForUpdate;
+
+	private final String update;
+
+	/** {@code null} khi bảng không có cột {@code deleted_at}. */
+	private final String softDelete;
+
+	/** {@code null} khi bảng không có cột {@code deleted_at}. */
+	private final String restore;
+
+	private final String deletePermanently;
 
 	CrudSql(String table, EntityMetadata<?> metadata) {
 		if (!IDENTIFIER.matcher(table).matches()) {
 			throw new IllegalArgumentException("Not a table name: " + table);
 		}
 		this.table = table;
-		this.metadata = metadata;
 		this.versioned = metadata.has(VERSION);
 		this.softDeletable = metadata.has(DELETED_AT);
+		String versionCheck = this.versioned ? " AND version = :version" : "";
+		List<String> audit = auditAssignments(metadata, this.versioned);
+		this.insert = metadata.insertInto(table);
+		this.selectByIdIncludingDeleted = "SELECT " + metadata.selectList() + " FROM " + table + BY_KEY;
+		this.selectById = this.selectByIdIncludingDeleted + (this.softDeletable ? " AND deleted_at IS NULL" : "");
+		this.selectByIdForShare = this.selectById + " FOR SHARE";
+		this.selectByIdForUpdate = this.selectById + " FOR UPDATE";
+		List<String> assignments = new ArrayList<>();
+		for (String component : metadata.components()) {
+			if (!NOT_BUSINESS.contains(component)) {
+				assignments.add(metadata.column(component) + " = :" + component);
+			}
+		}
+		assignments.addAll(audit);
+		this.update = "UPDATE " + table + " SET " + String.join(", ", assignments) + BY_KEY + versionCheck
+				+ (this.softDeletable ? " AND deleted_at IS NULL" : "");
+		this.softDelete = this.softDeletable ? "UPDATE " + table + " SET "
+				+ String.join(", ", prepend("deleted_at = :deletedAt", audit)) + BY_KEY + versionCheck
+				+ " AND deleted_at IS NULL" : null;
+		this.restore = this.softDeletable ? "UPDATE " + table + " SET "
+				+ String.join(", ", prepend("deleted_at = NULL", audit)) + BY_KEY + versionCheck
+				+ " AND deleted_at IS NOT NULL" : null;
+		this.deletePermanently = "DELETE FROM " + table + BY_KEY;
 	}
 
 	boolean versioned() {
@@ -62,54 +101,39 @@ final class CrudSql {
 	}
 
 	String insert() {
-		String parameters = this.metadata.components().stream().map(c -> ":" + c).collect(Collectors.joining(", "));
-		return "INSERT INTO " + this.table + " (" + this.metadata.selectList() + ") VALUES (" + parameters + ")";
+		return this.insert;
 	}
 
 	String selectById() {
-		return selectByIdIncludingDeleted() + (this.softDeletable ? " AND deleted_at IS NULL" : "");
+		return this.selectById;
 	}
 
 	/** Như {@link #selectById()}, giữ dòng tới hết transaction: lệnh khác không sửa, xoá được nó. */
 	String selectByIdForShare() {
-		return selectById() + " FOR SHARE";
+		return this.selectByIdForShare;
 	}
 
 	/** Như {@link #selectById()}, giữ dòng tới hết transaction: lệnh khác không sửa, xoá, giữ được nó. */
 	String selectByIdForUpdate() {
-		return selectById() + " FOR UPDATE";
+		return this.selectByIdForUpdate;
 	}
 
 	String selectByIdIncludingDeleted() {
-		return "SELECT " + this.metadata.selectList() + " FROM " + this.table + BY_KEY;
+		return this.selectByIdIncludingDeleted;
 	}
 
 	String update() {
-		List<String> assignments = new ArrayList<>();
-		for (String component : this.metadata.components()) {
-			if (!NOT_BUSINESS.contains(component)) {
-				assignments.add(this.metadata.column(component) + " = :" + component);
-			}
-		}
-		assignments.addAll(auditAssignments());
-		return "UPDATE " + this.table + " SET " + String.join(", ", assignments) + BY_KEY + versionCheck()
-				+ (this.softDeletable ? " AND deleted_at IS NULL" : "");
+		return this.update;
 	}
 
 	String softDelete() {
 		requireSoftDelete();
-		List<String> assignments = new ArrayList<>(List.of("deleted_at = :deletedAt"));
-		assignments.addAll(auditAssignments());
-		return "UPDATE " + this.table + " SET " + String.join(", ", assignments) + BY_KEY + versionCheck()
-				+ " AND deleted_at IS NULL";
+		return this.softDelete;
 	}
 
 	String restore() {
 		requireSoftDelete();
-		List<String> assignments = new ArrayList<>(List.of("deleted_at = NULL"));
-		assignments.addAll(auditAssignments());
-		return "UPDATE " + this.table + " SET " + String.join(", ", assignments) + BY_KEY + versionCheck()
-				+ " AND deleted_at IS NOT NULL";
+		return this.restore;
 	}
 
 	String deletePermanently() {
@@ -117,26 +141,29 @@ final class CrudSql {
 			throw new UnsupportedOperationException(
 					this.table + " has a deleted_at column: use softDelete instead of deletePermanently");
 		}
-		return "DELETE FROM " + this.table + BY_KEY;
+		return this.deletePermanently;
 	}
 
 	/** Phần của mệnh đề SET mà mọi lệnh ghi đều có: người sửa, lúc sửa, tăng version. */
-	private List<String> auditAssignments() {
+	private static List<String> auditAssignments(EntityMetadata<?> metadata, boolean versioned) {
 		List<String> assignments = new ArrayList<>();
-		if (this.metadata.has(UPDATED_AT)) {
+		if (metadata.has(UPDATED_AT)) {
 			assignments.add("updated_at = :updatedAt");
 		}
-		if (this.metadata.has(UPDATED_BY)) {
+		if (metadata.has(UPDATED_BY)) {
 			assignments.add("updated_by = :updatedBy");
 		}
-		if (this.versioned) {
+		if (versioned) {
 			assignments.add("version = version + 1");
 		}
 		return assignments;
 	}
 
-	private String versionCheck() {
-		return this.versioned ? " AND version = :version" : "";
+	private static List<String> prepend(String first, List<String> rest) {
+		List<String> all = new ArrayList<>(rest.size() + 1);
+		all.add(first);
+		all.addAll(rest);
+		return all;
 	}
 
 	private void requireSoftDelete() {

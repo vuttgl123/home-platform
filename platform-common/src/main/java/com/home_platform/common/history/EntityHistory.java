@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,8 @@ public class EntityHistory {
 
 	private final String listAfter;
 
+	private final String listRecent;
+
 	/**
 	 * @param table tên bảng version, lấy từ {@code platform.history.table}
 	 * @throws IllegalArgumentException nếu {@code table} không phải một tên bảng hợp lệ
@@ -88,6 +91,8 @@ public class EntityHistory {
 				+ " ORDER BY version_no DESC LIMIT :limit";
 		this.listAfter = "SELECT " + summaryColumns + " FROM " + table + " WHERE " + KEY
 				+ " AND version_no < :cursorVersion ORDER BY version_no DESC LIMIT :limit";
+		this.listRecent = "SELECT entity_type, entity_id, " + summaryColumns + " FROM " + table
+				+ " WHERE workspace_id = :workspaceId";
 	}
 
 	/**
@@ -142,12 +147,44 @@ public class EntityHistory {
 					ChangeAction.valueOf(rs.getString("action")), readChangedFields(rs), rs.getLong("changed_by"),
 					readInstant(rs, "changed_at"), rs.getString("note")))
 			.list();
-		if (rows.size() <= page.limit()) {
-			return new CursorPage<>(rows, null);
+		return CursorPage.of(rows, page.limit(), last -> List.of(String.valueOf(last.versionNo())));
+	}
+
+	/**
+	 * Mọi version của một không gian, mới nhất trước, không kèm {@code snapshot}: hoạt động gần đây.
+	 *
+	 * <p>Sắp theo {@code changed_at} rồi khoá chính, giảm dần, nên nhiều version cùng mili giây vẫn
+	 * có thứ tự chắc chắn. Bảng version cần index {@code (workspace_id, changed_at)}: index của
+	 * InnoDB mang sẵn các cột khoá chính ở cuối, nên cả bốn cột sắp xếp đều đi theo index.
+	 * @param entityType {@code null} là mọi loại bản ghi
+	 * @throws BadRequestException nếu {@code cursor} hỏng
+	 */
+	public CursorPage<EntityChange> listRecent(long workspaceId, String entityType, CursorRequest page) {
+		if (page.limit() < 1) {
+			throw new IllegalArgumentException("limit must be positive: " + page.limit());
 		}
-		List<EntityVersionSummary> items = List.copyOf(rows.subList(0, page.limit()));
-		String next = CursorCodec.encode(List.of(String.valueOf(items.get(items.size() - 1).versionNo())));
-		return new CursorPage<>(items, next);
+		StringBuilder sql = new StringBuilder(this.listRecent);
+		Map<String, Object> params = new HashMap<>();
+		params.put("workspaceId", workspaceId);
+		if (entityType != null) {
+			sql.append(" AND entity_type = :entityType");
+			params.put("entityType", entityType);
+		}
+		if (page.cursor() != null) {
+			params.putAll(decodeRecent(page.cursor()));
+			sql.append(" AND (changed_at < :t OR (changed_at = :t AND (entity_type < :e OR (entity_type = :e AND "
+					+ "(entity_id < :i OR (entity_id = :i AND version_no < :v))))))");
+		}
+		sql.append(" ORDER BY changed_at DESC, entity_type DESC, entity_id DESC, version_no DESC LIMIT :limit");
+		params.put("limit", page.limit() + 1);
+		List<EntityChange> rows = this.jdbc.sql(sql.toString())
+			.params(params)
+			.query((rs, rowNum) -> new EntityChange(rs.getString("entity_type"), rs.getLong("entity_id"),
+					rs.getInt("version_no"), ChangeAction.valueOf(rs.getString("action")), readChangedFields(rs),
+					rs.getLong("changed_by"), readInstant(rs, "changed_at"), rs.getString("note")))
+			.list();
+		return CursorPage.of(rows, page.limit(), last -> List.of(last.changedAt().toString(), last.entityType(),
+				String.valueOf(last.entityId()), String.valueOf(last.versionNo())));
 	}
 
 	/**
@@ -227,6 +264,21 @@ public class EntityHistory {
 			return Integer.parseInt(parts.get(0));
 		}
 		catch (IllegalArgumentException ex) {
+			throw new BadRequestException("Invalid cursor");
+		}
+	}
+
+	/** Cursor của {@link #listRecent}: {@code [changed_at, entity_type, entity_id, version_no]}. */
+	private static Map<String, Object> decodeRecent(String cursor) {
+		List<String> parts = CursorCodec.decode(cursor);
+		try {
+			if (parts.size() != 4) {
+				throw new IllegalArgumentException();
+			}
+			return Map.of("t", LocalDateTime.ofInstant(Instant.parse(parts.get(0)), ZoneOffset.UTC), "e", parts.get(1),
+					"i", Long.parseLong(parts.get(2)), "v", Integer.parseInt(parts.get(3)));
+		}
+		catch (RuntimeException ex) {
 			throw new BadRequestException("Invalid cursor");
 		}
 	}

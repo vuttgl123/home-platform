@@ -1,7 +1,6 @@
 package com.home_platform.identity.user;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.home_platform.common.jdbc.EntityMetadata;
 import com.home_platform.common.jdbc.RepositorySupport;
@@ -19,16 +18,16 @@ public class UserRepository {
 
 	private final EntityMetadata<User> metadata;
 
+	private final String insert;
+
 	UserRepository(RepositorySupport support) {
 		this.jdbc = support.jdbc();
 		this.metadata = EntityMetadata.of(User.class, support.json());
+		this.insert = this.metadata.insertInto("idn_user");
 	}
 
 	public void insert(User user) {
-		String values = this.metadata.components().stream().map(c -> ":" + c).collect(Collectors.joining(", "));
-		this.jdbc.sql("INSERT INTO idn_user (" + this.metadata.selectList() + ") VALUES (" + values + ")")
-			.params(this.metadata.parameters(user))
-			.update();
+		this.jdbc.sql(this.insert).params(this.metadata.parameters(user)).update();
 	}
 
 	public Optional<User> findById(long id) {

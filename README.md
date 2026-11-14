@@ -128,7 +128,8 @@ giá trị nó trả về.
   `restore`, `deletePermanently`. Các cột chuẩn (`createdAt`, `createdBy`, `updatedAt`,
   `updatedBy`, `version`, `deletedAt`) được tự điền nếu record có. `update` ghi đè cả bản ghi
   và từ chối (409) nếu `version` đã khác. Truy vấn riêng viết tay bằng `jdbc()`, `columns()`,
-  `rowMapper()`. Mọi hàm public của repository nhận `workspaceId` hoặc `WorkspaceContext` làm
+  `rowMapper()`; câu có `JOIN` lấy cột kèm tiền tố bằng `metadata().selectList("p")`, và danh sách
+  phân trang tự viết dựng trang bằng `CursorPage.of(rows, limit, cursorOf)`. Mọi hàm public của repository nhận `workspaceId` hoặc `WorkspaceContext` làm
   tham số đầu tiên. Repository không tự mở transaction: service đặt `@Transactional`.
 - **Kiểm tra rồi ghi:** khi một lệnh ghi dựa vào việc một dòng khác còn nguyên (thêm đồ vào một
   địa điểm, đếm đồ rồi mới xoá địa điểm), service đọc dòng đó bằng `findByIdForShare` (lệnh khác
@@ -152,7 +153,9 @@ giá trị nó trả về.
   `CursorPage`. Cột sắp xếp là hằng số trong code, `NOT NULL`, nên có index phục vụ.
 - **Lịch sử version:** service đặt `platform.history.table` (ví dụ `reg_entity_version`) thì có
   bean `EntityHistory`. Service của nghiệp vụ gọi `record(...)` ngay sau lần sửa, trong cùng
-  transaction; `changed_fields` được tự tính. Sau mỗi lần ghi có sự kiện `EntityChangedEvent`.
+  transaction; `changed_fields` được tự tính. Sau mỗi lần ghi có sự kiện `EntityChangedEvent`. `listRecent(workspaceId, entityType, page)` liệt kê mọi version của
+  không gian, mới nhất trước (màn hình "hoạt động gần đây"); bảng version cần index
+  `(workspace_id, changed_at)` cho việc này.
 - **Mapper:** `@Mapper(config = PlatformMapperConfig.class)`. Build báo lỗi nếu một trường của
   kiểu đích không được gán.
 - **Cache:** dùng `@Cacheable`; khoá cache luôn có `workspace_id`.
