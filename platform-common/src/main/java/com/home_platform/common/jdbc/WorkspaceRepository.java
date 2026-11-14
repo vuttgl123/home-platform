@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Lớp cha của repository cho một bảng có khoá chính {@code (workspace_id, id)}. Lớp con cấp
@@ -102,6 +104,32 @@ public abstract class WorkspaceRepository<T extends Record> {
 	 */
 	public T getById(long workspaceId, long id) {
 		return findById(workspaceId, id).orElseThrow(() -> NotFoundException.of(this.entityName, id));
+	}
+
+	/**
+	 * Như {@link #findById}, và giữ dòng tới hết transaction: lệnh khác không sửa, xoá được nó
+	 * (nhiều lệnh cùng giữ kiểu này thì được). Dùng khi lệnh sắp ghi một thứ phụ thuộc vào việc
+	 * dòng này còn nguyên, ví dụ thêm đồ vào một địa điểm.
+	 *
+	 * <p>Gọi trước câu {@code SELECT} thường đầu tiên của transaction mà kết quả dùng để quyết
+	 * định: câu đọc kèm khoá luôn thấy bản đã commit mới nhất, còn {@code SELECT} thường thấy
+	 * snapshot chốt từ lần đọc thường đầu tiên.
+	 * @throws IllegalTransactionStateException nếu không có transaction đang mở (khoá sẽ nhả ngay)
+	 */
+	public Optional<T> findByIdForShare(long workspaceId, long id) {
+		requireTransaction("findByIdForShare");
+		return select(this.sql.selectByIdForShare(), workspaceId, id);
+	}
+
+	/**
+	 * Như {@link #findByIdForShare}, nhưng giữ riêng: lệnh khác cũng không giữ được dòng này cho
+	 * tới khi transaction xong. Dùng khi lệnh sắp kiểm tra rồi ghi chính dòng này, ví dụ đếm đồ
+	 * trong địa điểm rồi mới xoá nó.
+	 * @throws IllegalTransactionStateException nếu không có transaction đang mở (khoá sẽ nhả ngay)
+	 */
+	public Optional<T> findByIdForUpdate(long workspaceId, long id) {
+		requireTransaction("findByIdForUpdate");
+		return select(this.sql.selectByIdForUpdate(), workspaceId, id);
 	}
 
 	/** Như {@link #findById} nhưng thấy cả dòng đã xoá mềm; dùng cho việc khôi phục. */
@@ -220,6 +248,13 @@ public abstract class WorkspaceRepository<T extends Record> {
 			.param(CrudSql.ID, id)
 			.query(this.rowMapper)
 			.optional();
+	}
+
+	private static void requireTransaction(String method) {
+		if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+			throw new IllegalTransactionStateException(
+					method + " must run inside a transaction: the lock is released as soon as the statement ends");
+		}
 	}
 
 	private Map<String, Object> keyAndAudit(WorkspaceContext ctx, long id, int expectedVersion, Instant now) {

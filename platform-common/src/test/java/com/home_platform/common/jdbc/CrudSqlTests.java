@@ -56,6 +56,12 @@ class CrudSqlTests {
 	}
 
 	@Test
+	void lockingSelectsAppendTheLockClause() {
+		assertThat(this.doc.selectByIdForUpdate()).isEqualTo(this.doc.selectById() + " FOR UPDATE");
+		assertThat(this.doc.selectByIdForShare()).isEqualTo(this.doc.selectById() + " FOR SHARE");
+	}
+
+	@Test
 	void tableNameMustBeAPlainIdentifier() {
 		assertThatThrownBy(() -> new CrudSql("t; DROP TABLE x", EntityMetadata.of(SampleTag.class, this.json)))
 			.isInstanceOf(IllegalArgumentException.class);

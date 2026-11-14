@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
@@ -114,6 +115,15 @@ class ApiExceptionHandlerTests {
 	}
 
 	@Test
+	void lockFailureIsReportedAsConflict() throws Exception {
+		this.mvc.perform(get("/locked"))
+			.andExpect(status().isConflict())
+			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.detail").value("The record is being changed by someone else; try again"))
+			.andExpect(content().string(not(containsString("Deadlock"))));
+	}
+
+	@Test
 	void otherConstraintViolationIsReportedAs400WithoutSqlText() throws Exception {
 		this.mvc.perform(get("/integrity"))
 			.andExpect(status().isBadRequest())
@@ -151,6 +161,11 @@ class ApiExceptionHandlerTests {
 		@GetMapping("/duplicate")
 		void duplicate() {
 			throw new DuplicateKeyException("Duplicate entry 'x' for key 'uk_reg_place_type_code'");
+		}
+
+		@GetMapping("/locked")
+		void locked() {
+			throw new CannotAcquireLockException("Deadlock found; internal detail");
 		}
 
 		@GetMapping("/missing")

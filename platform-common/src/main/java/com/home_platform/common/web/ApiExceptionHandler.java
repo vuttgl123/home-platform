@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -86,6 +87,18 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
 		log.warn("Data integrity violation: {}", ex.getMessage());
 		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Invalid data");
+	}
+
+	/**
+	 * Không lấy được khoá dòng: deadlock (database tự huỷ một trong hai lệnh) hoặc chờ quá lâu vì
+	 * lệnh khác đang giữ dòng đó. Dữ liệu client gửi không sai và lệnh chưa ghi gì, nên trả 409 để
+	 * client đọc lại rồi thử lại; thông báo của database chỉ ghi vào log.
+	 */
+	@ExceptionHandler(PessimisticLockingFailureException.class)
+	ProblemDetail handleLockFailure(PessimisticLockingFailureException ex) {
+		log.warn("Lock failure: {}", ex.getMessage());
+		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"The record is being changed by someone else; try again");
 	}
 
 	/**

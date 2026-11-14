@@ -130,10 +130,17 @@ giá trị nó trả về.
   và từ chối (409) nếu `version` đã khác. Truy vấn riêng viết tay bằng `jdbc()`, `columns()`,
   `rowMapper()`. Mọi hàm public của repository nhận `workspaceId` hoặc `WorkspaceContext` làm
   tham số đầu tiên. Repository không tự mở transaction: service đặt `@Transactional`.
+- **Kiểm tra rồi ghi:** khi một lệnh ghi dựa vào việc một dòng khác còn nguyên (thêm đồ vào một
+  địa điểm, đếm đồ rồi mới xoá địa điểm), service đọc dòng đó bằng `findByIdForShare` (lệnh khác
+  không sửa, xoá được nó) hoặc `findByIdForUpdate` (lệnh khác cũng không giữ được nó) để không
+  lệnh nào chen vào giữa. Hai hàm chỉ gọi được trong transaction, và phải gọi trước câu `SELECT`
+  thường đầu tiên mà kết quả dùng để quyết định: `SELECT` thường thấy snapshot chốt từ lần đọc
+  thường đầu tiên của transaction, còn câu đọc kèm khoá luôn thấy bản đã commit mới nhất.
 - **Lỗi:** ném `NotFoundException.of("Place", id)`, `ConflictException`, `BadRequestException`;
   mọi lỗi được trả về ở dạng Problem Details (`application/problem+json`). Lỗi `@Valid` trả 400
   kèm danh sách từng trường; trùng khoá duy nhất trả 409; vi phạm ràng buộc khác của database
-  (chuỗi dài quá cột, khoá ngoại sai) trả 400.
+  (chuỗi dài quá cột, khoá ngoại sai) trả 400. Không lấy được khoá dòng (deadlock, hoặc lệnh
+  khác giữ dòng quá lâu) trả 409: lệnh chưa ghi gì, client đọc lại rồi thử lại.
 - **Thời gian:** mọi cột `DATETIME(3)` lưu giờ UTC. Kết nối database được đặt sẵn ở UTC, nên SQL
   viết tay truyền thẳng `Instant` hay dùng `NOW()` đều đúng, bất kể múi giờ của máy chạy.
 - **Danh sách dài:** controller nhận một tham số `CursorRequest` (tham số URL `cursor` và

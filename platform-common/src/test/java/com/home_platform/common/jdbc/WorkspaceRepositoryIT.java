@@ -264,6 +264,21 @@ class WorkspaceRepositoryIT extends CommonIT {
 			.isInstanceOf(DuplicateKeyException.class);
 	}
 
+	@Test
+	void lockingReadsReturnLiveRowsOnly() {
+		SampleDoc stored = this.docs.insert(CTX_A, room());
+
+		assertThat(this.docs.findByIdForShare(WS_A, stored.id())).contains(stored);
+		assertThat(this.docs.findByIdForUpdate(WS_A, stored.id())).contains(stored);
+		assertThat(this.docs.findByIdForShare(WS_B, stored.id())).isEmpty();
+		assertThat(this.docs.findByIdForUpdate(WS_B, stored.id())).isEmpty();
+
+		this.docs.softDelete(CTX_A, stored.id(), 1);
+
+		assertThat(this.docs.findByIdForShare(WS_A, stored.id())).isEmpty();
+		assertThat(this.docs.findByIdForUpdate(WS_A, stored.id())).isEmpty();
+	}
+
 	/** Các lỗi của repository là {@link ErrorResponse}: nội dung cho client nằm ở {@code detail}. */
 	private static ThrowingConsumer<Throwable> detail(String expected) {
 		return ex -> assertThat(((ErrorResponse) ex).getBody().getDetail()).isEqualTo(expected);

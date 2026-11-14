@@ -70,6 +70,16 @@ final class CrudSql {
 		return selectByIdIncludingDeleted() + (this.softDeletable ? " AND deleted_at IS NULL" : "");
 	}
 
+	/** Như {@link #selectById()}, giữ dòng tới hết transaction: lệnh khác không sửa, xoá được nó. */
+	String selectByIdForShare() {
+		return selectById() + " FOR SHARE";
+	}
+
+	/** Như {@link #selectById()}, giữ dòng tới hết transaction: lệnh khác không sửa, xoá, giữ được nó. */
+	String selectByIdForUpdate() {
+		return selectById() + " FOR UPDATE";
+	}
+
 	String selectByIdIncludingDeleted() {
 		return "SELECT " + this.metadata.selectList() + " FROM " + this.table + BY_KEY;
 	}

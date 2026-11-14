@@ -9,6 +9,7 @@ import java.time.Clock;
 import com.home_platform.common.json.StorageJson;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.transaction.IllegalTransactionStateException;
 
 class WorkspaceRepositoryTests {
 
@@ -43,6 +44,16 @@ class WorkspaceRepositoryTests {
 	void boxedStandardColumnsAreAccepted() {
 		assertThatCode(() -> new WorkspaceRepository<>(this.support, "t", Boxed.class) {
 		}).doesNotThrowAnyException();
+	}
+
+	@Test
+	void lockingReadOutsideATransactionIsRejected() {
+		WorkspaceRepository<Boxed> repository = new WorkspaceRepository<>(this.support, "t", Boxed.class) {
+		};
+
+		assertThatThrownBy(() -> repository.findByIdForShare(1, 1)).isInstanceOf(IllegalTransactionStateException.class);
+		assertThatThrownBy(() -> repository.findByIdForUpdate(1, 1))
+			.isInstanceOf(IllegalTransactionStateException.class);
 	}
 
 	record LongVersion(long workspaceId, long id, long version) {
