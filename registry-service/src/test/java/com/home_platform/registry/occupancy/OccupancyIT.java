@@ -11,6 +11,7 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.ResultActions;
 
 class OccupancyIT extends OccupancyTestData {
 
@@ -98,6 +99,32 @@ class OccupancyIT extends OccupancyTestData {
 
 		postOccupancy(room, gone, LocalDate.of(2025, 1, 1), null).andExpect(status().isNotFound());
 		postOccupancy(ghostPlace, person("A"), LocalDate.of(2025, 1, 1), null).andExpect(status().isNotFound());
+	}
+
+	@Test
+	void editingAnOccupancyAtADeletedPlaceIsRefused() throws Exception {
+		long room = place(null, "P");
+		long id = occupancy(room, person("A"), this.today.minusYears(1), this.today.minusDays(1));
+		this.places.delete(CTX_A, room, 1, null);
+
+		putOccupancy(id).andExpect(status().isConflict())
+			.andExpect(jsonPath("$.detail").value("Restore place " + room + " first"));
+	}
+
+	@Test
+	void editingAnOccupancyOfADeletedPersonIsRefused() throws Exception {
+		long an = person("A");
+		long id = occupancy(place(null, "P"), an, this.today.minusYears(1), this.today.minusDays(1));
+		this.people.delete(CTX_A, an, 1, null);
+
+		putOccupancy(id).andExpect(status().isConflict())
+			.andExpect(jsonPath("$.detail").value("Restore person " + an + " first"));
+	}
+
+	/** Sửa dòng đã rời thành "đang ở": bỏ ngày cuối. */
+	private ResultActions putOccupancy(long id) throws Exception {
+		return this.mvc.perform(asA(put("/occupancies/" + id)).contentType(MediaType.APPLICATION_JSON).content("""
+				{"version": 1, "relation": "RESIDENT", "startDate": "%s"}""".formatted(this.today.minusYears(1))));
 	}
 
 	@Test

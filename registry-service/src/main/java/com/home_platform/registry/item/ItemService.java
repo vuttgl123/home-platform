@@ -70,7 +70,7 @@ public class ItemService {
 		if (request.placeId() == null) {
 			throw new BadRequestException("placeId is required");
 		}
-		this.places.get(ctx.workspaceId(), request.placeId());
+		this.places.getForShare(ctx.workspaceId(), request.placeId());
 		requireSettableStatus(request.status());
 		if (request.categoryId() != null) {
 			this.categories.requireActive(ctx.workspaceId(), request.categoryId());
@@ -110,7 +110,7 @@ public class ItemService {
 	@Transactional
 	public Item move(WorkspaceContext ctx, long id, ItemMoveRequest request) {
 		Item current = requireNotRemoved(get(ctx.workspaceId(), id));
-		this.places.get(ctx.workspaceId(), request.placeId());
+		this.places.getForShare(ctx.workspaceId(), request.placeId());
 		Item stored = this.repository.update(ctx,
 				current.withVersion(request.version()).withPlaceId(request.placeId()));
 		record(ctx, stored, ChangeAction.UPDATE, request.note());
@@ -158,7 +158,7 @@ public class ItemService {
 		if (current.replacedByItemId() != null) {
 			throw new ConflictException("Item " + id + " was replaced by item " + current.replacedByItemId());
 		}
-		if (!this.places.isAlive(ctx.workspaceId(), current.placeId())) {
+		if (this.places.findForShare(ctx.workspaceId(), current.placeId()).isEmpty()) {
 			throw new ConflictException("Restore place " + current.placeId() + " first");
 		}
 		Item stored = this.repository.update(ctx,
@@ -183,7 +183,7 @@ public class ItemService {
 	public Item restore(WorkspaceContext ctx, long id, ItemVersionRequest request) {
 		Item deleted = this.repository.findByIdIncludingDeleted(ctx.workspaceId(), id)
 			.orElseThrow(() -> NotFoundException.of("Item", id));
-		if (deleted.deletedAt() != null && !this.places.isAlive(ctx.workspaceId(), deleted.placeId())) {
+		if (deleted.deletedAt() != null && this.places.findForShare(ctx.workspaceId(), deleted.placeId()).isEmpty()) {
 			throw new ConflictException("Restore place " + deleted.placeId() + " first");
 		}
 		Item stored = this.repository.restore(ctx, id, request.version());

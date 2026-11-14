@@ -2,6 +2,7 @@ package com.home_platform.registry.person;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.history.ChangeAction;
@@ -50,6 +51,20 @@ public class PersonService {
 		return this.repository.getById(workspaceId, id);
 	}
 
+	/**
+	 * Như {@link #get}, và giữ riêng người này tới hết transaction: không lệnh nào xoá được người
+	 * đó, và hai lệnh ghi cư trú của cùng một người chạy lần lượt chứ không cùng lúc.
+	 * @throws NotFoundException nếu không có hoặc đã xoá
+	 */
+	public Person getForUpdate(long workspaceId, long id) {
+		return findForUpdate(workspaceId, id).orElseThrow(() -> NotFoundException.of("Person", id));
+	}
+
+	/** Như {@link #getForUpdate}, trả rỗng thay vì ném lỗi khi người đó không có hoặc đã xoá. */
+	public Optional<Person> findForUpdate(long workspaceId, long id) {
+		return this.repository.findByIdForUpdate(workspaceId, id);
+	}
+
 	@Transactional
 	public Person create(WorkspaceContext ctx, PersonRequest request) {
 		requireUniqueDocument(ctx.workspaceId(), 0, request.idType(), request.idNumber());
@@ -86,7 +101,8 @@ public class PersonService {
 	 */
 	@Transactional
 	public void delete(WorkspaceContext ctx, long id, int version, String note) {
-		get(ctx.workspaceId(), id);
+		// Giữ riêng trước khi đếm: câu đếm bên dưới mới thấy mọi dòng cư trú đã commit của người này.
+		getForUpdate(ctx.workspaceId(), id);
 		int occupancies = this.repository.countCurrentOccupancies(ctx.workspaceId(), id, this.businessDate.today());
 		if (occupancies > 0) {
 			throw new ConflictException(

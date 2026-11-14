@@ -212,7 +212,7 @@ Một dòng nghĩa là: người X có quan hệ R với địa điểm Y từ n
 - Tạo: địa điểm và người phải tồn tại, chưa xoá. `relation` là OWNER, RESIDENT, GUEST, STAFF hoặc OTHER. `start_date` bắt buộc. `end_date` trống (đang ở) hoặc không trước `start_date`.
 - Một người không có hai dòng chưa xoá **ở cùng một địa điểm** có khoảng thời gian giao nhau (ngày cuối trống coi như vô hạn); trùng thì trả 409. Ở nhiều nơi cùng lúc thì được. **(tôi chọn)**
 - **Chuyển đi**: đặt `end_date`. Đây là cách kết thúc cư trú bình thường; dòng không bị xoá. **(bạn)**
-- **Sửa** quan hệ, ngày, ghi chú khi nhập nhầm; vẫn kiểm tra luật giao nhau.
+- **Sửa** quan hệ, ngày, ghi chú khi nhập nhầm; vẫn kiểm tra luật giao nhau. Địa điểm và người của dòng phải chưa bị xoá, nếu không trả 409 và phải khôi phục trước: nhờ vậy một dòng đã rời không thể bị sửa thành "đang ở" tại một địa điểm, hoặc cho một người, đã xoá. **(bổ sung 2026-11-14 sau đợt review)**
 - **Xoá** (mềm) chỉ dành cho dòng nhập nhầm.
 - Trạng thái suy ra từ ngày, không lưu: **đang ở** khi `start_date` ≤ hôm nay và (`end_date` trống hoặc ≥ hôm nay); **sắp đến** khi `start_date` > hôm nay; **đã rời** khi `end_date` < hôm nay. **(tôi chọn)** `end_date` là ngày cuối cùng còn ở.
 - Đọc: ai đang ở một địa điểm; ai từng ở (đã rời, mới nhất trước); ai đang ở trong cả cây con (ví dụ cả toà nhà, join với `reg_place` theo tiền tố `path`, cùng nhóm bảng nên được join); một người đã và đang ở những đâu.

@@ -77,11 +77,6 @@ public class PlaceService {
 		return this.repository.getById(workspaceId, id);
 	}
 
-	/** Địa điểm có tồn tại và chưa bị xoá không. */
-	public boolean isAlive(long workspaceId, long id) {
-		return this.repository.findById(workspaceId, id).isPresent();
-	}
-
 	/**
 	 * Như {@link #get}, và giữ địa điểm tới hết transaction: không lệnh nào xoá hay di chuyển nó
 	 * được. Lệnh sắp ghi một thứ nằm trong địa điểm (địa điểm con, món đồ, cư trú) gọi hàm này

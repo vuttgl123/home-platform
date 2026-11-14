@@ -13,12 +13,19 @@ import com.home_platform.common.web.NotFoundException;
 import com.home_platform.registry.item.Item;
 import com.home_platform.registry.item.ItemRequest;
 import com.home_platform.registry.item.ItemService;
+import com.home_platform.registry.occupancy.Occupancy;
+import com.home_platform.registry.occupancy.OccupancyCreateRequest;
+import com.home_platform.registry.occupancy.OccupancyService;
+import com.home_platform.registry.occupancy.Relation;
+import com.home_platform.registry.person.PersonRequest;
+import com.home_platform.registry.person.PersonService;
 import com.home_platform.registry.place.Place;
 import com.home_platform.registry.place.PlaceCreateRequest;
 import com.home_platform.registry.place.PlaceMoveRequest;
 import com.home_platform.registry.place.PlaceService;
 import com.home_platform.registry.placetype.PlaceTypeCreateRequest;
 import com.home_platform.registry.placetype.PlaceTypeService;
+import com.home_platform.registry.support.BusinessDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +48,15 @@ class ConcurrentWritesIT extends CommittedDataIT {
 
 	@Autowired
 	EntityHistory history;
+
+	@Autowired
+	PersonService people;
+
+	@Autowired
+	OccupancyService occupancies;
+
+	@Autowired
+	BusinessDate businessDate;
 
 	long type;
 
@@ -129,12 +145,87 @@ class ConcurrentWritesIT extends CommittedDataIT {
 		first.commit();
 	}
 
+	@Test
+	void itemAddedDuringAPlaceDeleteIsRefused() throws Exception {
+		long room = place(null, "P101");
+		OpenTransaction<Void> deleting = holdOpen(() -> {
+			this.places.delete(CTX, room, 1, null);
+			return null;
+		});
+		Future<Item> adding = inBackground(() -> this.items.create(CTX, item(room, "Tủ")));
+		letItBlock();
+		deleting.commit();
+
+		assertThatThrownBy(adding::get).cause().isInstanceOf(NotFoundException.class);
+		assertThat(rows("reg_item")).isZero();
+	}
+
+	@Test
+	void occupancyAddedDuringAPersonDeleteIsRefused() throws Exception {
+		long room = place(null, "P101");
+		long an = person("An");
+		OpenTransaction<Void> deleting = holdOpen(() -> {
+			this.people.delete(CTX, an, 1, null);
+			return null;
+		});
+		Future<Occupancy> adding = inBackground(() -> this.occupancies.create(CTX, stay(room, an)));
+		letItBlock();
+		deleting.commit();
+
+		assertThatThrownBy(adding::get).cause().isInstanceOf(NotFoundException.class);
+		assertThat(rows("reg_occupancy")).isZero();
+	}
+
+	@Test
+	void personDeleteSeesAnOccupancyAddedConcurrently() throws Exception {
+		long room = place(null, "P101");
+		long an = person("An");
+		OpenTransaction<Occupancy> adding = holdOpen(() -> this.occupancies.create(CTX, stay(room, an)));
+		Future<Void> deleting = inBackground(() -> {
+			this.people.delete(CTX, an, 1, null);
+			return null;
+		});
+		letItBlock();
+		adding.commit();
+
+		assertThatThrownBy(deleting::get).cause()
+			.isInstanceOfSatisfying(ConflictException.class, ex -> assertThat(ex.getBody().getDetail())
+				.contains("1 current or upcoming occupancies"));
+		assertThat(this.people.get(WS, an).version()).isEqualTo(1);
+	}
+
+	@Test
+	void overlappingOccupanciesCreatedTogetherLeaveOne() throws Exception {
+		long room = place(null, "P101");
+		long an = person("An");
+		OpenTransaction<Occupancy> first = holdOpen(() -> this.occupancies.create(CTX, stay(room, an)));
+		Future<Occupancy> second = inBackground(() -> this.occupancies.create(CTX, stay(room, an)));
+		letItBlock();
+		first.commit();
+
+		assertThatThrownBy(second::get).cause()
+			.isInstanceOfSatisfying(ConflictException.class, ex -> assertThat(ex.getBody().getDetail())
+				.contains("already has an overlapping occupancy"));
+		assertThat(rows("reg_occupancy")).isEqualTo(1);
+	}
+
 	private long place(Long parentId, String name) {
 		return this.places.create(CTX, newPlace(parentId, name)).id();
 	}
 
 	private PlaceCreateRequest newPlace(Long parentId, String name) {
 		return new PlaceCreateRequest(parentId, this.type, null, name, null, null, null, null, null, null);
+	}
+
+	private long person(String fullName) {
+		return this.people
+			.create(CTX, new PersonRequest(fullName, null, null, null, null, null, null, null, null, null, null))
+			.id();
+	}
+
+	/** Cư trú từ hôm nay, chưa có ngày cuối. */
+	private OccupancyCreateRequest stay(long placeId, long personId) {
+		return new OccupancyCreateRequest(placeId, personId, Relation.RESIDENT, this.businessDate.today(), null, null);
 	}
 
 	private static ItemRequest item(long placeId, String name) {

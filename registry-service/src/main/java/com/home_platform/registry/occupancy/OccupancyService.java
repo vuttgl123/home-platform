@@ -9,6 +9,7 @@ import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
+import com.home_platform.common.web.NotFoundException;
 import com.home_platform.registry.person.PersonService;
 import com.home_platform.registry.place.PlaceService;
 import com.home_platform.registry.support.BusinessDate;
@@ -93,18 +94,30 @@ public class OccupancyService {
 	/** @throws com.home_platform.common.web.NotFoundException nếu địa điểm hoặc người không có hay đã xoá */
 	@Transactional
 	public Occupancy create(WorkspaceContext ctx, OccupancyCreateRequest request) {
-		this.places.get(ctx.workspaceId(), request.placeId());
-		this.people.get(ctx.workspaceId(), request.personId());
+		this.places.getForShare(ctx.workspaceId(), request.placeId());
+		this.people.getForUpdate(ctx.workspaceId(), request.personId());
 		requireValidRange(ctx.workspaceId(), request.personId(), request.placeId(), request.startDate(),
 				request.endDate(), 0);
 		return this.repository.insert(ctx, new Occupancy(0, 0, request.placeId(), request.personId(),
 				request.relation(), request.startDate(), request.endDate(), request.note(), null, 0, null, 0, 0, null));
 	}
 
-	/** Sửa một dòng nhập nhầm. */
+	/**
+	 * Sửa một dòng nhập nhầm. Địa điểm và người của dòng phải chưa bị xoá: nếu không, sửa ngày có
+	 * thể biến một dòng đã rời thành "đang ở" tại một địa điểm (hoặc cho một người) đã xoá.
+	 * @throws ConflictException nếu địa điểm hoặc người đã bị xoá, hoặc khoảng thời gian mới giao dòng khác
+	 */
 	@Transactional
 	public Occupancy update(WorkspaceContext ctx, long id, OccupancyUpdateRequest request) {
-		Occupancy current = get(ctx.workspaceId(), id);
+		long workspaceId = ctx.workspaceId();
+		Occupancy current = this.repository.findByIdForUpdate(workspaceId, id)
+			.orElseThrow(() -> NotFoundException.of("Occupancy", id));
+		if (this.places.findForShare(workspaceId, current.placeId()).isEmpty()) {
+			throw new ConflictException("Restore place " + current.placeId() + " first");
+		}
+		if (this.people.findForUpdate(workspaceId, current.personId()).isEmpty()) {
+			throw new ConflictException("Restore person " + current.personId() + " first");
+		}
 		requireValidRange(ctx.workspaceId(), current.personId(), current.placeId(), request.startDate(),
 				request.endDate(), id);
 		return this.repository.update(ctx, current.withVersion(request.version())
