@@ -143,6 +143,10 @@ giá trị nó trả về.
   khác giữ dòng quá lâu) trả 409: lệnh chưa ghi gì, client đọc lại rồi thử lại.
 - **Thời gian:** mọi cột `DATETIME(3)` lưu giờ UTC. Kết nối database được đặt sẵn ở UTC, nên SQL
   viết tay truyền thẳng `Instant` hay dùng `NOW()` đều đúng, bất kể múi giờ của máy chạy.
+- **Giới hạn chờ database:** mở kết nối tối đa 5 giây, đọc kết quả một câu lệnh 60 giây, chờ khoá
+  dòng 5 giây (hết hạn thì API trả 409), cả một transaction 30 giây. Đặt trong
+  `platform-common-defaults.properties`; service ghi đè trong `application.yaml` của mình. Migration
+  chạy lâu hơn 60 giây thì đặt lại `socketTimeout` cho lần chạy đó.
 - **Danh sách dài:** controller nhận một tham số `CursorRequest` (tham số URL `cursor` và
   `limit`, mặc định 20, tối đa 100), repository dựng truy vấn bằng `keyset()`, trả về
   `CursorPage`. Cột sắp xếp là hằng số trong code, `NOT NULL`, nên có index phục vụ.
