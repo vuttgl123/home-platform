@@ -1,12 +1,15 @@
 package com.home_platform.common.context;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.home_platform.common.web.ApiExceptionHandler;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +34,27 @@ class ContextArgumentResolverTests {
 		this.mvc.perform(get("/me").header("X-User-Id", "34"))
 			.andExpect(status().isOk())
 			.andExpect(content().string("34"));
+	}
+
+	@Test
+	void putsTheCallerIntoTheLogContext() throws Exception {
+		this.mvc.perform(get("/ws").header("X-Workspace-Id", "12").header("X-User-Id", "34"));
+
+		assertThat(MDC.get("workspaceId")).isEqualTo("12");
+		assertThat(MDC.get("userId")).isEqualTo("34");
+	}
+
+	@Test
+	void userContextPutsOnlyTheUserIntoTheLogContext() throws Exception {
+		this.mvc.perform(get("/me").header("X-User-Id", "34"));
+
+		assertThat(MDC.get("workspaceId")).isNull();
+		assertThat(MDC.get("userId")).isEqualTo("34");
+	}
+
+	@AfterEach
+	void clearLogContext() {
+		MDC.clear();
 	}
 
 	@Test

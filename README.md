@@ -156,6 +156,11 @@ giá trị nó trả về.
   transaction; `changed_fields` được tự tính. Sau mỗi lần ghi có sự kiện `EntityChangedEvent`. `listRecent(workspaceId, entityType, page)` liệt kê mọi version của
   không gian, mới nhất trước (màn hình "hoạt động gần đây"); bảng version cần index
   `(workspace_id, changed_at)` cho việc này.
+- **Log:** mỗi request có một mã: lấy từ header `X-Request-Id` nếu client gửi (chữ, số, `.`, `_`,
+  `-`, tối đa 64 ký tự), không thì tự sinh; trả lại trong cùng header. Mã có trong mọi dòng log của
+  request (`[mã]` ở bản text; `requestId`, `workspaceId`, `userId` ở bản JSON) và trong thuộc tính
+  `requestId` của lỗi 500, nên một lỗi client báo lại lần ngược được về log. Mỗi request để lại một
+  dòng tóm tắt `GET /places/1 -> 200 in 12 ms`, trừ `/actuator`.
 - **Mapper:** `@Mapper(config = PlatformMapperConfig.class)`. Build báo lỗi nếu một trường của
   kiểu đích không được gán.
 - **Cache:** dùng `@Cacheable`; khoá cache luôn có `workspace_id`.

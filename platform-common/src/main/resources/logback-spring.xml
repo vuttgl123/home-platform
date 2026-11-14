@@ -76,8 +76,12 @@
     <!-- ============================================================================
          3. ĐỊNH DẠNG DÒNG LOG (TEXT)
          Thứ tự các trường:
-           thời gian (ISO-8601 kèm múi giờ)  level  PID  [service]  [thread]  [trace]  logger : nội dung
+           thời gian (ISO-8601 kèm múi giờ)  level  PID  [service]  [thread]  [trace]  [mã request]  logger : nội dung
          Stack trace (%wEx) nằm ở các dòng kế tiếp.
+
+         [mã request] là giá trị MDC "requestId" do RequestLogFilter đặt cho từng request (trùng với
+         header X-Request-Id trả cho client); dòng log không thuộc request nào thì là []. Bản JSON
+         mang mọi giá trị MDC, gồm cả requestId, workspaceId, userId.
 
          LOG_CORRELATION_PATTERN do Spring Boot đặt khi service có tracing: lúc đó mỗi dòng
          tự có thêm [traceId-spanId] để lần theo một request qua nhiều service. Chưa có
@@ -87,11 +91,11 @@
          bản ghi để lấy thông tin đó, rất tốn CPU.
          ============================================================================ -->
     <property name="TEXT_CONSOLE_PATTERN"
-              value="%clr(%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}){faint} %clr(%5p){} %clr(${PID:-}){magenta} %clr(--- [${APP_NAME}] [%15.15t] ${LOG_CORRELATION_PATTERN:-}){faint}%clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"/>
+              value="%clr(%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}){faint} %clr(%5p){} %clr(${PID:-}){magenta} %clr(--- [${APP_NAME}] [%15.15t] ${LOG_CORRELATION_PATTERN:-}[%X{requestId:-}] ){faint}%clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"/>
 
     <!-- Giống console nhưng không có mã màu và in đủ tên thread. -->
     <property name="TEXT_FILE_PATTERN"
-              value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p ${PID:-} --- [${APP_NAME}] [%t] ${LOG_CORRELATION_PATTERN:-}%-40.40logger{39} : %m%n%wEx"/>
+              value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p ${PID:-} --- [${APP_NAME}] [%t] ${LOG_CORRELATION_PATTERN:-}[%X{requestId:-}] %-40.40logger{39} : %m%n%wEx"/>
 
     <!-- ============================================================================
          4. APPENDER GHI FILE, DÙNG Ở MỌI PROFILE

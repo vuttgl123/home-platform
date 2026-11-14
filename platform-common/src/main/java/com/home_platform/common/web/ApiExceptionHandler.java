@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -103,12 +104,18 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	/**
 	 * Lỗi không lường trước: ghi đầy đủ vào log, chỉ trả cho client một thông báo chung để
-	 * không lộ chi tiết bên trong.
+	 * không lộ chi tiết bên trong. Client nhận thêm {@code requestId} (nếu request đi qua
+	 * {@link RequestLogFilter}) để báo lại; mã đó có trong mọi dòng log của request.
 	 */
 	@ExceptionHandler(Exception.class)
 	ProblemDetail handleUnexpected(Exception ex) {
 		log.error("Unhandled exception", ex);
-		return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
+		String requestId = MDC.get(RequestLogFilter.REQUEST_ID);
+		if (requestId != null) {
+			problem.setProperty(RequestLogFilter.REQUEST_ID, requestId);
+		}
+		return problem;
 	}
 
 	private static Map<String, Object> error(String field, String message) {

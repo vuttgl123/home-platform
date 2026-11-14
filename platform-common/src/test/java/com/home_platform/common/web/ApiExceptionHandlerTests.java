@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
@@ -62,6 +63,19 @@ class ApiExceptionHandlerTests {
 			.andExpect(jsonPath("$.status").value(500))
 			.andExpect(jsonPath("$.detail").value("Unexpected error"))
 			.andExpect(content().string(not(containsString("internal detail"))));
+	}
+
+	@Test
+	void unexpectedErrorCarriesTheRequestId() throws Exception {
+		MDC.put("requestId", "r-1");
+		try {
+			this.mvc.perform(get("/boom"))
+				.andExpect(status().isInternalServerError())
+				.andExpect(jsonPath("$.requestId").value("r-1"));
+		}
+		finally {
+			MDC.clear();
+		}
 	}
 
 	@Test
