@@ -8,6 +8,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -81,6 +82,29 @@ public class PlaceService {
 		return this.repository.findById(workspaceId, id).isPresent();
 	}
 
+	/**
+	 * Như {@link #get}, và giữ địa điểm tới hết transaction: không lệnh nào xoá hay di chuyển nó
+	 * được. Lệnh sắp ghi một thứ nằm trong địa điểm (địa điểm con, món đồ, cư trú) gọi hàm này
+	 * thay cho {@link #get}, để lệnh xoá hoặc di chuyển chạy cùng lúc không chen vào giữa.
+	 * @throws NotFoundException nếu không có hoặc đã xoá
+	 */
+	public Place getForShare(long workspaceId, long id) {
+		return findForShare(workspaceId, id).orElseThrow(() -> NotFoundException.of("Place", id));
+	}
+
+	/** Như {@link #getForShare}, trả rỗng thay vì ném lỗi khi địa điểm không có hoặc đã xoá. */
+	public Optional<Place> findForShare(long workspaceId, long id) {
+		return this.repository.findByIdForShare(workspaceId, id);
+	}
+
+	/**
+	 * Giữ riêng địa điểm tới hết transaction, trước khi kiểm tra rồi ghi chính nó. Phải là câu đầu
+	 * tiên của lệnh: các câu đếm chạy sau đó mới thấy mọi thứ đã commit vào địa điểm này.
+	 */
+	private Place lockForChange(long workspaceId, long id) {
+		return this.repository.findByIdForUpdate(workspaceId, id).orElseThrow(() -> NotFoundException.of("Place", id));
+	}
+
 	/** Tên của các địa điểm (kể cả đã xoá) theo {@code id}; id không có thì không có trong kết quả. */
 	public Map<Long, String> names(long workspaceId, List<Long> ids) {
 		return this.repository.refs(workspaceId, ids)
@@ -108,14 +132,16 @@ public class PlaceService {
 	 */
 	@Transactional
 	public Place move(WorkspaceContext ctx, long id, PlaceMoveRequest request) {
-		Place current = get(ctx.workspaceId(), id);
+		Place current = lockForChange(ctx.workspaceId(), id);
 		if (current.version() != request.version()) {
 			throw new ConflictException("Place " + id + " was changed by someone else");
 		}
 		if (Objects.equals(request.parentId(), current.parentId())) {
 			return current;
 		}
-		Place parent = (request.parentId() != null) ? get(ctx.workspaceId(), request.parentId()) : null;
+		// Giữ cha mới: path của nó (tức cả chuỗi tổ tiên) không đổi được cho tới khi lệnh này xong,
+		// nên hai lệnh chuyển chéo nhau không thể cùng qua bước kiểm tra vòng bên dưới.
+		Place parent = (request.parentId() != null) ? getForShare(ctx.workspaceId(), request.parentId()) : null;
 		if (parent != null && parent.path().startsWith(current.path())) {
 			throw new ConflictException("A place cannot be moved into itself or its descendants");
 		}
@@ -138,7 +164,7 @@ public class PlaceService {
 	 */
 	@Transactional
 	public void delete(WorkspaceContext ctx, long id, int version, String note) {
-		get(ctx.workspaceId(), id);
+		lockForChange(ctx.workspaceId(), id);
 		int children = this.repository.countChildren(ctx.workspaceId(), id);
 		int occupancies = this.repository.countCurrentOccupancies(ctx.workspaceId(), id, this.businessDate.today());
 		int items = this.repository.countCurrentItems(ctx.workspaceId(), id);
@@ -159,7 +185,7 @@ public class PlaceService {
 		Place deleted = this.repository.findByIdIncludingDeleted(ctx.workspaceId(), id)
 			.orElseThrow(() -> NotFoundException.of("Place", id));
 		if (deleted.deletedAt() != null && deleted.parentId() != null
-				&& this.repository.findById(ctx.workspaceId(), deleted.parentId()).isEmpty()) {
+				&& findForShare(ctx.workspaceId(), deleted.parentId()).isEmpty()) {
 			throw new ConflictException("Restore the parent place " + deleted.parentId() + " first");
 		}
 		Place stored = this.repository.restore(ctx, id, request.version());
@@ -306,7 +332,7 @@ public class PlaceService {
 
 	@Transactional
 	public Place create(WorkspaceContext ctx, PlaceCreateRequest request) {
-		Place parent = (request.parentId() != null) ? get(ctx.workspaceId(), request.parentId()) : null;
+		Place parent = (request.parentId() != null) ? getForShare(ctx.workspaceId(), request.parentId()) : null;
 		int depth = (parent != null) ? parent.depth() + 1 : 0;
 		if (depth > Place.MAX_DEPTH) {
 			throw tooDeep();
