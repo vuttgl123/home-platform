@@ -3,6 +3,7 @@ package com.home_platform.registry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +11,11 @@ import com.home_platform.common.history.EntityHistory;
 import com.home_platform.common.web.ConflictException;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.common.web.NotFoundException;
+import com.home_platform.registry.fielddef.AttributeValidation;
+import com.home_platform.registry.fielddef.FieldDataType;
+import com.home_platform.registry.fielddef.FieldDefCreateRequest;
+import com.home_platform.registry.fielddef.FieldDefService;
+import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.item.Item;
 import com.home_platform.registry.item.ItemRequest;
 import com.home_platform.registry.item.ItemService;
@@ -58,6 +64,12 @@ class ConcurrentWritesIT extends CommittedDataIT {
 
 	@Autowired
 	BusinessDate businessDate;
+
+	@Autowired
+	FieldDefService fieldDefs;
+
+	@Autowired
+	AttributeValidation attributeValidation;
 
 	long type;
 
@@ -221,6 +233,26 @@ class ConcurrentWritesIT extends CommittedDataIT {
 			.isInstanceOfSatisfying(ConflictException.class, ex -> assertThat(ex.getBody().getDetail())
 				.isEqualTo("Another person already has this document"));
 		assertThat(rows("reg_person")).isEqualTo(1);
+	}
+
+	/**
+	 * Một transaction đã chốt snapshot, rồi danh mục đổi và commit, rồi transaction đó mới nạp cache:
+	 * cache phải nhận bản mới, không phải bản của snapshot cũ.
+	 */
+	@Test
+	void catalogChangeCommittedMidTransactionIsNotCachedStale() throws Exception {
+		long room = place(null, "P101");
+		Map<String, Object> floor = Map.of("floor_no", 3);
+
+		inTransaction(() -> {
+			this.places.get(WS, room); // SELECT thường: chốt snapshot của transaction này
+			inBackground(() -> this.fieldDefs.create(CTX, new FieldDefCreateRequest(FieldTarget.PLACE, 0L, "floor_no",
+					"Tầng", FieldDataType.NUMBER, null, false, 10)))
+				.get();
+			return this.attributeValidation.validate(WS, FieldTarget.PLACE, this.type, floor);
+		});
+
+		assertThat(this.attributeValidation.validate(WS, FieldTarget.PLACE, this.type, floor)).containsEntry("floor_no", 3);
 	}
 
 	private long place(Long parentId, String name) {

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.home_platform.common.jdbc.RepositorySupport;
 import com.home_platform.common.jdbc.WorkspaceRepository;
+import com.home_platform.registry.catalog.CatalogCache;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -15,9 +16,13 @@ public class FieldDefRepository extends WorkspaceRepository<FieldDef> {
 		super(support, "reg_field_def", FieldDef.class);
 	}
 
-	/** Mọi mục của không gian, mọi đích, mọi trạng thái. */
+	/**
+	 * Mọi mục của không gian, mọi đích, mọi trạng thái. Là nguồn nạp cache nên đọc bản đã commit
+	 * mới nhất ({@link CatalogCache#LATEST_COMMITTED}).
+	 */
 	public List<FieldDef> listAll(long workspaceId) {
-		return jdbc().sql("SELECT " + columns() + " FROM reg_field_def WHERE workspace_id = :workspaceId" + ORDER)
+		return jdbc().sql("SELECT " + columns() + " FROM reg_field_def WHERE workspace_id = :workspaceId" + ORDER
+				+ CatalogCache.LATEST_COMMITTED)
 			.param("workspaceId", workspaceId)
 			.query(rowMapper())
 			.list();

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.home_platform.common.jdbc.RepositorySupport;
 import com.home_platform.common.jdbc.WorkspaceRepository;
+import com.home_platform.registry.catalog.CatalogCache;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -13,10 +14,13 @@ public class ItemCategoryRepository extends WorkspaceRepository<ItemCategory> {
 		super(support, "reg_item_category", ItemCategory.class);
 	}
 
-	/** Mọi nhóm của không gian, mọi trạng thái, theo thứ tự hiển thị rồi tên. */
+	/**
+	 * Mọi nhóm của không gian, mọi trạng thái, theo thứ tự hiển thị rồi tên. Là nguồn nạp cache nên
+	 * đọc bản đã commit mới nhất ({@link CatalogCache#LATEST_COMMITTED}).
+	 */
 	public List<ItemCategory> listAll(long workspaceId) {
 		return jdbc().sql("SELECT " + columns() + " FROM reg_item_category WHERE workspace_id = :workspaceId "
-				+ "ORDER BY sort_order, name, id")
+				+ "ORDER BY sort_order, name, id" + CatalogCache.LATEST_COMMITTED)
 			.param("workspaceId", workspaceId)
 			.query(rowMapper())
 			.list();
