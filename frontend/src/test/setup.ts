@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
 
-import { setCurrentUser } from '@/api'
+import { sessionStore } from '@/app/session/sessionStore'
 
 import { server } from './server'
 
@@ -13,8 +13,9 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => {
   cleanup()
   server.resetHandlers()
+  server.events.removeAllListeners()
+  sessionStore.signOut()
   localStorage.clear()
-  setCurrentUser(null)
 })
 
 afterAll(() => server.close())

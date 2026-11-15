@@ -1,0 +1,54 @@
+// Dữ liệu mẫu cho test, đúng dạng backend trả về: đủ mọi khoá, trường trống là null.
+import type { PlaceType } from '@/features/catalog'
+import type { User } from '@/features/users'
+import type { Workspace } from '@/features/workspaces'
+
+const AT = '2026-11-01T02:00:00Z'
+
+export function page<T>(items: T[], nextCursor: string | null = null) {
+  return { items, nextCursor }
+}
+
+/** Thân của một response lỗi dạng Problem Details. */
+export function problem(status: number, detail: string, errors?: { field: string | null; message: string }[]) {
+  return { status, title: 'Error', detail, instance: '/', ...(errors ? { errors } : {}) }
+}
+
+export function user(overrides: Partial<User> = {}): User {
+  return {
+    id: '42',
+    email: 'an@example.com',
+    displayName: 'An',
+    status: 'ACTIVE',
+    createdAt: AT,
+    updatedAt: AT,
+    ...overrides,
+  }
+}
+
+export function workspace(overrides: Partial<Workspace> = {}): Workspace {
+  return {
+    id: '7',
+    name: 'Nhà An',
+    status: 'ACTIVE',
+    ownerUserId: '42',
+    role: 'OWNER',
+    createdAt: AT,
+    updatedAt: AT,
+    ...overrides,
+  }
+}
+
+export function placeType(overrides: Partial<PlaceType> = {}): PlaceType {
+  return {
+    id: '100',
+    code: 'BUILDING',
+    name: 'Toà nhà',
+    description: null,
+    sortOrder: 10,
+    status: 'ACTIVE',
+    createdAt: AT,
+    updatedAt: AT,
+    ...overrides,
+  }
+}

@@ -121,6 +121,7 @@ export function createQueryClient(): QueryClient
 	// quay lại cửa sổ); query thử lại 1 lần với lỗi mạng và 5xx, không thử lại 4xx; mutation không thử lại
 ```
 
+  - `vite.config.ts` tách thư viện thành gói riêng (`react`, `vendor`) để không gói nào vượt 500 kB và cache của thư viện sống qua các lần phát hành.
   - `scripts/api-sync.mjs`: tải `http://localhost:8081/v3/api-docs` và `http://localhost:8082/v3/api-docs` vào `src/api/schema/*.json` (ghi lại bằng `JSON.stringify(doc, null, 2)`, bỏ `servers`), rồi chạy `openapi-typescript` cho từng file ra `*.d.ts`. Script `"api:sync"`. Script `"api:types"` chỉ sinh `.d.ts` từ JSON đã có.
   - Lấy JSON lần đầu: build và chạy `identity-service`, `registry-service` bằng jar, chạy `npm run api:sync`. Commit cả JSON và `.d.ts`.
   - `baseUrl` phải tuyệt đối: `openapi-fetch` tự tạo `Request`, và `Request` của Node (dùng trong test) không nhận URL tương đối. Client nhận `fetch: (request) => globalThis.fetch(request)`: mặc định `openapi-fetch` giữ lại `fetch` lúc tạo client, tức là trước khi MSW thay nó, nên request trong test sẽ lọt ra mạng.
@@ -138,7 +139,7 @@ export function createQueryClient(): QueryClient
 
 ### Task 3: Phiên, router, khung trang, không gian
 
-**Files:** `frontend/src/app/{router.tsx,App.tsx}`, `frontend/src/app/session/{sessionStore.ts,useSession.ts,RequireUser.tsx,LoginPage.tsx}`, `frontend/src/app/layout/{StartPage.tsx,AppLayout.tsx,WorkspaceSwitcher.tsx,UserMenu.tsx,WorkspaceHomePage.tsx,NotFoundPage.tsx,ComingSoonPage.tsx}`, `frontend/src/features/users/{api.ts,queries.ts,types.ts,index.ts}`, `frontend/src/features/workspaces/{api.ts,queries.ts,types.ts,index.ts,components/CreateWorkspaceDialog.tsx}`, `frontend/src/features/catalog/{api.ts,queries.ts,types.ts,index.ts}`, `frontend/src/components/common/{ErrorState.tsx,FormError.tsx}`; hoàn thiện `src/test/render.tsx`, tạo `src/test/fixtures.ts`; test `frontend/src/app/*.test.tsx`, `frontend/src/features/workspaces/*.test.tsx`.
+**Files:** `frontend/src/app/{router.tsx,App.tsx}`, `frontend/src/app/session/{sessionStore.ts,useSession.ts,RequireUser.tsx,LoginPage.tsx}`, `frontend/src/app/layout/{StartPage.tsx,AppLayout.tsx,WorkspaceSwitcher.tsx,UserMenu.tsx,WorkspaceHomePage.tsx,NotFoundPage.tsx,ComingSoonPage.tsx}`, `frontend/src/features/users/{api.ts,queries.ts,types.ts,index.ts}`, `frontend/src/features/workspaces/{api.ts,queries.ts,types.ts,index.ts,components/CreateWorkspaceDialog.tsx}`, `frontend/src/features/catalog/{api.ts,queries.ts,types.ts,index.ts}`, `frontend/src/components/common/{ErrorState.tsx,FormError.tsx,TextField.tsx}`, `frontend/src/features/workspaces/components/WorkspaceForm.tsx` (form dùng chung cho hộp thoại và trang "Tạo không gian đầu tiên"); hoàn thiện `src/test/render.tsx`, tạo `src/test/fixtures.ts`; test `frontend/src/app/*.test.tsx`, `frontend/src/features/workspaces/*.test.tsx`.
 
 **Interfaces:**
 - Consumes: `@/api` (Task 2).
@@ -174,7 +175,7 @@ export function useSetupWorkspace(ws: string): UseMutationResult<void, ApiError,
 ```
 
   - Route: `/` `StartPage`; `/w/:workspaceId` `RequireUser` › `AppLayout` (thanh bên + `Outlet`) với con: index `WorkspaceHomePage`, `places/:placeId` (Task 5; ở task này là `ComingSoonPage`), `people`, `catalog`, `activity` (`ComingSoonPage` "Sắp có"), `*` `NotFoundPage`; ngoài cùng `*` `NotFoundPage`.
-  - `RequireUser`: chưa có `userId` → `<Navigate to="/" state={{ from }}>`; đăng nhập xong quay lại `from`.
+  - `RequireUser`: chưa có `userId` → `<Navigate to="/" state={{ from }}>`. `from` chỉ được nhớ khi mở trang lúc chưa chọn người dùng; đang dùng mà "Đổi người dùng" thì không nhớ (trang đang xem thuộc về người cũ). Vào xong, `StartPage` là nơi duy nhất quyết định đi tiếp: về `from` nếu có, không thì vào một không gian (hai lệnh điều hướng đặt ở hai component sẽ đua nhau).
   - `StartPage`: chưa có người dùng → `LoginPage`. Đã có → về không gian dùng lần trước (`localStorage 'hp.lastWorkspaceId'`, nếu còn trong danh sách), không thì không gian đầu tiên; chưa có không gian nào → form "Tạo không gian đầu tiên".
   - `LoginPage`: hai phần "Tạo người dùng" (email, tên hiển thị → `POST /users`; 409 → "Email này đã có người dùng") và "Tôi đã có id" (ô nhập id → kiểm tra; 404 → "Không tìm thấy người dùng").
   - `AppLayout`: `Sidebar` của shadcn; trên cùng `WorkspaceSwitcher` (tên không gian, danh sách để chuyển, "Tạo không gian"), giữa là chỗ cho cây (Task 4), cuối là liên kết Người, Danh mục, Hoạt động và `UserMenu` (tên hiển thị, "Đổi người dùng"). `workspaceId` trên URL không có trong `useMyWorkspaces()` → cả trang là "Không tìm thấy không gian" kèm liên kết về `/`, không gọi registry. `GET /users/me` trả 404 (id đã lưu không còn) → `signOut`.

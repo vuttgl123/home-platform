@@ -22,6 +22,20 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        // Thư viện đổi ít hơn code của ứng dụng: tách riêng để trình duyệt giữ được cache của
+        // chúng qua các lần phát hành.
+        codeSplitting: {
+          groups: [
+            { name: "react", test: /node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/, priority: 2 },
+            { name: "vendor", test: /node_modules[\\/]/, priority: 1 },
+          ],
+        },
+      },
+    },
+  },
   server: {
     // Trong lúc phát triển, trình duyệt gọi ba service qua cùng origin với trang.
     proxy: {
