@@ -19,6 +19,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { Spinner } from '@/components/ui/spinner'
+import { PlaceTree } from '@/features/places'
 import { useCurrentUser } from '@/features/users'
 import { useMyWorkspaces } from '@/features/workspaces'
 
@@ -104,7 +105,10 @@ export function AppLayout() {
         <SidebarHeader>
           <WorkspaceSwitcher workspaces={workspaces.data} current={current} />
         </SidebarHeader>
-        <SidebarContent>{/* Cây địa điểm: Task 4. */}</SidebarContent>
+        <SidebarContent>
+          {/* `key`: đổi không gian thì cây bắt đầu lại, không giữ các nhánh đã mở của không gian cũ. */}
+          <PlaceTree key={current.id} workspaceId={current.id} />
+        </SidebarContent>
         <SidebarSeparator />
         <SidebarFooter>
           <SidebarMenu>

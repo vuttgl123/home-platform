@@ -1,5 +1,6 @@
 // Dữ liệu mẫu cho test, đúng dạng backend trả về: đủ mọi khoá, trường trống là null.
 import type { PlaceType } from '@/features/catalog'
+import type { PlaceDetail, PlaceSummary } from '@/features/places'
 import type { User } from '@/features/users'
 import type { Workspace } from '@/features/workspaces'
 
@@ -49,6 +50,47 @@ export function placeType(overrides: Partial<PlaceType> = {}): PlaceType {
     status: 'ACTIVE',
     createdAt: AT,
     updatedAt: AT,
+    ...overrides,
+  }
+}
+
+export function place(overrides: Partial<PlaceSummary> = {}): PlaceSummary {
+  return {
+    id: '1',
+    parentId: null,
+    placeTypeId: '100',
+    code: null,
+    name: 'Toà A',
+    status: 'ACTIVE',
+    depth: 0,
+    coverFileId: null,
+    version: 1,
+    ...overrides,
+  }
+}
+
+export function placeDetail(overrides: Partial<PlaceDetail> = {}): PlaceDetail {
+  return {
+    id: '1',
+    parentId: null,
+    placeTypeId: '100',
+    path: '/1/',
+    depth: 0,
+    code: null,
+    name: 'Toà A',
+    description: null,
+    status: 'ACTIVE',
+    attributes: null,
+    coverFileId: null,
+    createdAt: AT,
+    createdBy: '42',
+    updatedAt: AT,
+    updatedBy: '42',
+    version: 1,
+    deletedAt: null,
+    ancestors: [],
+    address: null,
+    effectiveAddress: null,
     ...overrides,
   }
 }

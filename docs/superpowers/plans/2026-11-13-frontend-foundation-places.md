@@ -227,7 +227,11 @@ export const placeKeys = {
 export function useChildren(ws: string, parentId: string | null, options?: { enabled?: boolean }): CursorList<PlaceSummary>
 export function usePlace(ws: string, id: string | undefined): UseQueryResult<PlaceDetail, ApiError>   // id sai dạng: không gọi
 export function usePlaceSearch(ws: string, name: string): CursorList<PlaceSummary>                    // name rỗng: không gọi
-export function isId(value: string | undefined): value is string                                      // /^\d+$/
+export function PlaceTree(props: { workspaceId: string }): JSX.Element   // không gian là prop: feature không nhập gì từ app/
+// routes.ts
+export function placeUrl(ws: string, placeId: string): string           // '/w/<ws>/places/<id>'
+// src/lib/ids.ts (dùng chung, không riêng gì địa điểm)
+export function isId(value: string | null | undefined): value is string // /^\d+$/
 ```
 
   - Cây: cấp cao nhất là `useChildren(ws, null)`; mỗi nút chỉ tải con khi được mở (`enabled`); dòng "Tải thêm" khi `hasMore`. Nút đang chọn theo `placeId` trên URL mang `aria-current="page"`. Bấm tên → `/w/<ws>/places/<id>`; bấm mũi tên → mở hoặc đóng.
