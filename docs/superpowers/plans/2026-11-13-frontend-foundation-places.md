@@ -110,7 +110,7 @@ export type Present<T, K extends keyof T> = { [P in K]-?: NonNullable<T[P]> } & 
 export type CursorPage<T> = { items: T[]; nextCursor: string | null }
 
 // paging.ts
-export type CursorList<T> = { items: T[]; hasMore: boolean; loadMore: () => void; isLoading: boolean; isLoadingMore: boolean; error: ApiError | null; refetch: () => void }
+export type CursorList<T> = { items: T[]; hasMore: boolean; loadMore: () => void; isLoading: boolean; isLoadingMore: boolean; isLoaded: boolean; error: ApiError | null; refetch: () => void }
 export function useCursorList<T extends { id: string }>(options: { queryKey: QueryKey; fetchPage: (cursor?: string) => Promise<CursorPage<T>>; enabled?: boolean }): CursorList<T>
 	// dựng trên useInfiniteQuery; items là các trang nối lại, một id chỉ giữ lần xuất hiện đầu
 export async function fetchAllPages<T>(fetchPage: (cursor?: string) => Promise<CursorPage<T>>): Promise<T[]>
@@ -123,7 +123,7 @@ export function createQueryClient(): QueryClient
 
   - `scripts/api-sync.mjs`: tải `http://localhost:8081/v3/api-docs` và `http://localhost:8082/v3/api-docs` vào `src/api/schema/*.json` (ghi lại bằng `JSON.stringify(doc, null, 2)`, bỏ `servers`), rồi chạy `openapi-typescript` cho từng file ra `*.d.ts`. Script `"api:sync"`. Script `"api:types"` chỉ sinh `.d.ts` từ JSON đã có.
   - Lấy JSON lần đầu: build và chạy `identity-service`, `registry-service` bằng jar, chạy `npm run api:sync`. Commit cả JSON và `.d.ts`.
-  - `baseUrl` phải tuyệt đối: `openapi-fetch` tự tạo `Request`, và `Request` của Node (dùng trong test) không nhận URL tương đối.
+  - `baseUrl` phải tuyệt đối: `openapi-fetch` tự tạo `Request`, và `Request` của Node (dùng trong test) không nhận URL tương đối. Client nhận `fetch: (request) => globalThis.fetch(request)`: mặc định `openapi-fetch` giữ lại `fetch` lúc tạo client, tức là trước khi MSW thay nó, nên request trong test sẽ lọt ra mạng.
 
 - [ ] Test:
   - `readsFieldErrors`: body `{status:400, detail:'Invalid request content.', errors:[{field:'name', message:'must not be blank'}, {field:'name', message:'size must be between 0 and 255'}, {field:null, message:'bad object'}]}` → `fieldErrors.name === 'must not be blank; size must be between 0 and 255'`, `formErrors` là `['bad object']`.

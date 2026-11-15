@@ -3,6 +3,8 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
 
+import { setCurrentUser } from '@/api'
+
 import { server } from './server'
 
 // Request không có handler là lỗi của test, không được lặng lẽ đi ra mạng.
@@ -12,6 +14,7 @@ afterEach(() => {
   cleanup()
   server.resetHandlers()
   localStorage.clear()
+  setCurrentUser(null)
 })
 
 afterAll(() => server.close())
