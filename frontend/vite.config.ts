@@ -3,20 +3,31 @@ import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
+/** Chuyển `/api/<service>/...` tới service ở `port`, bỏ tiền tố. */
+function service(name: string, port: number) {
+  const prefix = `/api/${name}`
+  return {
+    [prefix]: {
+      target: `http://localhost:${port}`,
+      rewrite: (requestPath: string) => requestPath.slice(prefix.length),
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
   server: {
-    // Same-origin calls to the three services during dev; the prefix is stripped.
+    // Trong lúc phát triển, trình duyệt gọi ba service qua cùng origin với trang.
     proxy: {
-      "/api/identity": { target: "http://localhost:8081", rewrite: (p) => p.replace(/^\/api\/identity/, "") },
-      "/api/authz": { target: "http://localhost:8082", rewrite: (p) => p.replace(/^\/api\/authz/, "") },
-      "/api/audit": { target: "http://localhost:8083", rewrite: (p) => p.replace(/^\/api\/audit/, "") },
+      ...service("identity", 8081),
+      ...service("registry", 8082),
+      ...service("media", 8083),
     },
   },
 })
