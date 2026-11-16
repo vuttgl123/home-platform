@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import type { UseFormReturn } from 'react-hook-form'
+import { Controller, type UseFormReturn } from 'react-hook-form'
 
 import { TextField } from '@/components/common/TextField'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -41,14 +41,22 @@ export function ItemFields({
     <FieldGroup className="gap-4">
       <Field>
         <FieldLabel htmlFor={categoryId}>Nhóm</FieldLabel>
-        <NativeSelect id={categoryId} className="w-full" {...form.register('categoryId')}>
-          <NativeSelectOption value="">Không nhóm</NativeSelectOption>
-          {categories.map((category) => (
-            <NativeSelectOption key={category.id} value={category.id}>
-              {category.status === 'ARCHIVED' ? `${category.name} (đã lưu trữ)` : category.name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+        {/* Có điều khiển: danh sách nhóm thường tải xong sau khi form dựng; ô không điều khiển
+            sẽ rơi về "Không nhóm" và gửi đi giá trị đó. */}
+        <Controller
+          name="categoryId"
+          control={form.control}
+          render={({ field }) => (
+            <NativeSelect id={categoryId} className="w-full" {...field}>
+              <NativeSelectOption value="">Không nhóm</NativeSelectOption>
+              {categories.map((category) => (
+                <NativeSelectOption key={category.id} value={category.id}>
+                  {category.status === 'ARCHIVED' ? `${category.name} (đã lưu trữ)` : category.name}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          )}
+        />
       </Field>
       <TextField label="Tên" required autoComplete="off" error={errors.name?.message} {...form.register('name')} />
       <div className="grid gap-4 sm:grid-cols-3">

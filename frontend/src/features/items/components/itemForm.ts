@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { formatDate } from '@/lib/format'
 import { attributeDefaults, attributeErrors, attributePayload, type AttributeFormValues, type FieldDef } from '@/features/catalog'
 
 import type { ItemBody, ItemDetail, ItemStatus } from '../types'
@@ -88,4 +89,11 @@ export function itemPayload(
     description: or(values.description),
     attributes: attributePayload(defs, values.attributes, stored?.attributes ?? null) ?? undefined,
   }
+}
+
+/** Lỗi của một ngày gỡ: trống, hoặc trước ngày đặt. `null` nếu hợp lệ. */
+export function removalDateError(date: string, item: ItemDetail): string | null {
+  if (date === '') return 'Chọn ngày gỡ'
+  if (item.placedAt && date < item.placedAt) return `Không được trước ngày đặt (${formatDate(item.placedAt)})`
+  return null
 }

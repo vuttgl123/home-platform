@@ -1,4 +1,5 @@
 export { PlaceItemsTab } from './components/PlaceItemsTab'
 export { ITEM_STATUS_LABEL } from './labels'
+export { ItemPage } from './pages/ItemPage'
 export { itemKeys, useItem } from './queries'
 export type { ItemDetail, ItemStatus, ItemSummary } from './types'

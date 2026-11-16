@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import { MemoryRouter } from 'react-router'
 import { expect, test } from 'vitest'
 
@@ -141,4 +141,28 @@ test('versionConflictKeepsTypedValues', async () => {
 
   await waitFor(() => expect(form.getByRole('textbox', { name: 'Mô tả' })).toHaveValue('Mới bảo trì'))
   expect(form.getByRole('textbox', { name: 'Tên' })).toHaveValue('Tủ lạnh Toshiba')
+})
+
+test('editKeepsTheCategoryWhenCategoriesLoadLate', async () => {
+  const backend = mockItemBackend({ items: [{ id: '900', name: 'Tủ lạnh', categoryId: '600' }] })
+  setCurrentUser('42')
+  mockCatalog()
+  server.use(
+    http.get('/api/registry/item-categories', async () => {
+      await delay(150)
+      return HttpResponse.json([itemCategory({ id: '600', name: 'Nội thất' })])
+    }),
+  )
+  const { user } = renderWithProviders(
+    <MemoryRouter>
+      <ItemFormDialog ws="7" mode="edit" item={backend.items.get('900')!} open onOpenChange={() => {}} />
+    </MemoryRouter>,
+  )
+  const form = within(await screen.findByRole('dialog', { name: 'Sửa món đồ' }))
+
+  await waitFor(() => expect(form.getByRole('combobox', { name: 'Nhóm' })).toHaveValue('600'))
+  await user.click(form.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).toMatchObject({ categoryId: '600' })
 })

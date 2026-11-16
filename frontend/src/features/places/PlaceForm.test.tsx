@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { fieldDef, placeType, problem } from '@/test/fixtures'
@@ -241,4 +241,28 @@ test('renameReachesDescendantBreadcrumbs', async () => {
 
   const newTrail = within(await (await main()).findByRole('navigation', { name: 'Đường dẫn' }))
   expect(await newTrail.findByRole('link', { name: 'Toà Alpha' })).toBeInTheDocument()
+})
+
+test('suggestedTypeArrivesWhenTypesLoadLate', async () => {
+  const backend = setUp()
+  server.use(
+    http.get('/api/registry/place-types', async () => {
+      await delay(150)
+      return HttpResponse.json(types)
+    }),
+    http.get('/api/registry/people', () => HttpResponse.json({ items: [], nextCursor: null })),
+  )
+  // Trang Người không tải loại địa điểm trước.
+  const { user } = renderApp({ route: '/w/7/people', userId: '42' })
+  const tree = within(await screen.findByRole('navigation', { name: 'Cây địa điểm' }))
+
+  await user.click(await tree.findByRole('button', { name: 'Thêm địa điểm' }))
+
+  const form = await dialog('Thêm địa điểm')
+  await waitFor(() => expect(form.getByRole('combobox', { name: 'Loại' })).toHaveValue('100'))
+  // Ô chọn hiện "Toà nhà" thì giá trị gửi đi cũng phải là nó.
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Toà C')
+  await user.click(form.getByRole('button', { name: 'Thêm' }))
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).toMatchObject({ placeTypeId: '100' })
 })
