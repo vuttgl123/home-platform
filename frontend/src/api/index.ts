@@ -1,7 +1,7 @@
 export { identity, registry, unwrap } from './client'
 export type { IdentitySchemas, RegistrySchemas } from './client'
 export { ApiError } from './errors'
-export { setCurrentUser, userHeaders, workspaceHeaders } from './headers'
+export { currentUserId, setCurrentUser, userHeaders, workspaceHeaders } from './headers'
 export { fetchAllPages, useCursorList } from './paging'
 export type { CursorList } from './paging'
 export { createQueryClient } from './queryClient'
