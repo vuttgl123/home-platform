@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 
+import { deletedToast } from '@/components/common/deletedToast'
 import { FormError } from '@/components/common/FormError'
 import { VersionConflictAlert } from '@/components/common/VersionConflictAlert'
 import {
@@ -14,9 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { toast } from '@/components/ui/toast'
 
-import { forgetPlace, useDeletePlace, useFetchFreshPlace } from '../queries'
+import { forgetPlace, undoDeletePlace, useDeletePlace, useFetchFreshPlace } from '../queries'
 import { placeUrl } from '../routes'
 import type { PlaceDetail } from '../types'
 
@@ -45,7 +45,13 @@ export function DeletePlaceDialog({
   function confirm() {
     remove.mutate(place, {
       onSuccess: async () => {
-        toast.add({ title: `Đã xoá ${place.name}`, type: 'success' })
+        deletedToast({
+          name: place.name,
+          undo: async () => {
+            await undoDeletePlace(queryClient, ws, place.id, place.version)
+            await navigate(placeUrl(ws, place.id))
+          },
+        })
         onOpenChange(false)
         // Rời trang của nó trước rồi mới bỏ khỏi cache, để trang đang mở không tải lại nó.
         await navigate(place.parentId ? placeUrl(ws, place.parentId) : `/w/${ws}`)

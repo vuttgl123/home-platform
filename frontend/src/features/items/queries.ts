@@ -179,6 +179,13 @@ export function useDeleteItem(ws: string) {
   })
 }
 
+/** "Hoàn tác" sau khi xoá một món: khôi phục với `version` lúc xoá cộng 1. */
+export async function undoDeleteItem(queryClient: QueryClient, ws: string, id: string, deletedVersion: number): Promise<ItemDetail> {
+  const restored = await restoreItem(ws, id, deletedVersion + 1)
+  refreshItems(queryClient, ws, restored)
+  return restored
+}
+
 /** Bỏ xoá một món nhập nhầm đã xoá. */
 export function useRestoreItem(ws: string) {
   const queryClient = useQueryClient()

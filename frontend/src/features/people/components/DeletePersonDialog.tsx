@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 
+import { deletedToast } from '@/components/common/deletedToast'
 import { FormError } from '@/components/common/FormError'
 import { VersionConflictAlert } from '@/components/common/VersionConflictAlert'
 import {
@@ -14,9 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { toast } from '@/components/ui/toast'
 
-import { forgetPerson, useDeletePerson, useFetchFreshPerson } from '../queries'
+import { forgetPerson, undoDeletePerson, useDeletePerson, useFetchFreshPerson } from '../queries'
 import type { PersonDetail } from '../types'
 
 /** Hỏi lại trước khi xoá hồ sơ; chỉ xoá được khi người đó không còn đang ở hay sắp đến ở đâu. */
@@ -41,7 +41,13 @@ export function DeletePersonDialog({
   function confirm() {
     remove.mutate(person, {
       onSuccess: async () => {
-        toast.add({ title: `Đã xoá ${person.fullName}`, type: 'success' })
+        deletedToast({
+          name: person.fullName,
+          undo: async () => {
+            await undoDeletePerson(queryClient, ws, person.id, person.version)
+            await navigate(`/w/${ws}/people/${person.id}`)
+          },
+        })
         onOpenChange(false)
         // Rời trang của họ trước rồi mới bỏ khỏi cache, để trang đang mở không tải lại họ.
         await navigate(`/w/${ws}/people`)

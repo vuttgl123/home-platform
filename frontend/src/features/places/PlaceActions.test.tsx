@@ -318,3 +318,34 @@ test('reissueConflictOffersToReload', async () => {
 
   expect(await dialog.findByRole('button', { name: 'Tải bản mới' })).toBeInTheDocument()
 })
+
+test('undoRestoresTheDeletedPlaceAndReturnsToIt', async () => {
+  const backend = setUp()
+  const { user, dialog, router } = await openAction('302', 'Xoá', 'Xoá P302?')
+  await user.click(dialog.getByRole('button', { name: 'Xoá' }))
+  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/places/13'))
+
+  await user.click(await screen.findByRole('button', { name: 'Hoàn tác' }))
+
+  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/places/302'))
+  expect(backend.writes.at(-1)).toEqual({ method: 'POST', path: '/places/302/restore', body: { version: 2 } })
+  expect(await screen.findByText('Đã khôi phục P302')).toBeInTheDocument()
+  expect(await (await main()).findByRole('heading', { name: 'P302' })).toBeInTheDocument()
+})
+
+test('undoAfterSomeoneElseChangedItSaysSo', async () => {
+  setUp()
+  const { user, dialog, router } = await openAction('302', 'Xoá', 'Xoá P302?')
+  await user.click(dialog.getByRole('button', { name: 'Xoá' }))
+  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/places/13'))
+  server.use(
+    http.post('/api/registry/places/302/restore', () =>
+      HttpResponse.json({ ...problem(409, 'Place 302 was changed by someone else'), code: 'VERSION_CONFLICT' }, { status: 409 }),
+    ),
+  )
+
+  await user.click(await screen.findByRole('button', { name: 'Hoàn tác' }))
+
+  expect(await screen.findByText('Không hoàn tác được: bản ghi đã thay đổi')).toBeInTheDocument()
+  expect(router.state.location.pathname).toBe('/w/7/places/13')
+})

@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 
+import { deletedToast } from '@/components/common/deletedToast'
 import { FormError } from '@/components/common/FormError'
 import { VersionConflictAlert } from '@/components/common/VersionConflictAlert'
 import {
@@ -13,9 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { toast } from '@/components/ui/toast'
 
-import { forgetItem, useDeleteItem } from '../queries'
+import { forgetItem, undoDeleteItem, useDeleteItem } from '../queries'
 import type { ItemDetail } from '../types'
 import { useItemReload } from './useItemReload'
 
@@ -40,7 +40,13 @@ export function DeleteItemDialog({
   function confirm() {
     remove.mutate(item, {
       onSuccess: async () => {
-        toast.add({ title: `Đã xoá ${item.name}`, type: 'success' })
+        deletedToast({
+          name: item.name,
+          undo: async () => {
+            await undoDeleteItem(queryClient, ws, item.id, item.version)
+            await navigate(`/w/${ws}/items/${item.id}`)
+          },
+        })
         onOpenChange(false)
         // Rời trang của nó trước rồi mới bỏ khỏi cache, để trang đang mở không tải lại nó.
         await navigate(`/w/${ws}/places/${item.placeId}?tab=items`)

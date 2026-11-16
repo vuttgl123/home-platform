@@ -187,6 +187,16 @@ export function useReissuePlaceCode(ws: string) {
   })
 }
 
+/**
+ * "Hoàn tác" sau khi xoá: khôi phục với `version` lúc xoá cộng 1 (lần xoá làm tăng `version` một đơn
+ * vị), rồi làm mới như sau một lần khôi phục. Hàm thường, không phải hook: hộp thoại xoá đã đóng.
+ */
+export async function undoDeletePlace(queryClient: QueryClient, ws: string, id: string, deletedVersion: number): Promise<PlaceDetail> {
+  const restored = await restorePlace(ws, id, deletedVersion + 1)
+  refreshAfterWrite(queryClient, ws, restored, 'self')
+  return restored
+}
+
 /** Bỏ xoá một địa điểm: nó hiện lại trên cây, đúng chỗ cũ. */
 export function useRestorePlace(ws: string) {
   const queryClient = useQueryClient()

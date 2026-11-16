@@ -151,3 +151,19 @@ test('itemsTabIsOnTheUrl', async () => {
 
   await waitFor(() => expect(router.state.location.search).toBe('?tab=items'))
 })
+
+test('undoRestoresTheDeletedPerson', async () => {
+  mockShell()
+  const backend = mockPeopleBackend({ people: [an] })
+  const { user, router } = renderApp({ route: '/w/7/people/55', userId: '42' })
+  await user.click(await (await main()).findByRole('button', { name: 'Thao tác khác' }))
+  await user.click(await screen.findByRole('menuitem', { name: 'Xoá' }))
+  await user.click(within(await screen.findByRole('alertdialog', { name: 'Xoá Nguyễn An?' })).getByRole('button', { name: 'Xoá' }))
+  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/people'))
+
+  await user.click(await screen.findByRole('button', { name: 'Hoàn tác' }))
+
+  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/people/55'))
+  expect(backend.people.has('55')).toBe(true)
+  expect(await (await main()).findByRole('heading', { name: 'Nguyễn An' })).toBeInTheDocument()
+})

@@ -32,6 +32,8 @@ export function mockItemBackend(options: {
     items.set(full.id, full)
   }
   const writes: ItemWrite[] = []
+  // Món đã xoá, giữ lại để khôi phục; `version` đã tăng như sau một lần xoá thật.
+  const trashed = new Map<string, ItemDetail>()
   let nextId = 9500
   // Mã do backend cấp, như mẫu có sẵn "TS" 6 chữ số; client gửi `code` thì bị bỏ qua.
   let nextCode = 1
@@ -212,7 +214,19 @@ export function mockItemBackend(options: {
       const result = check(id, Number(new URL(request.url).searchParams.get('version')), false)
       if (result.error) return result.error
       items.delete(id)
+      trashed.set(id, { ...result.item, version: result.item.version + 1 })
       return new HttpResponse(null, { status: 204 })
+    }),
+    http.post('/api/registry/items/:id/restore', async ({ request, params }) => {
+      const id = params.id as string
+      const body = (await record(request))!
+      const gone = trashed.get(id)
+      if (!gone) return notFound(id)
+      if (body.version !== gone.version) return stale(id)
+      trashed.delete(id)
+      const back = { ...gone, version: gone.version + 1 }
+      items.set(id, back)
+      return HttpResponse.json(withNames(back))
     }),
   )
 

@@ -198,6 +198,13 @@ export function useDeleteOccupancy(ws: string) {
   })
 }
 
+/** "Hoàn tác" sau khi xoá một người: khôi phục với `version` lúc xoá cộng 1. */
+export async function undoDeletePerson(queryClient: QueryClient, ws: string, id: string, deletedVersion: number): Promise<PersonDetail> {
+  const restored = await restorePerson(ws, id, deletedVersion + 1)
+  refreshAfterPersonWrite(queryClient, ws, restored)
+  return restored
+}
+
 /** Bỏ xoá một người. */
 export function useRestorePerson(ws: string) {
   const queryClient = useQueryClient()

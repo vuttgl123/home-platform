@@ -25,6 +25,8 @@ export function mockPeopleBackend(options: {
   placeNames?: Record<string, string>
 }) {
   const today = options.today ?? '2026-11-16'
+  // Người đã xoá, giữ lại để khôi phục; `version` đã tăng như sau một lần xoá thật.
+  const trashed = new Map<string, PersonDetail>()
   const people = new Map<string, PersonDetail>()
   for (const seed of options.people ?? []) {
     const full = personDetail(seed)
@@ -144,7 +146,18 @@ export function mockPeopleBackend(options: {
       const active = [...stays.values()].filter((o) => o.personId === id && statusOf(o) !== 'PAST').length
       if (active > 0) return conflict(`Person ${id} still has ${active} current or upcoming occupancies`)
       people.delete(id)
+      trashed.set(id, { ...person, version: person.version + 1 })
       return new HttpResponse(null, { status: 204 })
+    }),
+    http.post('/api/registry/people/:id/restore', async ({ request, params }) => {
+      const id = params.id as string
+      const body = (await record(request))! as { version: number }
+      const gone = trashed.get(id)
+      if (!gone) return notFound('Person', id)
+      if (body.version !== gone.version) return stale('Person', id)
+      trashed.delete(id)
+      people.set(id, { ...gone, version: gone.version + 1 })
+      return HttpResponse.json(detail(id))
     }),
     http.get('/api/registry/occupancies', ({ request }) => {
       const query = new URL(request.url).searchParams

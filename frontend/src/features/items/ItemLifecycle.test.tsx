@@ -329,3 +329,17 @@ test('replaceDialogSaysTheNewItemKeepsTheOwner', async () => {
 
   expect(dialog.getByText('Món mới cũng là của An.')).toBeInTheDocument()
 })
+
+test('undoRestoresTheDeletedItem', async () => {
+  const backend = setUp([fridge])
+  const { user, router } = renderApp({ route: '/w/7/items/900', userId: '42' })
+  await openMenuItem(user, 'Xoá')
+  await user.click(within(await screen.findByRole('alertdialog', { name: 'Xoá Tủ lạnh?' })).getByRole('button', { name: 'Xoá' }))
+  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/places/301'))
+
+  await user.click(await screen.findByRole('button', { name: 'Hoàn tác' }))
+
+  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/items/900'))
+  expect(backend.items.get('900')?.version).toBe(3)
+  expect(await (await main()).findByRole('heading', { name: 'Tủ lạnh' })).toBeInTheDocument()
+})

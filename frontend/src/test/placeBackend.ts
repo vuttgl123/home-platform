@@ -23,6 +23,8 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
     places.set(full.id, full)
   }
   const writes: WriteRequest[] = []
+  // Địa điểm đã xoá, giữ lại để khôi phục; `version` đã tăng như sau một lần xoá thật.
+  const trashed = new Map<string, PlaceDetail>()
   let nextId = 9000
   // Mã do backend cấp, như mẫu có sẵn "DD" 6 chữ số; client gửi `code` thì bị bỏ qua.
   let nextCode = 1
@@ -158,7 +160,19 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
       const result = await write(request, id, version)
       if (result.error) return result.error
       places.delete(id)
+      trashed.set(id, { ...result.place, version: result.place.version + 1 })
       return new HttpResponse(null, { status: 204 })
+    }),
+    http.post('/api/registry/places/:id/restore', async ({ request, params }) => {
+      const id = params.id as string
+      const body = (await request.json()) as { version: number }
+      writes.push({ method: 'POST', path: `/places/${id}/restore`, body })
+      const gone = trashed.get(id)
+      if (!gone) return notFound(id)
+      if (body.version !== gone.version) return stale(id)
+      trashed.delete(id)
+      places.set(id, { ...gone, version: gone.version + 1 })
+      return HttpResponse.json(detail(id))
     }),
   )
 
