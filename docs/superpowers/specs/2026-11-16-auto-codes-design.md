@@ -135,7 +135,7 @@ Lệnh tạo hỏng thì transaction rollback và bộ đếm trở về số c�
 ### 5.5 Mã cũ
 
 - Mã gõ tay đang có: giữ nguyên và bị khoá như mã mới.
-- **Mã đang trùng nhau** (trong cùng không gian, cùng bảng): migration giữ mã cho bản ghi tạo sớm nhất và bỏ trống mã của các bản còn lại; chúng nhận mã mới ở bước cấp mã bên dưới. **(tôi chọn)** Đây là lần duy nhất hệ thống tự bỏ một mã; mã cũ của các bản ghi đó vẫn xem được trong các version trước của chúng. Trước khi chạy migration, người xây đếm số bản ghi bị ảnh hưởng trên UAT và báo lại cho bạn.
+- **Mã đang trùng nhau** (trong cùng không gian, cùng bảng): migration giữ mã cho bản ghi chưa xoá, nếu nhiều bản chưa xoá thì bản tạo sớm nhất, và bỏ trống mã của các bản còn lại (**bạn, 2026-11-16**, khi gặp MD001 trùng giữa một phòng đã xoá và một tầng đang dùng); chúng nhận mã mới ở bước cấp mã bên dưới. **(tôi chọn)** Đây là lần duy nhất hệ thống tự bỏ một mã; mã cũ của các bản ghi đó vẫn xem được trong các version trước của chúng. Trước khi chạy migration, người xây đếm số bản ghi bị ảnh hưởng trên UAT và báo lại cho bạn.
 - **Bản ghi chưa có mã**: trang Danh mục hiện "Có N địa điểm và M món đồ chưa có mã" với nút **Cấp mã**. Mỗi bản ghi được cấp mã theo mẫu của loại (nhóm) nó đang có, cũ trước mới sau, và có một version `UPDATE` ghi chú `Code assigned`. Backend làm từng lô 100 bản ghi trong một transaction (lô nhỏ để bộ đếm không bị giữ lâu, lệnh tạo đang chạy cùng lúc không phải chờ quá hạn khoá 5 giây); frontend gọi lặp tới khi hết.
 - Bản ghi đã xoá và món đồ đã gỡ (chỉ đọc) không được cấp mã, và không tính vào số "chưa có mã". Khôi phục hoặc đưa lại sau này thì nó lại hiện trong số đó.
 
@@ -170,7 +170,7 @@ CREATE TABLE reg_code_counter (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-Sau đó, cho cả `reg_place` và `reg_item`: bỏ trống mã trùng (giữ dòng có `id` nhỏ nhất của mỗi nhóm `(workspace_id, code)`), rồi thay index thường bằng khoá duy nhất `uk_reg_place_code`, `uk_reg_item_code` trên `(workspace_id, code)`. Nhiều dòng `code` trống vẫn hợp lệ với khoá duy nhất.
+Sau đó, cho cả `reg_place` và `reg_item`: bỏ trống mã trùng (mỗi nhóm `(workspace_id, code)` giữ dòng chưa xoá có `id` nhỏ nhất; cả nhóm đã xoá thì dòng có `id` nhỏ nhất), rồi thay index thường bằng khoá duy nhất `uk_reg_place_code`, `uk_reg_item_code` trên `(workspace_id, code)`. Nhiều dòng `code` trống vẫn hợp lệ với khoá duy nhất.
 
 So sánh mã theo collation của cột (không phân biệt hoa thường và dấu), nên `p-0001` và `P-0001` là một mã.
 
@@ -249,4 +249,4 @@ Mọi đồ đạc           TS        6           Không      TS-000001        
 2. Mã không dùng lại sau khi bản ghi bị xoá (mục 4.2).
 3. Tiền tố mặc định `DD` cho địa điểm, `TS` cho đồ đạc, 6 chữ số (mục 5.1).
 4. Đổi loại hay nhóm không đổi mã (mục 5.4).
-5. Mã trùng có sẵn: giữ bản tạo sớm nhất, các bản còn lại được cấp mã mới (mục 5.5).
+5. Mã trùng có sẵn: giữ bản đang dùng (rồi bản tạo sớm nhất), các bản còn lại được cấp mã mới (mục 5.5; bạn đã chọn khi xây).

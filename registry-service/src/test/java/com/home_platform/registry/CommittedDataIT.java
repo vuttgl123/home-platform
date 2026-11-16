@@ -42,7 +42,8 @@ public abstract class CommittedDataIT extends RegistryIT {
 			"DELETE FROM reg_place WHERE workspace_id = :ws", "DELETE FROM reg_person WHERE workspace_id = :ws",
 			"DELETE FROM reg_entity_version WHERE workspace_id = :ws",
 			"DELETE FROM reg_field_def WHERE workspace_id = :ws", "DELETE FROM reg_place_type WHERE workspace_id = :ws",
-			"DELETE FROM reg_item_category WHERE workspace_id = :ws");
+			"DELETE FROM reg_item_category WHERE workspace_id = :ws",
+			"DELETE FROM reg_code_counter WHERE workspace_id = :ws", "DELETE FROM reg_code_rule WHERE workspace_id = :ws");
 
 	private static final int WAIT_SECONDS = 20;
 
