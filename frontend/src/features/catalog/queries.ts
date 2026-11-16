@@ -42,3 +42,23 @@ export function useSetupWorkspace(ws: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: catalogKeys.all(ws) }),
   })
 }
+
+/** Mọi mục tuỳ biến của một đích (mọi phạm vi, mọi trạng thái), cho trang danh mục. */
+export function useAllFieldDefs(ws: string, target: FieldTarget) {
+  return useQuery<FieldDef[], ApiError>({
+    queryKey: catalogKeys.fieldDefs(ws, target, 'all'),
+    queryFn: async () => (await listFieldDefs(ws, target)).sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label)),
+  })
+}
+
+/**
+ * Một lệnh ghi danh mục bất kỳ. Danh mục nhỏ và ít đổi, nên ghi xong thì làm cũ cả danh mục của
+ * không gian: loại, nhóm, mục tuỳ biến đều được form khác đọc.
+ */
+export function useCatalogWrite<Variables>(ws: string, write: (variables: Variables) => Promise<unknown>) {
+  const queryClient = useQueryClient()
+  return useMutation<unknown, ApiError, Variables>({
+    mutationFn: write,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: catalogKeys.all(ws) }),
+  })
+}

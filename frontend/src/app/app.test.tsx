@@ -75,13 +75,14 @@ test('existingIdIsChecked', async () => {
 
 test('returnsToTheRequestedPageAfterLogin', async () => {
   mockShell()
-  const { user: actor, router } = renderApp({ route: '/w/7/catalog' })
+  server.use(http.get('/api/registry/people', () => HttpResponse.json(page([]))))
+  const { user: actor, router } = renderApp({ route: '/w/7/people' })
 
   await actor.type(await screen.findByLabelText('Id người dùng'), '42')
   await actor.click(screen.getByRole('button', { name: 'Vào' }))
 
-  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/catalog'))
-  expect(await screen.findByText('Sắp có')).toBeInTheDocument()
+  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/people'))
+  expect(await screen.findByRole('heading', { name: 'Người' })).toBeInTheDocument()
 })
 
 test('signedInUserGoesStraightToTheirWorkspace', async () => {
