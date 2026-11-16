@@ -11,6 +11,7 @@ Kho hồ sơ về các địa điểm, tổ chức theo microservice. Thiết k�
 | `identity-service` | 8081 | Người dùng, không gian, thành viên (bảng `idn_`) |
 | `registry-service` | 8082 | Địa điểm, địa chỉ, người, đồ đạc, version (bảng `reg_`) |
 | `media-service` | 8083 | Thông tin file và việc gắn file vào bản ghi (bảng `med_`) |
+| `frontend` | 5173 | Giao diện web (React, Vite); cách chạy và cấu trúc ở `frontend/README.md` |
 
 Ba service dùng chung một database MySQL. Giữa các service không có join và không có khoá
 ngoại; chúng chỉ lưu `id` của nhau.
