@@ -9,6 +9,7 @@ import {
   createItem,
   deleteItem,
   getItem,
+  listAllItems,
   listItemsAtPlace,
   listItemsInSubtree,
   listItemsOwnedBy,
@@ -19,6 +20,7 @@ import {
   replaceItem,
   restoreItem,
   updateItem,
+  type ItemFilter,
 } from './api'
 import type { ItemBody, ItemDetail, ItemSummary, ItemUpdateBody } from './types'
 
@@ -28,6 +30,8 @@ export const itemKeys = {
   atPlace: (ws: string, placeId: string, removed: boolean) => ['items', ws, 'list', 'place', placeId, removed] as const,
   inSubtree: (ws: string, placeId: string) => ['items', ws, 'list', 'subtree', placeId] as const,
   ownedBy: (ws: string, personId: string) => ['items', ws, 'list', 'owner', personId] as const,
+  everywhere: (ws: string, filter: ItemFilter) =>
+    ['items', ws, 'list', 'all', filter.status ?? 'current', filter.categoryId ?? 'any'] as const,
   details: (ws: string) => ['items', ws, 'detail'] as const,
   detail: (ws: string, id: string) => ['items', ws, 'detail', id] as const,
 }
@@ -51,6 +55,11 @@ export function useItemsInSubtree(ws: string, placeId: string, enabled: boolean)
     fetchPage: (cursor) => listItemsInSubtree(ws, placeId, cursor),
     enabled,
   })
+}
+
+/** Đồ của cả không gian theo bộ lọc. */
+export function useAllItems(ws: string, filter: ItemFilter): CursorList<ItemSummary> {
+  return useCursorList({ queryKey: itemKeys.everywhere(ws, filter), fetchPage: (cursor) => listAllItems(ws, filter, cursor) })
 }
 
 /** Đồ chưa gỡ của riêng một người. */

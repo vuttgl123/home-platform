@@ -114,6 +114,14 @@ export function mockItemBackend(options: {
       } else if (subtreeOf != null) {
         const inside = new Set([subtreeOf, ...(options.placesUnder?.[subtreeOf] ?? [])])
         found = found.filter((item) => inside.has(item.placeId) && item.removedAt == null).sort((a, b) => a.name.localeCompare(b.name))
+      } else {
+        // Cả không gian: chưa gỡ, hoặc đúng `status`; có thể lọc thêm theo nhóm.
+        const status = query.get('status')
+        const categoryId = query.get('categoryId')
+        found = found
+          .filter((item) => (status ? item.status === status : item.removedAt == null))
+          .filter((item) => categoryId == null || item.categoryId === categoryId)
+          .sort((a, b) => a.name.localeCompare(b.name))
       }
       return HttpResponse.json(page(found.map(summary)))
     }),

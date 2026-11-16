@@ -8,7 +8,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -24,7 +24,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -945,6 +945,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_7"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1079,6 +1095,10 @@ export interface components {
         };
         CursorPagePlaceVersionSummaryResponse: {
             items?: components["schemas"]["PlaceVersionSummaryResponse"][];
+            nextCursor?: string;
+        };
+        CursorPageTrashResponse: {
+            items?: components["schemas"]["TrashResponse"][];
             nextCursor?: string;
         };
         EffectiveAddressResponse: {
@@ -1766,6 +1786,19 @@ export interface components {
         SetupResponse: {
             created?: boolean;
         };
+        TrashResponse: {
+            /** @enum {string} */
+            entityType?: "PLACE" | "PERSON" | "ITEM";
+            id?: string;
+            name?: string;
+            code?: string;
+            context?: string;
+            /** Format: date-time */
+            deletedAt?: string;
+            deletedBy?: string;
+            /** Format: int32 */
+            version?: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -1775,7 +1808,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 entityType?: string;
@@ -1815,7 +1848,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: never;
             header: {
@@ -2478,6 +2511,7 @@ export interface operations {
                 subtreeOf?: string;
                 categoryId?: string;
                 ownerId?: string;
+                status?: "IN_USE" | "BROKEN" | "STORED" | "REMOVED";
                 /** @description nextCursor of the previous page; omit for the first page */
                 cursor?: string;
                 /** @description Maximum number of items in the page */
@@ -4990,6 +5024,46 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SetupResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_7: {
+        parameters: {
+            query: {
+                entityType: "PLACE" | "PERSON" | "ITEM";
+                /** @description nextCursor of the previous page; omit for the first page */
+                cursor?: string;
+                /** @description Maximum number of items in the page */
+                limit?: number;
+            };
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CursorPageTrashResponse"];
                 };
             };
             /** @description Error, described as Problem Details */

@@ -1,4 +1,4 @@
-import { ActivityIcon, TagsIcon, UsersIcon, type LucideIcon } from 'lucide-react'
+import { ActivityIcon, PackageIcon, TagsIcon, UsersIcon, type LucideIcon } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
@@ -30,6 +30,7 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 
 const SECTIONS: { path: string; label: string; icon: LucideIcon }[] = [
   { path: 'people', label: 'Người', icon: UsersIcon },
+  { path: 'items', label: 'Đồ đạc', icon: PackageIcon },
   { path: 'catalog', label: 'Danh mục', icon: TagsIcon },
   { path: 'activity', label: 'Hoạt động', icon: ActivityIcon },
 ]

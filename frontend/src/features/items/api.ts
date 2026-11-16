@@ -1,6 +1,6 @@
 import { registry, unwrap, workspaceHeaders, type CursorPage, type RegistrySchemas } from '@/api'
 
-import type { ItemBody, ItemDetail, ItemSummary, ItemUpdateBody } from './types'
+import type { ItemBody, ItemDetail, ItemStatus, ItemSummary, ItemUpdateBody } from './types'
 
 /** Đồ ở đúng một địa điểm: đang có (theo tên) hoặc đã gỡ (mới gỡ trước). */
 export async function listItemsAtPlace(
@@ -43,6 +43,19 @@ export async function moveItem(ws: string, id: string, version: number, placeId:
     body: { version, placeId },
   })
   return (await unwrap(call)) as ItemDetail
+}
+
+export type ItemFilter = { status: ItemStatus | null; categoryId: string | null }
+
+/** Đồ của cả không gian, theo tên: chưa gỡ, hoặc đúng `status`; có thể lọc theo nhóm. */
+export async function listAllItems(ws: string, filter: ItemFilter, cursor?: string): Promise<CursorPage<ItemSummary>> {
+  const call = registry.GET('/items', {
+    params: {
+      header: workspaceHeaders(ws),
+      query: { status: filter.status ?? undefined, categoryId: filter.categoryId ?? undefined, cursor },
+    },
+  })
+  return (await unwrap(call)) as CursorPage<ItemSummary>
 }
 
 /** Đồ chưa gỡ của riêng một người, theo tên. */

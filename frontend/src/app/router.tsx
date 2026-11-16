@@ -2,7 +2,7 @@ import type { RouteObject } from 'react-router'
 
 import { ActivityPage } from '@/features/activity'
 import { CatalogPage } from '@/features/catalog'
-import { ItemPage, PersonItemsTab, PlaceItemsTab } from '@/features/items'
+import { ItemPage, ItemsPage, PersonItemsTab, PlaceItemsTab } from '@/features/items'
 import { PeoplePage, PersonPage, PlaceOccupantsTab, type PersonTabSlots } from '@/features/people'
 import { PersonOwnershipsTab, PlaceOwnersTab } from '@/features/ownership'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
@@ -43,6 +43,7 @@ export const routes: RouteObject[] = [
           { path: 'places/:placeId', element: <PlacePage tabs={placeTabs} /> },
           { path: 'people', element: <PeoplePage /> },
           { path: 'people/:personId', element: <PersonPage tabs={personTabs} /> },
+          { path: 'items', element: <ItemsPage /> },
           { path: 'items/:itemId', element: <ItemPage /> },
           { path: 'catalog', element: <CatalogPage /> },
           { path: 'activity', element: <ActivityPage /> },
