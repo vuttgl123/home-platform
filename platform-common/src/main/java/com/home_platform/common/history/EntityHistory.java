@@ -28,6 +28,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.NullNode;
 
 /**
  * Lối vào duy nhất của bảng version (ví dụ {@code reg_entity_version}): ghi một version, liệt
@@ -232,7 +233,8 @@ public class EntityHistory {
 
 	/**
 	 * Tên các trường cấp một có giá trị khác nhau giữa hai snapshot, kể cả trường chỉ có ở một
-	 * bên. Cả hai cây đều được đọc lại từ chuỗi JSON nên cách biểu diễn số giống nhau.
+	 * bên (trừ khi giá trị ở bên kia là {@code null}). Cả hai cây đều được đọc lại từ chuỗi JSON
+	 * nên cách biểu diễn số giống nhau.
 	 * Snapshot không phải object thì không có "trường" để so: trả {@code null}.
 	 */
 	private static List<String> changedFields(JsonNode previous, JsonNode current) {
@@ -241,16 +243,24 @@ public class EntityHistory {
 		}
 		Set<String> changed = new LinkedHashSet<>();
 		for (Map.Entry<String, JsonNode> field : current.properties()) {
-			if (!field.getValue().equals(previous.get(field.getKey()))) {
+			if (!valueOf(field.getValue()).equals(valueOf(previous.get(field.getKey())))) {
 				changed.add(field.getKey());
 			}
 		}
 		for (Map.Entry<String, JsonNode> field : previous.properties()) {
-			if (!current.has(field.getKey())) {
+			if (!current.has(field.getKey()) && !valueOf(field.getValue()).isNull()) {
 				changed.add(field.getKey());
 			}
 		}
 		return new ArrayList<>(changed);
+	}
+
+	/**
+	 * Giá trị để so: trường vắng mặt và trường {@code null} là như nhau. Nhờ vậy thêm một thành phần
+	 * mới vào snapshot không làm lần sửa đầu tiên sau đó báo trường đó "đã đổi".
+	 */
+	private static JsonNode valueOf(JsonNode node) {
+		return (node != null) ? node : NullNode.getInstance();
 	}
 
 	private List<String> readChangedFields(ResultSet rs) throws SQLException {

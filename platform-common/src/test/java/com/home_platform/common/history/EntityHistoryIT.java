@@ -3,6 +3,7 @@ package com.home_platform.common.history;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.home_platform.common.CommonIT;
@@ -65,6 +66,47 @@ class EntityHistoryIT extends CommonIT {
 		this.history.record(CTX_A, "PLACE", 10, 2, ChangeAction.UPDATE, Map.of("a", 1, "c", 3), null);
 
 		assertThat(this.history.get(WS_A, "PLACE", 10, 2).changedFields()).containsExactlyInAnyOrder("b", "c");
+	}
+
+	@Test
+	void aFieldAddedAsNullIsNotAChange() {
+		this.history.record(CTX_A, "PLACE", 10, 1, ChangeAction.CREATE, map("a", 1), null);
+		this.history.record(CTX_A, "PLACE", 10, 2, ChangeAction.UPDATE, map("a", 1, "b", null), null);
+
+		assertThat(this.history.get(WS_A, "PLACE", 10, 2).changedFields()).isEmpty();
+	}
+
+	@Test
+	void aFieldAddedWithAValueIsAChange() {
+		this.history.record(CTX_A, "PLACE", 10, 1, ChangeAction.CREATE, map("a", 1), null);
+		this.history.record(CTX_A, "PLACE", 10, 2, ChangeAction.UPDATE, map("a", 1, "b", 2), null);
+
+		assertThat(this.history.get(WS_A, "PLACE", 10, 2).changedFields()).containsExactly("b");
+	}
+
+	@Test
+	void aFieldDroppedWhileNullIsNotAChange() {
+		this.history.record(CTX_A, "PLACE", 10, 1, ChangeAction.CREATE, map("a", 1, "b", null), null);
+		this.history.record(CTX_A, "PLACE", 10, 2, ChangeAction.UPDATE, map("a", 1), null);
+
+		assertThat(this.history.get(WS_A, "PLACE", 10, 2).changedFields()).isEmpty();
+	}
+
+	@Test
+	void aFieldSetBackToNullIsAChange() {
+		this.history.record(CTX_A, "PLACE", 10, 1, ChangeAction.CREATE, map("a", 1, "b", 2), null);
+		this.history.record(CTX_A, "PLACE", 10, 2, ChangeAction.UPDATE, map("a", 1, "b", null), null);
+
+		assertThat(this.history.get(WS_A, "PLACE", 10, 2).changedFields()).containsExactly("b");
+	}
+
+	/** Như {@code Map.of} nhưng nhận giá trị {@code null}. */
+	private static Map<String, Object> map(Object... keysAndValues) {
+		Map<String, Object> map = new HashMap<>();
+		for (int i = 0; i < keysAndValues.length; i += 2) {
+			map.put((String) keysAndValues[i], keysAndValues[i + 1]);
+		}
+		return map;
 	}
 
 	@Test
