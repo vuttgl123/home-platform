@@ -29,13 +29,13 @@ class PlaceIT extends PlaceTestData {
 		long building = type("BUILDING");
 
 		String body = postPlace("""
-				{"placeTypeId": "%d", "name": " Toà A ", "code": "A"}""".formatted(building))
+				{"placeTypeId": "%d", "name": " Toà A "}""".formatted(building))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.id").isString())
 			.andExpect(jsonPath("$.parentId").value(nullValue()))
 			.andExpect(jsonPath("$.depth").value(0))
 			.andExpect(jsonPath("$.name").value("Toà A"))
-			.andExpect(jsonPath("$.code").value("A"))
+			.andExpect(jsonPath("$.code").value("DD-000001"))
 			.andExpect(jsonPath("$.status").value("ACTIVE"))
 			.andExpect(jsonPath("$.version").value(1))
 			.andExpect(jsonPath("$.ancestors", hasSize(0)))

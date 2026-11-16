@@ -24,12 +24,16 @@ import com.home_platform.common.web.ConflictException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.common.web.NotFoundException;
+import com.home_platform.registry.code.CodeIssuer;
+import com.home_platform.registry.code.CodeReissueRequest;
+import com.home_platform.registry.code.CodeTarget;
 import com.home_platform.registry.support.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.placetype.PlaceTypeService;
 import com.home_platform.registry.support.BusinessDate;
 import com.home_platform.registry.support.Geohash;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,10 +64,13 @@ public class PlaceService {
 
 	private final BusinessDate businessDate;
 
+	private final CodeIssuer codes;
+
 	PlaceService(PlaceRepository repository, PlaceTypeService placeTypes, AttributeValidation attributeValidation,
 			EntityHistory history, IdGenerator idGenerator, PlaceAddressRepository addresses, Clock clock,
-			BusinessDate businessDate) {
+			BusinessDate businessDate, CodeIssuer codes) {
 		this.businessDate = businessDate;
+		this.codes = codes;
 		this.repository = repository;
 		this.addresses = addresses;
 		this.clock = clock;
@@ -282,7 +289,7 @@ public class PlaceService {
 
 	/**
 	 * Khôi phục nội dung của một version cũ, như một lần sửa bình thường: version mới mang nội
-	 * dung cũ, không version nào bị ghi đè. Chỉ nội dung và địa chỉ; không đổi chỗ đứng. Nội dung
+	 * dung cũ, không version nào bị ghi đè. Chỉ nội dung và địa chỉ; không đổi chỗ đứng, không đổi mã. Nội dung
 	 * cũ phải hợp lệ như một lần sửa (loại còn dùng được, {@code attributes} hợp với mục tuỳ biến
 	 * hiện tại); nếu không thì không ghi gì.
 	 * @throws ConflictException nếu địa điểm đang bị xoá
@@ -297,7 +304,7 @@ public class PlaceService {
 		PlaceSnapshot old = snapshotOf(version(workspaceId, id, versionNo));
 		String note = EntityHistory.restoredNote(versionNo, request.note());
 		Place stored = applyContent(ctx, current, new PlaceUpdateRequest(request.version(), old.placeTypeId(),
-				old.code(), old.name(), old.description(), old.status(), old.attributes(), old.coverFileId(), note));
+				old.name(), old.description(), old.status(), old.attributes(), old.coverFileId(), note));
 		PlaceAddress address = (old.address() != null) ? fromSnapshot(id, old.address()) : null;
 		if (address != null) {
 			this.addresses.upsert(workspaceId, address);
@@ -357,16 +364,70 @@ public class PlaceService {
 		Map<String, Object> attributes = validAttributes(ctx, request.placeTypeId(), request.attributes());
 		long id = this.idGenerator.nextId();
 		String path = ((parent != null) ? parent.path() : "/") + id + "/";
-		Place place = new Place(0, id, request.parentId(), request.placeTypeId(), path, depth, request.code(),
-				request.name(), request.description(), request.status(), attributes, request.coverFileId(), null, 0,
-				null, 0, 0, null);
-		Place stored = this.repository.insert(ctx, place);
+		String code = issueCode(ctx, request.placeTypeId());
+		Place place = new Place(0, id, request.parentId(), request.placeTypeId(), path, depth, code, request.name(),
+				request.description(), request.status(), attributes, request.coverFileId(), null, 0, null, 0, 0, null);
+		Place stored = insertWithCode(ctx, place);
 		PlaceAddress address = (request.address() != null) ? toAddress(id, request.address()) : null;
 		if (address != null) {
 			this.addresses.upsert(ctx.workspaceId(), address);
 		}
 		record(ctx, stored, address, ChangeAction.CREATE, request.note());
 		return stored;
+	}
+
+	/**
+	 * Cấp mã kế tiếp theo mẫu của loại hiện tại. Mã cũ không được trả lại và không ai nhận lại nó.
+	 * @throws ConflictException nếu {@code version} lệch
+	 */
+	@Transactional
+	public Place reissueCode(WorkspaceContext ctx, long id, CodeReissueRequest request) {
+		Place current = lockForChange(ctx.workspaceId(), id);
+		if (current.version() != request.version()) {
+			throw ConflictException.versionConflict("Place", id);
+		}
+		Place stored = this.repository.update(ctx, current.withCode(issueCode(ctx, current.placeTypeId())));
+		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.UPDATE, request.noteFor(current.code()));
+		return stored;
+	}
+
+	public int countWithoutCode(long workspaceId) {
+		return this.repository.countWithoutCode(workspaceId);
+	}
+
+	/**
+	 * Cấp mã cho tối đa {@code limit} địa điểm chưa xoá chưa có mã, cũ trước; mỗi địa điểm một version
+	 * ghi chú {@value CodeIssuer#CODE_ASSIGNED}. Địa điểm vừa được lệnh khác cấp mã thì bỏ qua.
+	 * @return số địa điểm vừa được cấp mã
+	 */
+	@Transactional
+	public int assignMissingCodes(WorkspaceContext ctx, int limit) {
+		int assigned = 0;
+		for (long id : this.repository.idsWithoutCode(ctx.workspaceId(), limit)) {
+			Place current = this.repository.findByIdForUpdate(ctx.workspaceId(), id).orElse(null);
+			if (current == null || current.code() != null) {
+				continue;
+			}
+			Place stored = this.repository.update(ctx, current.withCode(issueCode(ctx, current.placeTypeId())));
+			record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.UPDATE, CodeIssuer.CODE_ASSIGNED);
+			assigned++;
+		}
+		return assigned;
+	}
+
+	private String issueCode(WorkspaceContext ctx, long placeTypeId) {
+		return this.codes.issue(ctx.workspaceId(), CodeTarget.PLACE, placeTypeId,
+				candidate -> this.repository.codeExists(ctx.workspaceId(), candidate));
+	}
+
+	/** Khoá duy nhất trên mã là chốt cuối; bộ đếm đúng thì không bao giờ tới đây. */
+	private Place insertWithCode(WorkspaceContext ctx, Place place) {
+		try {
+			return this.repository.insert(ctx, place);
+		}
+		catch (DuplicateKeyException ex) {
+			throw new ConflictException("Code " + place.code() + " is already in use; try again");
+		}
 	}
 
 	@Transactional
@@ -390,7 +451,6 @@ public class PlaceService {
 		Map<String, Object> attributes = validAttributes(ctx, request.placeTypeId(), request.attributes());
 		return this.repository.update(ctx, current.withVersion(request.version())
 			.withPlaceTypeId(request.placeTypeId())
-			.withCode(request.code())
 			.withName(request.name())
 			.withDescription(request.description())
 			.withStatus(request.status())

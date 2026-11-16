@@ -5,6 +5,7 @@ import com.home_platform.common.history.EntityVersion;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
+import com.home_platform.registry.code.CodeReissueRequest;
 import com.home_platform.registry.support.Text;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -117,6 +118,13 @@ class PlaceController {
 	PlaceDetailResponse restoreVersion(WorkspaceContext ctx, @PathVariable long id, @PathVariable int versionNo,
 			@Valid @RequestBody PlaceVersionRestoreRequest request) {
 		return detail(ctx, this.service.restoreVersion(ctx, id, versionNo, request).id());
+	}
+
+	/** Cấp mã mới; mã cũ không còn tìm ra địa điểm này. */
+	@PostMapping("/{id}/reissue-code")
+	PlaceDetailResponse reissueCode(WorkspaceContext ctx, @PathVariable long id,
+			@Valid @RequestBody CodeReissueRequest request) {
+		return detail(ctx, this.service.reissueCode(ctx, id, request).id());
 	}
 
 	@PostMapping("/{id}/move")

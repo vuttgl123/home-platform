@@ -70,7 +70,35 @@ public class ItemRepository extends WorkspaceRepository<Item> {
 			.fetch(workspaceId, page);
 	}
 
-	/** Đúng mã (không phân biệt hoa thường); theo {@code id}. Index (workspace_id, code). */
+	/** Số dòng chưa xoá, chưa gỡ chưa có mã. */
+	public int countWithoutCode(long workspaceId) {
+		return jdbc().sql("SELECT COUNT(*) FROM reg_item WHERE workspace_id = :workspaceId AND code IS NULL "
+				+ "AND deleted_at IS NULL AND removed_at IS NULL")
+			.param("workspaceId", workspaceId)
+			.query(Integer.class)
+			.single();
+	}
+
+	/** {@code id} của tối đa {@code limit} dòng chưa có mã, cùng điều kiện như {@link #countWithoutCode}; cũ trước. */
+	public List<Long> idsWithoutCode(long workspaceId, int limit) {
+		return jdbc().sql("SELECT id FROM reg_item WHERE workspace_id = :workspaceId AND code IS NULL "
+				+ "AND deleted_at IS NULL AND removed_at IS NULL ORDER BY id LIMIT :limit")
+			.param("workspaceId", workspaceId)
+			.param("limit", limit)
+			.query(Long.class)
+			.list();
+	}
+
+	/** Đã có dòng nào (kể cả đã xoá) mang mã này chưa. Khoá duy nhất uk_reg_item_code. */
+	public boolean codeExists(long workspaceId, String code) {
+		return jdbc().sql("SELECT EXISTS (SELECT 1 FROM reg_item WHERE workspace_id = :workspaceId AND code = :code)")
+			.param("workspaceId", workspaceId)
+			.param("code", code)
+			.query(Integer.class)
+			.single() == 1;
+	}
+
+	/** Đúng mã (không phân biệt hoa thường); theo {@code id}. Khoá duy nhất (workspace_id, code). */
 	public CursorPage<Item> findByCode(long workspaceId, String code, CursorRequest page) {
 		return keyset().where("code = :code", Map.of("code", code)).fetch(workspaceId, page);
 	}

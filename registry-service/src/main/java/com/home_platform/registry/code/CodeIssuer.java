@@ -12,6 +12,9 @@ public class CodeIssuer {
 
 	static final int MAX_ATTEMPTS = 1000;
 
+	/** Ghi chú version khi một bản ghi chưa có mã nhận mã đầu tiên. */
+	public static final String CODE_ASSIGNED = "Code assigned";
+
 	private final CodeRuleService rules;
 
 	private final CodeCounterRepository counters;

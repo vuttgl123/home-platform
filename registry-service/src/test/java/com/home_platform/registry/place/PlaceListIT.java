@@ -177,12 +177,12 @@ class PlaceListIT extends PlaceTestData {
 	@Test
 	void searchByCodeMatchesExactly() throws Exception {
 		long type = type("T");
-		place("""
-				{"placeTypeId": "%d", "name": "a", "code": "P101"}""".formatted(type));
-		place("""
-				{"placeTypeId": "%d", "name": "b", "code": "P1010"}""".formatted(type));
+		codeRule("PLACE", 0, "P", 3, false);
+		for (int i = 1; i <= 10; i++) {
+			place(null, type, "p" + i);
+		}
 
-		list(get("/places/search").param("code", "p101")).andExpect(jsonPath("$.items[*].code", contains("P101")));
+		list(get("/places/search").param("code", "p-001")).andExpect(jsonPath("$.items[*].code", contains("P-001")));
 	}
 
 	@Test

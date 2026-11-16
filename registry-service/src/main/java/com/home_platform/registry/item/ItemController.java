@@ -8,6 +8,7 @@ import com.home_platform.common.history.EntityVersion;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
+import com.home_platform.registry.code.CodeReissueRequest;
 import com.home_platform.registry.support.Text;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -95,6 +96,13 @@ class ItemController {
 			@Valid @RequestBody ItemReplaceRequest request) {
 		ItemReplacement replaced = this.service.replace(ctx, id, request);
 		return new ItemReplaceResponse(detail(ctx, replaced.removed().id()), detail(ctx, replaced.replacement().id()));
+	}
+
+	/** Cấp mã mới; mã cũ không còn tìm ra món này. */
+	@PostMapping("/{id}/reissue-code")
+	ItemDetailResponse reissueCode(WorkspaceContext ctx, @PathVariable long id,
+			@Valid @RequestBody CodeReissueRequest request) {
+		return detail(ctx, this.service.reissueCode(ctx, id, request).id());
 	}
 
 	/** Đưa lại một món đã gỡ. */

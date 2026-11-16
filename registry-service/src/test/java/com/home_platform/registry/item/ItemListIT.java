@@ -70,10 +70,13 @@ class ItemListIT extends ItemTestData {
 
 	@Test
 	void searchByCodeMatchesExactly() throws Exception {
-		item("{\"placeId\": \"%d\", \"name\": \"a\", \"code\": \"SN-1\"}".formatted(this.room));
-		item("{\"placeId\": \"%d\", \"name\": \"b\", \"code\": \"SN-10\"}".formatted(this.room));
+		codeRule("ITEM", 0, "SN", 3, false);
+		item(this.room, "a");
+		for (int i = 2; i <= 10; i++) {
+			item(this.room, "b" + i);
+		}
 
-		this.mvc.perform(asA(get("/items/search").param("code", "sn-1")))
+		this.mvc.perform(asA(get("/items/search").param("code", "sn-001")))
 			.andExpect(jsonPath("$.items[*].name", contains("a")));
 	}
 

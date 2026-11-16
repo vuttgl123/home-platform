@@ -16,6 +16,9 @@ import com.home_platform.common.web.ConflictException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.common.web.NotFoundException;
+import com.home_platform.registry.code.CodeIssuer;
+import com.home_platform.registry.code.CodeReissueRequest;
+import com.home_platform.registry.code.CodeTarget;
 import com.home_platform.registry.support.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
@@ -23,6 +26,7 @@ import com.home_platform.registry.itemcategory.ItemCategory;
 import com.home_platform.registry.itemcategory.ItemCategoryService;
 import com.home_platform.registry.place.PlaceService;
 import com.home_platform.registry.support.BusinessDate;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,9 +51,13 @@ public class ItemService {
 
 	private final BusinessDate businessDate;
 
+	private final CodeIssuer codes;
+
 	ItemService(ItemRepository repository, PlaceService places, ItemCategoryService categories,
-			AttributeValidation attributeValidation, EntityHistory history, BusinessDate businessDate) {
+			AttributeValidation attributeValidation, EntityHistory history, BusinessDate businessDate,
+			CodeIssuer codes) {
 		this.businessDate = businessDate;
+		this.codes = codes;
 		this.repository = repository;
 		this.places = places;
 		this.categories = categories;
@@ -76,13 +84,68 @@ public class ItemService {
 		if (request.categoryId() != null) {
 			this.categories.requireActive(ctx.workspaceId(), request.categoryId());
 		}
-		Item item = new Item(0, 0, request.placeId(), request.categoryId(), request.code(), request.name(),
-				request.quantity(), request.unit(), request.status(), request.placedAt(), null, null,
-				request.description(), validAttributes(ctx, request.categoryId(), request.attributes()),
+		Map<String, Object> attributes = validAttributes(ctx, request.categoryId(), request.attributes());
+		String code = issueCode(ctx, request.categoryId());
+		Item item = new Item(0, 0, request.placeId(), request.categoryId(), code, request.name(), request.quantity(),
+				request.unit(), request.status(), request.placedAt(), null, null, request.description(), attributes,
 				request.coverFileId(), null, 0, null, 0, 0, null);
-		Item stored = this.repository.insert(ctx, item);
+		Item stored = insertWithCode(ctx, item);
 		record(ctx, stored, ChangeAction.CREATE, request.note());
 		return stored;
+	}
+
+	/**
+	 * Cấp mã kế tiếp theo mẫu của nhóm hiện tại. Mã cũ không được trả lại và không ai nhận lại nó.
+	 * @throws ConflictException nếu món đã gỡ hoặc {@code version} lệch
+	 */
+	@Transactional
+	public Item reissueCode(WorkspaceContext ctx, long id, CodeReissueRequest request) {
+		Item current = requireNotRemoved(get(ctx.workspaceId(), id));
+		if (current.version() != request.version()) {
+			throw ConflictException.versionConflict("Item", id);
+		}
+		Item stored = this.repository.update(ctx, current.withCode(issueCode(ctx, current.categoryId())));
+		record(ctx, stored, ChangeAction.UPDATE, request.noteFor(current.code()));
+		return stored;
+	}
+
+	public int countWithoutCode(long workspaceId) {
+		return this.repository.countWithoutCode(workspaceId);
+	}
+
+	/**
+	 * Cấp mã cho tối đa {@code limit} món chưa xoá, chưa gỡ, chưa có mã, cũ trước; mỗi món một version
+	 * ghi chú {@value CodeIssuer#CODE_ASSIGNED}. Món vừa được lệnh khác cấp mã hay vừa bị gỡ thì bỏ qua.
+	 * @return số món vừa được cấp mã
+	 */
+	@Transactional
+	public int assignMissingCodes(WorkspaceContext ctx, int limit) {
+		int assigned = 0;
+		for (long id : this.repository.idsWithoutCode(ctx.workspaceId(), limit)) {
+			Item current = this.repository.findByIdForUpdate(ctx.workspaceId(), id).orElse(null);
+			if (current == null || current.code() != null || current.removed()) {
+				continue;
+			}
+			Item stored = this.repository.update(ctx, current.withCode(issueCode(ctx, current.categoryId())));
+			record(ctx, stored, ChangeAction.UPDATE, CodeIssuer.CODE_ASSIGNED);
+			assigned++;
+		}
+		return assigned;
+	}
+
+	private String issueCode(WorkspaceContext ctx, Long categoryId) {
+		return this.codes.issue(ctx.workspaceId(), CodeTarget.ITEM, (categoryId != null) ? categoryId : 0,
+				candidate -> this.repository.codeExists(ctx.workspaceId(), candidate));
+	}
+
+	/** Khoá duy nhất trên mã là chốt cuối; bộ đếm đúng thì không bao giờ tới đây. */
+	private Item insertWithCode(WorkspaceContext ctx, Item item) {
+		try {
+			return this.repository.insert(ctx, item);
+		}
+		catch (DuplicateKeyException ex) {
+			throw new ConflictException("Code " + item.code() + " is already in use; try again");
+		}
 	}
 
 	@Transactional
@@ -106,7 +169,6 @@ public class ItemService {
 		}
 		return this.repository.update(ctx, current.withVersion(request.version())
 			.withCategoryId(request.categoryId())
-			.withCode(request.code())
 			.withName(request.name())
 			.withQuantity(request.quantity())
 			.withUnit(request.unit())
@@ -237,7 +299,7 @@ public class ItemService {
 		ItemStatus status = (old.status() == ItemStatus.REMOVED) ? current.status() : old.status();
 		String note = EntityHistory.restoredNote(versionNo, request.note());
 		Item stored = applyContent(ctx, current,
-				new ItemUpdateRequest(request.version(), old.categoryId(), old.code(), old.name(), old.quantity(),
+				new ItemUpdateRequest(request.version(), old.categoryId(), old.name(), old.quantity(),
 						old.unit(), status, old.placedAt(), old.description(), old.attributes(), old.coverFileId(),
 						note));
 		record(ctx, stored, ChangeAction.UPDATE, note);

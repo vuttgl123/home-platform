@@ -24,11 +24,12 @@ class ItemIT extends ItemTestData {
 		long tv = category("Điện tử");
 
 		postItem("""
-				{"placeId": "%d", "categoryId": "%d", "name": " Tivi ", "code": "SN-1", "unit": "cái",
+				{"placeId": "%d", "categoryId": "%d", "name": " Tivi ", "code": "HAND-TYPED", "unit": "cái",
 				 "placedAt": "2025-01-15"}""".formatted(this.room, tv))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.id").isString())
 			.andExpect(jsonPath("$.name").value("Tivi"))
+			.andExpect(jsonPath("$.code").value("TS-000001"))
 			.andExpect(jsonPath("$.quantity").value(1))
 			.andExpect(jsonPath("$.status").value("IN_USE"))
 			.andExpect(jsonPath("$.placeName").value("P101"))

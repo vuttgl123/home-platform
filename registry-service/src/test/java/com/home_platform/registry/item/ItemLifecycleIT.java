@@ -79,7 +79,7 @@ class ItemLifecycleIT extends ItemTestData {
 		long old = item(this.room, "Tivi cũ");
 
 		String body = action(old, "replace", """
-				{"version": 1, "replacement": {"name": "Tivi mới", "code": "SN-2"}}""")
+				{"version": 1, "replacement": {"name": "Tivi mới"}}""")
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.removed.status").value("REMOVED"))
 			.andExpect(jsonPath("$.replacement.name").value("Tivi mới"))

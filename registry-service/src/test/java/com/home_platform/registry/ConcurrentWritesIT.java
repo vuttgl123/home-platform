@@ -260,7 +260,7 @@ class ConcurrentWritesIT extends CommittedDataIT {
 	}
 
 	private PlaceCreateRequest newPlace(Long parentId, String name) {
-		return new PlaceCreateRequest(parentId, this.type, null, name, null, null, null, null, null, null);
+		return new PlaceCreateRequest(parentId, this.type, name, null, null, null, null, null, null);
 	}
 
 	private long person(String fullName) {
@@ -279,7 +279,7 @@ class ConcurrentWritesIT extends CommittedDataIT {
 	}
 
 	private static ItemRequest item(long placeId, String name) {
-		return new ItemRequest(placeId, null, null, name, null, null, null, null, null, null, null, null);
+		return new ItemRequest(placeId, null, name, null, null, null, null, null, null, null, null);
 	}
 
 }
