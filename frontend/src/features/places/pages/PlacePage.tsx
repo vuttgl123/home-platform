@@ -16,6 +16,7 @@ import { PlaceChildrenTab } from '../components/PlaceChildrenTab'
 import { DeletePlaceDialog } from '../components/DeletePlaceDialog'
 import { MovePlaceDialog } from '../components/MovePlaceDialog'
 import { PlaceFormDialog } from '../components/PlaceFormDialog'
+import { PlaceHistoryTab } from '../components/PlaceHistoryTab'
 import { PlaceHeader } from '../components/PlaceHeader'
 import { PlaceOverviewTab } from '../components/PlaceOverviewTab'
 import { usePlace } from '../queries'
@@ -32,10 +33,10 @@ const TABS = [
 type Tab = (typeof TABS)[number]['value']
 
 /**
- * Nội dung của những tab thuộc nghiệp vụ khác (người ở, đồ đạc, lịch sử). Trang địa điểm không
+ * Nội dung của những tab thuộc nghiệp vụ dựa trên địa điểm (người ở, đồ đạc). Trang địa điểm không
  * nhập các feature đó; `app/` ghép chúng vào. Tab chưa có nội dung hiện "Sắp có".
  */
-export type PlaceTabSlots = Partial<Record<'people' | 'items' | 'history', (ws: string, place: PlaceDetail) => ReactNode>>
+export type PlaceTabSlots = Partial<Record<'people' | 'items', (ws: string, place: PlaceDetail) => ReactNode>>
 
 function isTab(value: string | null): value is Tab {
   return TABS.some((tab) => tab.value === value)
@@ -118,11 +119,14 @@ export function PlacePage({ tabs = {} }: { tabs?: PlaceTabSlots }) {
             }
           />
         </TabsContent>
-        {(['people', 'items', 'history'] as const).map((value) => (
+        {(['people', 'items'] as const).map((value) => (
           <TabsContent key={value} value={value} className="pt-4">
             {tabs[value]?.(workspaceId, detail) ?? <ComingSoonState />}
           </TabsContent>
         ))}
+        <TabsContent value="history" className="pt-4">
+          <PlaceHistoryTab ws={workspaceId} place={detail} />
+        </TabsContent>
       </Tabs>
       <PlaceFormDialog
         ws={workspaceId}

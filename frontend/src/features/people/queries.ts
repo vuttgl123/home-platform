@@ -92,16 +92,18 @@ export function useCreatePerson(ws: string) {
   })
 }
 
+/** Sau khi hồ sơ một người đổi (sửa, khôi phục version): chi tiết, danh sách người, các dòng cư trú mang tên họ. */
+export function refreshAfterPersonWrite(queryClient: QueryClient, ws: string, person: PersonDetail): void {
+  queryClient.setQueryData(personKeys.detail(ws, person.id), person)
+  void queryClient.invalidateQueries({ queryKey: personKeys.lists(ws) })
+  void queryClient.invalidateQueries({ queryKey: occupancyKeys.all(ws) })
+}
+
 export function useUpdatePerson(ws: string) {
   const queryClient = useQueryClient()
   return useMutation<PersonDetail, ApiError, { id: string; body: PersonUpdateBody }>({
     mutationFn: ({ id, body }) => updatePerson(ws, id, body),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(personKeys.detail(ws, updated.id), updated)
-      void queryClient.invalidateQueries({ queryKey: personKeys.lists(ws) })
-      // Các dòng cư trú mang `personFullName`.
-      void queryClient.invalidateQueries({ queryKey: occupancyKeys.all(ws) })
-    },
+    onSuccess: (updated) => refreshAfterPersonWrite(queryClient, ws, updated),
   })
 }
 

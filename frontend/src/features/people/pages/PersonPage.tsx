@@ -2,7 +2,6 @@ import { MapPinPlusIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'luci
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
-import { ComingSoonState } from '@/components/common/ComingSoonState'
 import { ErrorState } from '@/components/common/ErrorState'
 import { NotFoundState } from '@/components/common/NotFoundState'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +17,7 @@ import { OccupancyActions } from '../components/OccupancyActions'
 import { OccupancyFormDialog } from '../components/OccupancyFormDialog'
 import { OccupancyList } from '../components/OccupancyList'
 import { PersonFormDialog } from '../components/PersonFormDialog'
+import { PersonHistoryTab } from '../components/PersonHistoryTab'
 import { PersonInfoTab } from '../components/PersonInfoTab'
 import { GENDER_LABEL } from '../labels'
 import { useOccupanciesOfPerson, usePerson } from '../queries'
@@ -86,7 +86,7 @@ export function PersonPage() {
           <PersonPlacesTab ws={workspaceId} person={detail} />
         </TabsContent>
         <TabsContent value="history" className="pt-4">
-          <ComingSoonState />
+          <PersonHistoryTab ws={workspaceId} person={detail} />
         </TabsContent>
       </Tabs>
       <PersonFormDialog

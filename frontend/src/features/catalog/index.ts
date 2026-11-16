@@ -1,5 +1,5 @@
 export { setupWorkspace } from './api'
-export { attributeDefaults, attributeErrors, attributePayload } from './attributes'
+export { attributeDefaults, attributeErrors, attributePayload, fieldLabelsWith } from './attributes'
 export type { AttributeFormValues } from './attributes'
 export { AttributeFields } from './components/AttributeFields'
 export { AttributeView } from './components/AttributeView'

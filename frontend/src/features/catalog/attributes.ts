@@ -77,3 +77,8 @@ export function attributePayload(
   }
   return Object.keys(payload).length > 0 ? payload : null
 }
+
+/** Nhãn của các trường một bản ghi, thêm nhãn của từng mục tuỳ biến dưới khoá `attributes.<khoá>`. */
+export function fieldLabelsWith(base: Record<string, string>, defs: FieldDef[]): Record<string, string> {
+  return { ...base, ...Object.fromEntries(defs.map((def) => [`attributes.${def.fieldKey}`, def.label])) }
+}

@@ -2,7 +2,6 @@ import { ArrowRightLeftIcon, FolderInputIcon, MoreHorizontalIcon, PackageMinusIc
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
-import { ComingSoonState } from '@/components/common/ComingSoonState'
 import { ErrorState } from '@/components/common/ErrorState'
 import { NotFoundState } from '@/components/common/NotFoundState'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -23,6 +22,7 @@ import { isId } from '@/lib/ids'
 
 import { DeleteItemDialog } from '../components/DeleteItemDialog'
 import { ItemFormDialog } from '../components/ItemFormDialog'
+import { ItemHistoryTab } from '../components/ItemHistoryTab'
 import { MoveItemDialog } from '../components/MoveItemDialog'
 import { PutBackItemDialog } from '../components/PutBackItemDialog'
 import { RemoveItemDialog } from '../components/RemoveItemDialog'
@@ -172,7 +172,7 @@ export function ItemPage() {
           <ItemInfo ws={workspaceId} item={detail} />
         </TabsContent>
         <TabsContent value="history" className="pt-4">
-          <ComingSoonState />
+          <ItemHistoryTab ws={workspaceId} item={detail} />
         </TabsContent>
       </Tabs>
       {!removed && (
