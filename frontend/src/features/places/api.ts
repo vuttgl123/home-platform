@@ -85,3 +85,9 @@ export async function removeAddress(ws: string, id: string, version: number): Pr
   })
   return (await unwrap(call)) as PlaceDetail
 }
+
+/** Bỏ xoá một địa điểm; `version` là version của dòng đã xoá. @throws ApiError 409 nếu cha còn đang bị xoá */
+export async function restorePlace(ws: string, id: string, version: number): Promise<PlaceDetail> {
+  const call = registry.POST('/places/{id}/restore', { params: { header: workspaceHeaders(ws), path: { id } }, body: { version } })
+  return (await unwrap(call)) as PlaceDetail
+}

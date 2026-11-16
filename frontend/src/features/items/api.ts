@@ -84,3 +84,9 @@ export async function deleteItem(ws: string, id: string, version: number): Promi
     registry.DELETE('/items/{id}', { params: { header: workspaceHeaders(ws), path: { id }, query: { version } } }),
   )
 }
+
+/** Bỏ xoá một món; `version` là version của dòng đã xoá. @throws ApiError 409 nếu địa điểm của nó đang bị xoá */
+export async function restoreItem(ws: string, id: string, version: number): Promise<ItemDetail> {
+  const call = registry.POST('/items/{id}/restore', { params: { header: workspaceHeaders(ws), path: { id } }, body: { version } })
+  return (await unwrap(call)) as ItemDetail
+}

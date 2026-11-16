@@ -1,0 +1,36 @@
+import type { EntityType } from './types'
+
+export const ENTITY_LABEL: Record<EntityType, string> = { PLACE: 'Địa điểm', PERSON: 'Người', ITEM: 'Đồ đạc' }
+
+/** Đoạn đường dẫn trang của từng loại bản ghi. */
+export const ENTITY_PATH: Record<EntityType, string> = { PLACE: 'places', PERSON: 'people', ITEM: 'items' }
+
+/** Nhãn của các trường thường gặp trong `changedFields`, chung cho ba loại bản ghi. */
+export const FIELD_LABEL: Record<string, string> = {
+  name: 'Tên',
+  fullName: 'Họ tên',
+  code: 'Mã',
+  description: 'Mô tả',
+  status: 'Trạng thái',
+  placeTypeId: 'Loại',
+  address: 'Địa chỉ',
+  attributes: 'Mục tuỳ biến',
+  phone: 'Số điện thoại',
+  email: 'Email',
+  idType: 'Loại giấy tờ',
+  idNumber: 'Số giấy tờ',
+  dateOfBirth: 'Ngày sinh',
+  gender: 'Giới tính',
+  note: 'Ghi chú',
+  categoryId: 'Nhóm',
+  quantity: 'Số lượng',
+  unit: 'Đơn vị',
+  placedAt: 'Ngày đặt',
+  removedAt: 'Ngày gỡ',
+  placeId: 'Chỗ đặt',
+  replacedByItemId: 'Món thay',
+  parentId: 'Chỗ chứa',
+  coverFileId: 'Ảnh bìa',
+  avatarFileId: 'Ảnh đại diện',
+  deletedAt: 'Xoá',
+}

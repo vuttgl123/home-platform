@@ -1,12 +1,12 @@
 import type { RouteObject } from 'react-router'
 
+import { ActivityPage } from '@/features/activity'
 import { CatalogPage } from '@/features/catalog'
 import { ItemPage, PlaceItemsTab } from '@/features/items'
 import { PeoplePage, PersonPage, PlaceOccupantsTab } from '@/features/people'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
 
 import { AppLayout } from './layout/AppLayout'
-import { ComingSoonPage } from './layout/ComingSoonPage'
 import { NotFoundPage } from './layout/NotFoundPage'
 import { StartPage } from './layout/StartPage'
 import { WorkspaceHomePage } from './layout/WorkspaceHomePage'
@@ -37,7 +37,7 @@ export const routes: RouteObject[] = [
           { path: 'people/:personId', element: <PersonPage /> },
           { path: 'items/:itemId', element: <ItemPage /> },
           { path: 'catalog', element: <CatalogPage /> },
-          { path: 'activity', element: <ComingSoonPage /> },
+          { path: 'activity', element: <ActivityPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

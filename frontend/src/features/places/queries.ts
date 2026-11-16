@@ -12,6 +12,7 @@ import {
   listTopLevel,
   movePlace,
   removeAddress,
+  restorePlace,
   searchPlaces,
   setAddress,
   updatePlace,
@@ -173,5 +174,14 @@ export function useRemoveAddress(ws: string) {
   return useMutation<PlaceDetail, ApiError, PlaceDetail>({
     mutationFn: (place) => removeAddress(ws, place.id, place.version),
     onSuccess: (updated) => refreshAfterWrite(queryClient, ws, updated, 'descendants'),
+  })
+}
+
+/** Bỏ xoá một địa điểm: nó hiện lại trên cây, đúng chỗ cũ. */
+export function useRestorePlace(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<PlaceDetail, ApiError, { id: string; version: number }>({
+    mutationFn: ({ id, version }) => restorePlace(ws, id, version),
+    onSuccess: (restored) => refreshAfterWrite(queryClient, ws, restored, 'self'),
   })
 }

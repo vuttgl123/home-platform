@@ -116,3 +116,9 @@ export async function deleteOccupancy(ws: string, id: string, version: number): 
     registry.DELETE('/occupancies/{id}', { params: { header: workspaceHeaders(ws), path: { id }, query: { version } } }),
   )
 }
+
+/** Bỏ xoá một người; `version` là version của dòng đã xoá. */
+export async function restorePerson(ws: string, id: string, version: number): Promise<PersonDetail> {
+  const call = registry.POST('/people/{id}/restore', { params: { header: workspaceHeaders(ws), path: { id } }, body: { version } })
+  return (await unwrap(call)) as PersonDetail
+}

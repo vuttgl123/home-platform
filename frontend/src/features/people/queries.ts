@@ -15,6 +15,7 @@ import {
   listOccupanciesInSubtree,
   listOccupanciesOfPerson,
   listPeople,
+  restorePerson,
   searchPeople,
   updateOccupancy,
   updatePerson,
@@ -194,5 +195,14 @@ export function useDeleteOccupancy(ws: string) {
   return useMutation<void, ApiError, Occupancy>({
     mutationFn: (occupancy) => deleteOccupancy(ws, occupancy.id, occupancy.version),
     onSuccess: (_, occupancy) => refreshOccupancies(queryClient, ws, occupancy.personId),
+  })
+}
+
+/** Bỏ xoá một người. */
+export function useRestorePerson(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<PersonDetail, ApiError, { id: string; version: number }>({
+    mutationFn: ({ id, version }) => restorePerson(ws, id, version),
+    onSuccess: (restored) => refreshAfterPersonWrite(queryClient, ws, restored),
   })
 }

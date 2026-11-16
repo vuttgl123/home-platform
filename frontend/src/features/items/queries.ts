@@ -14,6 +14,7 @@ import {
   putBackItem,
   removeItem,
   replaceItem,
+  restoreItem,
   updateItem,
 } from './api'
 import type { ItemBody, ItemDetail, ItemSummary, ItemUpdateBody } from './types'
@@ -141,5 +142,14 @@ export function useDeleteItem(ws: string) {
   return useMutation<void, ApiError, ItemDetail>({
     mutationFn: (item) => deleteItem(ws, item.id, item.version),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: itemKeys.lists(ws) }),
+  })
+}
+
+/** Bỏ xoá một món nhập nhầm đã xoá. */
+export function useRestoreItem(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<ItemDetail, ApiError, { id: string; version: number }>({
+    mutationFn: ({ id, version }) => restoreItem(ws, id, version),
+    onSuccess: (restored) => refreshItems(queryClient, ws, restored),
   })
 }
