@@ -1,6 +1,6 @@
 // Dữ liệu mẫu cho test, đúng dạng backend trả về: đủ mọi khoá, trường trống là null.
 import type { FieldDef, PlaceType } from '@/features/catalog'
-import type { PlaceDetail, PlaceSummary } from '@/features/places'
+import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from '@/features/places'
 import type { User } from '@/features/users'
 import type { Workspace } from '@/features/workspaces'
 
@@ -65,8 +65,13 @@ export function place(overrides: Partial<PlaceSummary> = {}): PlaceSummary {
     depth: 0,
     coverFileId: null,
     version: 1,
+    hasChildren: false,
     ...overrides,
   }
+}
+
+export function searchResult(overrides: Partial<PlaceSearchResult> = {}): PlaceSearchResult {
+  return { ...place(), ancestors: [], ...overrides }
 }
 
 export function placeDetail(overrides: Partial<PlaceDetail> = {}): PlaceDetail {

@@ -1,6 +1,6 @@
 import { registry, unwrap, workspaceHeaders, type CursorPage, type RegistrySchemas } from '@/api'
 
-import type { PlaceDetail, PlaceSummary } from './types'
+import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from './types'
 
 // Cây tải mỗi lần 50 dòng: nhánh nghìn phòng không phải bấm "Tải thêm" quá nhiều, mà một trang
 // vẫn nhẹ. Backend cho tối đa 100.
@@ -22,12 +22,12 @@ export async function listChildren(ws: string, parentId: string, cursor?: string
   return (await unwrap(call)) as CursorPage<PlaceSummary>
 }
 
-/** Các địa điểm có tên bắt đầu bằng `name`, ở mọi cấp. */
-export async function searchPlaces(ws: string, name: string, cursor?: string): Promise<CursorPage<PlaceSummary>> {
+/** Các địa điểm có tên bắt đầu bằng `name`, ở mọi cấp, kèm tổ tiên của từng cái. */
+export async function searchPlaces(ws: string, name: string, cursor?: string): Promise<CursorPage<PlaceSearchResult>> {
   const call = registry.GET('/places/search', {
     params: { header: workspaceHeaders(ws), query: { name, cursor } },
   })
-  return (await unwrap(call)) as CursorPage<PlaceSummary>
+  return (await unwrap(call)) as CursorPage<PlaceSearchResult>
 }
 
 /** @throws ApiError 404 nếu địa điểm không có hoặc đã xoá */

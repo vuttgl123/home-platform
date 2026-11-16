@@ -19,7 +19,7 @@ import {
   type PlaceCreateBody,
   type PlaceUpdateBody,
 } from './api'
-import type { PlaceDetail, PlaceSummary } from './types'
+import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from './types'
 
 /**
  * Khoá cache của địa điểm. Khoá ngắn là tiền tố của khoá dài, nên làm cũ `details(ws)` là làm cũ
@@ -63,7 +63,7 @@ export function usePlace(ws: string, id: string | undefined) {
 }
 
 /** Tìm theo tên bắt đầu bằng `name`; `name` rỗng thì không gọi. */
-export function usePlaceSearch(ws: string, name: string): CursorList<PlaceSummary> {
+export function usePlaceSearch(ws: string, name: string): CursorList<PlaceSearchResult> {
   return useCursorList({
     queryKey: placeKeys.search(ws, name),
     fetchPage: (cursor) => searchPlaces(ws, name, cursor),
@@ -104,7 +104,9 @@ export function refreshAfterWrite(
     void queryClient.invalidateQueries({ queryKey: placeKeys.all(ws), predicate: (query) => !isOwnDetail(query.queryKey) })
     return
   }
-  void queryClient.invalidateQueries({ queryKey: placeKeys.children(ws, place.parentId) })
+  // Mọi danh sách con, không chỉ của cha: dòng của chính người cha (nằm trong danh sách của ông)
+  // mang `hasChildren`, có thể vừa đổi. Chỉ danh sách đang hiện mới tải lại.
+  void queryClient.invalidateQueries({ queryKey: placeKeys.lists(ws) })
   void queryClient.invalidateQueries({ queryKey: placeKeys.searches(ws) })
   if (scope === 'descendants') {
     void queryClient.invalidateQueries({ queryKey: placeKeys.details(ws), predicate: (query) => !isOwnDetail(query.queryKey) })
@@ -144,8 +146,9 @@ export function useDeletePlace(ws: string) {
   const queryClient = useQueryClient()
   return useMutation<void, ApiError, PlaceDetail>({
     mutationFn: (place) => deletePlace(ws, place.id, place.version),
-    onSuccess: (_, place) => {
-      void queryClient.invalidateQueries({ queryKey: placeKeys.children(ws, place.parentId) })
+    onSuccess: () => {
+      // Như `refreshAfterWrite`: cha có thể vừa thành lá.
+      void queryClient.invalidateQueries({ queryKey: placeKeys.lists(ws) })
       void queryClient.invalidateQueries({ queryKey: placeKeys.searches(ws) })
     },
   })

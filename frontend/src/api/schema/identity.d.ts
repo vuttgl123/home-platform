@@ -83,6 +83,8 @@ export interface components {
             detail?: string;
             /** Format: uri */
             instance?: string;
+            /** @description Machine-readable reason, when there is one; VERSION_CONFLICT means read again */
+            code?: string;
         };
         UserCreateRequest: {
             /** Format: email */

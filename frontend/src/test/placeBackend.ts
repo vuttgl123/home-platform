@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
-import type { PlaceDetail, PlaceSummary } from '@/features/places'
+import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from '@/features/places'
 
 import { page, placeDetail, problem } from './fixtures'
 import { server } from './server'
@@ -50,7 +50,12 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
 
   function summary(p: PlaceDetail): PlaceSummary {
     const { id, parentId, placeTypeId, code, name, status, coverFileId, version } = p
-    return { id, parentId, placeTypeId, code, name, status, depth: chain(id).length, coverFileId, version }
+    const hasChildren = [...places.values()].some((other) => other.parentId === id)
+    return { id, parentId, placeTypeId, code, name, status, depth: chain(id).length, coverFileId, version, hasChildren }
+  }
+
+  function searchResult(p: PlaceDetail): PlaceSearchResult {
+    return { ...summary(p), ancestors: chain(p.id).map((a) => ({ id: a.id, name: a.name })) }
   }
 
   function childrenOf(parentId: string | null) {
@@ -85,7 +90,7 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
     http.get('/api/registry/places', () => HttpResponse.json(page(childrenOf(null)))),
     http.get('/api/registry/places/search', ({ request }) => {
       const name = new URL(request.url).searchParams.get('name') ?? ''
-      return HttpResponse.json(page([...places.values()].filter((p) => p.name.startsWith(name)).map(summary)))
+      return HttpResponse.json(page([...places.values()].filter((p) => p.name.startsWith(name)).map(searchResult)))
     }),
     http.get('/api/registry/places/:id/children', ({ params }) =>
       HttpResponse.json(page(childrenOf(params.id as string))),

@@ -785,6 +785,7 @@ export interface components {
             /** Format: date-time */
             changedAt?: string;
             note?: string;
+            entityName?: string;
         };
         AddressRequest: {
             countryCode?: string;
@@ -853,6 +854,10 @@ export interface components {
         };
         CursorPagePlaceResponse: {
             items?: components["schemas"]["PlaceResponse"][];
+            nextCursor?: string;
+        };
+        CursorPagePlaceSearchResponse: {
+            items?: components["schemas"]["PlaceSearchResponse"][];
             nextCursor?: string;
         };
         CursorPagePlaceVersionSummaryResponse: {
@@ -1342,11 +1347,28 @@ export interface components {
             coverFileId?: string;
             /** Format: int32 */
             version?: number;
+            hasChildren?: boolean;
         };
         PlaceRestoreRequest: {
             /** Format: int32 */
             version: number;
             note?: string;
+        };
+        PlaceSearchResponse: {
+            id?: string;
+            parentId?: string;
+            placeTypeId?: string;
+            code?: string;
+            name?: string;
+            /** @enum {string} */
+            status?: "ACTIVE" | "INACTIVE";
+            /** Format: int32 */
+            depth?: number;
+            coverFileId?: string;
+            /** Format: int32 */
+            version?: number;
+            hasChildren?: boolean;
+            ancestors?: components["schemas"]["PlaceRef"][];
         };
         PlaceSnapshot: {
             id?: string;
@@ -1448,6 +1470,8 @@ export interface components {
             detail?: string;
             /** Format: uri */
             instance?: string;
+            /** @description Machine-readable reason, when there is one; VERSION_CONFLICT means read again */
+            code?: string;
         };
         SetupResponse: {
             created?: boolean;
@@ -4069,7 +4093,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CursorPagePlaceResponse"];
+                    "*/*": components["schemas"]["CursorPagePlaceSearchResponse"];
                 };
             };
             /** @description Error, described as Problem Details */

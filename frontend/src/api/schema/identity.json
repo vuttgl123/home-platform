@@ -390,6 +390,10 @@
           "instance": {
             "type": "string",
             "format": "uri"
+          },
+          "code": {
+            "type": "string",
+            "description": "Machine-readable reason, when there is one; VERSION_CONFLICT means read again"
           }
         }
       },

@@ -2,14 +2,20 @@ import type { Present, RegistrySchemas } from '@/api'
 
 type S = RegistrySchemas
 
+/** Tên và `id` của một tổ tiên. */
+export type PlaceRef = Present<S['PlaceRef'], 'id' | 'name'>
+
 /** Một địa điểm trong danh sách (cây, kết quả tìm kiếm). */
 export type PlaceSummary = Present<
   S['PlaceResponse'],
-  'id' | 'placeTypeId' | 'name' | 'status' | 'depth' | 'version'
+  'id' | 'placeTypeId' | 'name' | 'status' | 'depth' | 'version' | 'hasChildren'
 >
 
-/** Tên và `id` của một tổ tiên. */
-export type PlaceRef = Present<S['PlaceRef'], 'id' | 'name'>
+/** Một kết quả tìm địa điểm: như `PlaceSummary`, kèm tổ tiên từ gốc tới cha. */
+export type PlaceSearchResult = Omit<
+  Present<S['PlaceSearchResponse'], 'id' | 'placeTypeId' | 'name' | 'status' | 'depth' | 'version' | 'hasChildren'>,
+  'ancestors'
+> & { ancestors: PlaceRef[] }
 
 export type Address = Present<S['AddressResponse'], 'countryCode' | 'fullAddress'>
 

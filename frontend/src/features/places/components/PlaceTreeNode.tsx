@@ -62,16 +62,19 @@ export function PlaceTreeRows({ parentId, list }: { parentId: string | null; lis
 }
 
 /** Một địa điểm trên cây: mũi tên mở đóng, tên là liên kết tới trang của nó, và các con khi mở. */
-function PlaceTreeNode({ place }: { place: Pick<PlaceSummary, 'id' | 'name'> }) {
+function PlaceTreeNode({ place }: { place: Pick<PlaceSummary, 'id' | 'name'> & { hasChildren?: boolean } }) {
   const { ws, selectedId, selected, expanded, toggle } = useTree()
   const isOpen = expanded.has(place.id)
   const isSelected = selectedId === place.id
-  // Luôn theo dõi cache của danh sách con, nhưng chỉ tải khi nút được mở.
-  const children = useChildren(ws, place.id, { enabled: isOpen })
-
-  // Backend chưa cho biết một địa điểm có con hay không, nên chỉ biết là lá sau khi đã tải.
+  // Địa điểm đang mở là con của nút này thì nút này không phải lá, dù danh sách có nói gì.
   const hasSelectedChild = selected?.parentId === place.id
-  const isLeaf = children.isLoaded && children.items.length === 0 && !children.hasMore && !hasSelectedChild
+  // `hasChildren` có trong mọi danh sách; dòng ghim từ trang chi tiết thì không biết, coi như có thể có.
+  const knownLeaf = place.hasChildren === false && !hasSelectedChild
+  // Luôn theo dõi cache của danh sách con, nhưng chỉ tải khi nút được mở và có thể có con.
+  const children = useChildren(ws, place.id, { enabled: isOpen && !knownLeaf })
+  // Danh sách đã tải mà trống (ví dụ con vừa bị xoá ở tab khác) cũng là lá.
+  const isLeaf =
+    knownLeaf || (children.isLoaded && children.items.length === 0 && !children.hasMore && !hasSelectedChild)
 
   return (
     <li>

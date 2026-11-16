@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 import { usePlaceSearch } from '../queries'
 import { placeUrl } from '../routes'
+import { AncestorTrail } from './AncestorTrail'
 
 /** Kết quả tìm địa điểm theo tên bắt đầu bằng `term`, thay cho cây trong lúc đang tìm. */
 export function PlaceSearchResults({ ws, term }: { ws: string; term: string }) {
@@ -42,9 +43,12 @@ export function PlaceSearchResults({ ws, term }: { ws: string; term: string }) {
         <li key={place.id}>
           <Link
             to={placeUrl(ws, place.id)}
-            className="flex h-7 items-center gap-2 rounded-md px-2 text-sm outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            className="flex items-start gap-2 rounded-md px-2 py-1 text-sm outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
           >
-            <span className="min-w-0 flex-1 truncate">{place.name}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate">{place.name}</span>
+              <AncestorTrail ancestors={place.ancestors} />
+            </span>
             {place.code && <span className="shrink-0 text-xs text-muted-foreground">{place.code}</span>}
           </Link>
         </li>

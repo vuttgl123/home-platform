@@ -106,7 +106,8 @@ export type PlaceSummary = Present<S['PlaceResponse'], ... | 'hasChildren'>
 export type PlaceSearchResult = Present<S['PlaceSearchResponse'], 'id' | 'placeTypeId' | 'name' | 'status' | 'depth' | 'hasChildren' | 'version' | 'ancestors'>
 // places/components
 export function AncestorTrail(props: { ancestors: PlaceRef[] }): JSX.Element | null   // "Toà A › Tầng 3", chữ nhỏ, mờ
-export function PlacePicker(props: { ws: string; exclude: string[]; value: string | null; onChange: (id: string | null, place: PlaceSearchResult | null) => void; allowTop?: boolean }): JSX.Element
+export type PlaceChoice = { kind: 'top' } | { kind: 'place'; place: PlaceSearchResult }
+export function PlacePicker(props: { ws: string; exclude: (string | null | undefined)[]; value: PlaceChoice | null; onChange: (choice: PlaceChoice) => void; allowTop?: boolean; label?: string }): JSX.Element
 	// ô tìm + nhóm radio (tách ra từ MovePlaceDialog); mỗi kết quả: tên, AncestorTrail, mã; exported qua index.ts
 	// cho kế hoạch người ở và đồ đạc dùng lại
 ```

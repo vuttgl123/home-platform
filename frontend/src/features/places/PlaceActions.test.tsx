@@ -257,3 +257,23 @@ test('removesTheAddress', async () => {
   expect(await (await main()).findByText('Chưa có địa chỉ')).toBeInTheDocument()
   expect(backend.writes).toEqual([{ method: 'DELETE', path: '/places/1/address', body: null }])
 })
+
+test('deletingTheLastChildMakesTheParentALeaf', async () => {
+  mockShell({ placeTypes: types })
+  mockPlaceBackend([
+    { id: '1', name: 'Toà A', placeTypeId: '100' },
+    { id: '13', parentId: '1', name: 'Tầng 3', placeTypeId: '101' },
+  ])
+  const { user } = renderApp({ route: '/w/7/places/13', userId: '42' })
+  // Xem cây trước khi mở hộp thoại: hộp thoại ẩn phần còn lại của trang với công cụ đọc màn hình.
+  const tree = within(await screen.findByRole('navigation', { name: 'Cây địa điểm' }))
+  expect(await tree.findByRole('button', { name: /Toà A/ })).toBeInTheDocument()
+  await user.click(await (await main()).findByRole('button', { name: 'Thao tác khác' }))
+  await user.click(await screen.findByRole('menuitem', { name: 'Xoá' }))
+  const dialog = within(await screen.findByRole('alertdialog', { name: 'Xoá Tầng 3?' }))
+
+  await user.click(dialog.getByRole('button', { name: 'Xoá' }))
+
+  await waitFor(() => expect(tree.queryByRole('button', { name: /Toà A/ })).not.toBeInTheDocument())
+  expect(tree.getByRole('link', { name: 'Toà A' })).toBeInTheDocument()
+})

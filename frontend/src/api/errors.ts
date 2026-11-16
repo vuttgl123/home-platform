@@ -12,11 +12,18 @@ export class ApiError extends Error {
   /** Lỗi kiểm tra dữ liệu không gắn với trường nào. */
   readonly formErrors: string[]
   readonly requestId: string | null
+  /** Mã máy đọc của lỗi, nếu backend gửi, ví dụ `VERSION_CONFLICT`. */
+  readonly code: string | null
 
   constructor(
     status: number,
     detail: string,
-    extra: { fieldErrors?: Record<string, string>; formErrors?: string[]; requestId?: string | null } = {},
+    extra: {
+      fieldErrors?: Record<string, string>
+      formErrors?: string[]
+      requestId?: string | null
+      code?: string | null
+    } = {},
   ) {
     super(detail)
     this.name = 'ApiError'
@@ -25,13 +32,17 @@ export class ApiError extends Error {
     this.fieldErrors = extra.fieldErrors ?? {}
     this.formErrors = extra.formErrors ?? []
     this.requestId = extra.requestId ?? null
+    this.code = extra.code ?? null
   }
 
   /**
-   * Bản ghi đã được người khác sửa sau lần đọc: phải đọc lại rồi mới ghi được. Backend chưa có
-   * mã lỗi riêng, nên nhận ra bằng đuôi của `detail` ("Place 1 was changed by someone else").
+   * Bản ghi đã được người khác sửa sau lần đọc: phải đọc lại rồi mới ghi được. Nhận ra bằng mã
+   * `VERSION_CONFLICT`; response không có mã (backend cũ) thì bằng đuôi của `detail`.
    */
   get isVersionConflict(): boolean {
+    if (this.code != null) {
+      return this.code === 'VERSION_CONFLICT'
+    }
     return this.status === 409 && this.detail.endsWith('was changed by someone else')
   }
 
@@ -58,7 +69,8 @@ export class ApiError extends Error {
       }
     }
     const requestId = typeof body.requestId === 'string' ? body.requestId : null
-    return new ApiError(status, body.detail, { fieldErrors, formErrors, requestId })
+    const code = typeof body.code === 'string' ? body.code : null
+    return new ApiError(status, body.detail, { fieldErrors, formErrors, requestId, code })
   }
 
   /** Request không tới được máy chủ: mất mạng, hoặc backend đang tắt. */

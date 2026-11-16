@@ -52,3 +52,16 @@ test('networkFailureHasStatusZero', () => {
   expect(error.detail).toBe('Không kết nối được máy chủ')
   expect(error.isNotFound).toBe(false)
 })
+
+test('versionConflictIsReadFromTheCode', () => {
+  const error = ApiError.from(409, { status: 409, detail: 'Anything at all', code: 'VERSION_CONFLICT' })
+
+  expect(error.code).toBe('VERSION_CONFLICT')
+  expect(error.isVersionConflict).toBe(true)
+})
+
+test('messageIsStillAFallback', () => {
+  // Backend cũ chưa gửi `code`.
+  expect(ApiError.from(409, { detail: 'Item 7 was changed by someone else' }).isVersionConflict).toBe(true)
+  expect(ApiError.from(409, { detail: 'Item 7 was changed by someone else', code: 'OTHER' }).isVersionConflict).toBe(false)
+})

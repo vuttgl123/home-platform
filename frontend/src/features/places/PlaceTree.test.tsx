@@ -2,15 +2,15 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { page, place, placeDetail } from '@/test/fixtures'
+import { page, place, placeDetail, searchResult } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
 
 const BIG_ID = '114540094935228416'
 
-const buildingA = place({ id: '1', name: 'Toà A' })
-const floor3 = place({ id: '13', parentId: '1', name: 'Tầng 3', depth: 1 })
+const buildingA = place({ id: '1', name: 'Toà A', hasChildren: true })
+const floor3 = place({ id: '13', parentId: '1', name: 'Tầng 3', depth: 1, hasChildren: true })
 const room = (id: string, name: string) => place({ id, parentId: '13', name, depth: 2 })
 const p301Detail = placeDetail({
   id: '301',
@@ -102,7 +102,7 @@ test('loadMoreAppendsWithoutDuplicates', async () => {
 })
 
 test('navigatesWithTheExactId', async () => {
-  mockShell({ places: [place({ id: BIG_ID, name: 'Toà A' })] })
+  mockShell({ places: [place({ id: BIG_ID, name: 'Toà A', hasChildren: true })] })
   server.use(
     http.get(`/api/registry/places/${BIG_ID}`, () => HttpResponse.json(placeDetail({ id: BIG_ID }))),
   )
@@ -164,7 +164,7 @@ test('searchReplacesTheTreeWithResults', async () => {
   server.use(
     http.get('/api/registry/places/search', ({ request }) => {
       searchedFor = new URL(request.url).searchParams.get('name')
-      return HttpResponse.json(page([room('101', 'P101'), place({ id: '102', name: 'P102', code: 'R-102' })]))
+      return HttpResponse.json(page([searchResult({ id: '101', name: 'P101' }), searchResult({ id: '102', name: 'P102', code: 'R-102' })]))
     }),
   )
   const { user } = renderApp({ route: '/w/7', userId: '42' })
@@ -214,4 +214,38 @@ test('toggleReportsWhetherItIsOpen', async () => {
   expect(await (await findTree()).findByRole('button', { name: 'Đóng Toà A' })).toHaveAttribute('aria-expanded', 'true')
   // Cây không cài phím mũi tên của mẫu ARIA "tree", nên không tự nhận là một "tree".
   expect(screen.queryByRole('tree')).not.toBeInTheDocument()
+})
+
+test('leavesHaveNoArrowBeforeLoading', async () => {
+  // Không đăng ký handler cho `children`: nếu cây tải con của một lá, MSW làm test hỏng.
+  mockShell({ places: [place({ id: '5', name: 'Kho', hasChildren: false }), buildingA] })
+
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const tree = await findTree()
+  await tree.findByRole('link', { name: 'Kho' })
+  expect(tree.queryByRole('button', { name: 'Mở Kho' })).not.toBeInTheDocument()
+  expect(tree.getByRole('button', { name: 'Mở Toà A' })).toBeInTheDocument()
+})
+
+test('searchResultsShowTheirAncestors', async () => {
+  mockShell({ places: [buildingA] })
+  server.use(
+    http.get('/api/registry/places/search', () =>
+      HttpResponse.json(
+        page([
+          searchResult({ id: '301', name: 'P301', ancestors: [{ id: '1', name: 'Toà A' }, { id: '13', name: 'Tầng 3' }] }),
+          searchResult({ id: '901', name: 'P301', ancestors: [{ id: '2', name: 'Toà B' }] }),
+        ]),
+      ),
+    ),
+  )
+  const { user } = renderApp({ route: '/w/7', userId: '42' })
+  const tree = await findTree()
+  await tree.findByRole('link', { name: 'Toà A' })
+
+  await user.type(tree.getByRole('searchbox', { name: 'Tìm địa điểm' }), 'P301')
+
+  const results = await tree.findAllByRole('link', { name: /P301/ })
+  expect(results.map((link) => link.textContent)).toEqual(['P301Toà A › Tầng 3', 'P301Toà B'])
 })
