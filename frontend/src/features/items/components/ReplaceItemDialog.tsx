@@ -99,6 +99,7 @@ function ReplaceForm({ ws, item, onDone }: { ws: string; item: ItemDetail; onDon
   return (
     <form noValidate onSubmit={submit} className="flex flex-col gap-4">
       <ItemFields ws={ws} form={form} defs={defs} />
+      {item.ownerName && <p className="text-sm text-muted-foreground">Món mới cũng là của {item.ownerName}.</p>}
       <TextField
         label="Ngày gỡ món cũ"
         type="date"

@@ -10,7 +10,7 @@ import type { PersonSummary } from '../types'
 
 /**
  * Chọn một người bằng cách tìm theo tên; không có thì tạo người mới với đúng tên đang gõ.
- * @param onCreateNew người dùng chọn tạo người mới với tên này
+ * @param onCreateNew người dùng chọn tạo người mới với tên này; không truyền thì không có lựa chọn đó
  */
 export function PersonPicker({
   ws,
@@ -21,7 +21,7 @@ export function PersonPicker({
   ws: string
   value: PersonSummary | null
   onChange: (person: PersonSummary) => void
-  onCreateNew: (name: string) => void
+  onCreateNew?: (name: string) => void
 }) {
   const [term, setTerm] = useState('')
   const typed = term.trim()
@@ -67,7 +67,7 @@ export function PersonPicker({
           )
         })}
       </div>
-      {searchFor !== '' && results.isLoaded && (
+      {onCreateNew && searchFor !== '' && results.isLoaded && (
         <Button type="button" variant="ghost" size="sm" className="justify-start" onClick={() => onCreateNew(typed)}>
           <PlusIcon aria-hidden="true" />
           Thêm người mới “{typed}”

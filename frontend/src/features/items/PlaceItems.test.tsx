@@ -105,3 +105,10 @@ test('emptyTabInvitesToAdd', async () => {
   // P301 không có chỗ con: không có công tắc "Cả bên trong".
   expect((await main()).queryByRole('switch', { name: 'Cả bên trong' })).not.toBeInTheDocument()
 })
+
+test('ownedItemsShowTheirOwner', async () => {
+  setUp([{ id: '901', placeId: '301', name: 'Tủ lạnh', ownerPersonId: '8000', ownerName: 'An' }])
+  renderApp({ route: '/w/7/places/301?tab=items', userId: '42' })
+
+  expect(await (await main()).findByText('của An')).toBeInTheDocument()
+})

@@ -1191,6 +1191,14 @@
             }
           },
           {
+            "name": "ownerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "X-Workspace-Id",
             "in": "header",
             "description": "Id of the workspace the call works in",
@@ -1544,6 +1552,74 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ItemMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetailResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{id}/owner": {
+      "post": {
+        "tags": [
+          "item-controller"
+        ],
+        "operationId": "changeOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemOwnerRequest"
               }
             }
           },
@@ -5750,6 +5826,12 @@
           "categoryName": {
             "type": "string"
           },
+          "ownerPersonId": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          },
           "code": {
             "type": "string"
           },
@@ -5838,6 +5920,26 @@
           "version"
         ]
       },
+      "ItemOwnerRequest": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ownerPersonId": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
       "ItemRemoveRequest": {
         "type": "object",
         "properties": {
@@ -5894,6 +5996,9 @@
         "type": "object",
         "properties": {
           "placeId": {
+            "type": "string"
+          },
+          "ownerPersonId": {
             "type": "string"
           },
           "categoryId": {
@@ -5965,6 +6070,12 @@
             "type": "string"
           },
           "categoryName": {
+            "type": "string"
+          },
+          "ownerPersonId": {
+            "type": "string"
+          },
+          "ownerName": {
             "type": "string"
           },
           "code": {
@@ -6042,6 +6153,9 @@
             "format": "date"
           },
           "replacedByItemId": {
+            "type": "string"
+          },
+          "ownerPersonId": {
             "type": "string"
           },
           "description": {

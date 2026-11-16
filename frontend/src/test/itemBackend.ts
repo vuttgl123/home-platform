@@ -15,6 +15,7 @@ export type ItemWrite = { method: string; path: string; body: unknown }
  * @param options.placesUnder các `id` địa điểm trong cây con của một địa điểm (cho `subtreeOf`)
  * @param options.placeNames tên địa điểm theo `id`
  * @param options.categoryNames tên nhóm theo `id`
+ * @param options.ownerNames tên người theo `id`, cho chủ của món
  */
 export function mockItemBackend(options: {
   items?: Partial<ItemDetail>[]
@@ -22,6 +23,7 @@ export function mockItemBackend(options: {
   placesUnder?: Record<string, string[]>
   placeNames?: Record<string, string>
   categoryNames?: Record<string, string>
+  ownerNames?: Record<string, string>
 }) {
   const today = options.today ?? '2026-11-16'
   const items = new Map<string, ItemDetail>()
@@ -39,13 +41,14 @@ export function mockItemBackend(options: {
       ...item,
       placeName: options.placeNames?.[item.placeId] ?? item.placeName,
       categoryName: item.categoryId ? (options.categoryNames?.[item.categoryId] ?? item.categoryName) : null,
+      ownerName: item.ownerPersonId ? (options.ownerNames?.[item.ownerPersonId] ?? item.ownerName) : null,
     }
   }
 
   function summary(item: ItemDetail): ItemSummary {
-    const { id, placeId, placeName, categoryId, categoryName, code, name, quantity, unit, status, removedAt, version } =
+    const { id, placeId, placeName, categoryId, categoryName, ownerPersonId, ownerName, code, name, quantity, unit, status, removedAt, version } =
       withNames(item)
-    return { id, placeId, placeName, categoryId, categoryName, code, name, quantity, unit, status, removedAt, version }
+    return { id, placeId, placeName, categoryId, categoryName, ownerPersonId, ownerName, code, name, quantity, unit, status, removedAt, version }
   }
 
   const notFound = (id: string) => HttpResponse.json(problem(404, `Item ${id} not found`), { status: 404 })
@@ -65,6 +68,7 @@ export function mockItemBackend(options: {
       id: String(nextId++),
       placeId,
       categoryId: (body.categoryId as string | undefined) ?? null,
+      ownerPersonId: (body.ownerPersonId as string | undefined) ?? null,
       code: `TS-${String(nextCode++).padStart(6, '0')}`,
       name: body.name as string,
       quantity: (body.quantity as number | undefined) ?? 1,
@@ -103,6 +107,10 @@ export function mockItemBackend(options: {
         found = found
           .filter((item) => item.placeId === placeId && (item.removedAt != null) === removed)
           .sort((a, b) => (removed ? (b.removedAt ?? '').localeCompare(a.removedAt ?? '') : a.name.localeCompare(b.name)))
+      } else if (query.get('ownerId') != null) {
+        found = found
+          .filter((item) => item.ownerPersonId === query.get('ownerId') && item.removedAt == null)
+          .sort((a, b) => a.name.localeCompare(b.name))
       } else if (subtreeOf != null) {
         const inside = new Set([subtreeOf, ...(options.placesUnder?.[subtreeOf] ?? [])])
         found = found.filter((item) => inside.has(item.placeId) && item.removedAt == null).sort((a, b) => a.name.localeCompare(b.name))
@@ -142,6 +150,14 @@ export function mockItemBackend(options: {
       if (result.error) return result.error
       return HttpResponse.json(save(result.item, { placeId: body.placeId as string }))
     }),
+    http.post('/api/registry/items/:id/owner', async ({ request, params }) => {
+      const body = (await record(request))!
+      const result = check(params.id as string, body.version)
+      if (result.error) return result.error
+      const ownerPersonId = (body.ownerPersonId as string | null | undefined) ?? null
+      if (ownerPersonId === result.item.ownerPersonId) return HttpResponse.json(withNames(result.item))
+      return HttpResponse.json(save(result.item, { ownerPersonId }))
+    }),
     http.post('/api/registry/items/:id/reissue-code', async ({ request, params }) => {
       const body = (await record(request))!
       const result = check(params.id as string, body.version)
@@ -159,7 +175,10 @@ export function mockItemBackend(options: {
       const body = (await record(request))!
       const result = check(params.id as string, body.version)
       if (result.error) return result.error
-      const replacementBody = body.replacement as Record<string, unknown>
+      const replacementBody: Record<string, unknown> = {
+        ownerPersonId: result.item.ownerPersonId ?? undefined,
+        ...(body.replacement as Record<string, unknown>),
+      }
       const replacement = build(replacementBody, (replacementBody.placeId as string | undefined) ?? result.item.placeId)
       items.set(replacement.id, replacement)
       const removed = save(result.item, {

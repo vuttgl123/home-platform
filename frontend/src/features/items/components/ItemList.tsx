@@ -62,6 +62,7 @@ export function ItemList({
                     {item.name}
                   </Link>
                   {item.code && <span className="ml-2 text-xs text-muted-foreground">{item.code}</span>}
+                  {item.ownerName && <span className="block text-xs text-muted-foreground">{`của ${item.ownerName}`}</span>}
                 </td>
                 {showPlace && (
                   <td className="px-3 py-2">

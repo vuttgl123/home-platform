@@ -16,6 +16,8 @@ import { useCreateItem, useFetchFreshItem, useUpdateItem } from '../queries'
 import type { ItemDetail } from '../types'
 import { emptyItemForm, itemFormSchema, itemFormValues, itemPayload, type ItemFormValues } from './itemForm'
 import { ItemFields } from './ItemFields'
+import { OwnerField } from './OwnerField'
+import { ownerIdOf, type OwnerChoice } from './ownerChoice'
 import { useItemFieldDefs } from './useItemFieldDefs'
 
 type Mode = { mode: 'create'; place: { id: string; name: string } } | { mode: 'edit'; item: ItemDetail }
@@ -58,6 +60,7 @@ function ItemForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } & 
   const fetchFresh = useFetchFreshItem(ws)
   const [formErrors, setFormErrors] = useState<string[]>([])
   const [conflict, setConflict] = useState(false)
+  const [owner, setOwner] = useState<OwnerChoice>({ kind: 'place' })
   const [reloading, setReloading] = useState(false)
   const activeKeys = new Set(defs.filter((def) => def.status === 'ACTIVE').map((def) => def.fieldKey))
   const isField = (name: string) =>
@@ -101,8 +104,13 @@ function ItemForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } & 
         },
       )
     } else if (mode.mode === 'create') {
+      if (owner.kind === 'person' && owner.person == null) {
+        setFormErrors(['Chọn một người'])
+        return
+      }
+      const ownerPersonId = ownerIdOf(owner) ?? undefined
       create.mutate(
-        { ...body, placeId: mode.place.id },
+        { ...body, placeId: mode.place.id, ownerPersonId },
         {
           onSuccess: (created) => {
             toast.add({ title: created.code ? `Đã thêm ${created.name} (${created.code})` : `Đã thêm ${created.name}`, type: 'success' })
@@ -119,6 +127,7 @@ function ItemForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } & 
       {mode.mode === 'create' && <p className="text-sm text-muted-foreground">Đặt ở {mode.place.name}</p>}
       <CodeNote code={base ? (base.code ?? null) : undefined} />
       <ItemFields ws={ws} form={form} defs={defs} keep={base} />
+      {!base && <OwnerField ws={ws} value={owner} onChange={setOwner} />}
       {conflict && <VersionConflictAlert onReload={() => void reload()} isReloading={reloading} />}
       <FormError messages={formErrors} />
       <DialogFooter>

@@ -5,11 +5,13 @@ import { useCursorList, type ApiError, type CursorList } from '@/api'
 import { isId } from '@/lib/ids'
 
 import {
+  changeItemOwner,
   createItem,
   deleteItem,
   getItem,
   listItemsAtPlace,
   listItemsInSubtree,
+  listItemsOwnedBy,
   moveItem,
   putBackItem,
   reissueItemCode,
@@ -25,6 +27,7 @@ export const itemKeys = {
   lists: (ws: string) => ['items', ws, 'list'] as const,
   atPlace: (ws: string, placeId: string, removed: boolean) => ['items', ws, 'list', 'place', placeId, removed] as const,
   inSubtree: (ws: string, placeId: string) => ['items', ws, 'list', 'subtree', placeId] as const,
+  ownedBy: (ws: string, personId: string) => ['items', ws, 'list', 'owner', personId] as const,
   details: (ws: string) => ['items', ws, 'detail'] as const,
   detail: (ws: string, id: string) => ['items', ws, 'detail', id] as const,
 }
@@ -48,6 +51,11 @@ export function useItemsInSubtree(ws: string, placeId: string, enabled: boolean)
     fetchPage: (cursor) => listItemsInSubtree(ws, placeId, cursor),
     enabled,
   })
+}
+
+/** Đồ chưa gỡ của riêng một người. */
+export function useItemsOwnedBy(ws: string, personId: string): CursorList<ItemSummary> {
+  return useCursorList({ queryKey: itemKeys.ownedBy(ws, personId), fetchPage: (cursor) => listItemsOwnedBy(ws, personId, cursor) })
 }
 
 /** Một món đầy đủ; `id` trống hoặc sai dạng thì không gọi. */
@@ -106,6 +114,14 @@ export function useMoveItem(ws: string) {
   return useMutation<ItemDetail, ApiError, { item: ItemDetail; placeId: string }>({
     mutationFn: ({ item, placeId }) => moveItem(ws, item.id, item.version, placeId),
     onSuccess: (moved) => refreshItems(queryClient, ws, moved),
+  })
+}
+
+export function useChangeItemOwner(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<ItemDetail, ApiError, { item: ItemDetail; ownerPersonId: string | null }>({
+    mutationFn: ({ item, ownerPersonId }) => changeItemOwner(ws, item.id, item.version, ownerPersonId),
+    onSuccess: (changed) => refreshItems(queryClient, ws, changed),
   })
 }
 

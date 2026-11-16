@@ -48,3 +48,22 @@ test('itemHistoryRestoresContentOnly', async () => {
   expect(await main.findByRole('heading', { name: 'Tủ lạnh' })).toBeInTheDocument()
   expect(main.getByText('Đã gỡ ngày 01/03/2026.')).toBeInTheDocument()
 })
+
+test('ownerChangeIsLabelled', async () => {
+  mockShell({ placeTypes: [placeType()] })
+  server.use(http.get('/api/registry/item-categories', () => HttpResponse.json([])))
+  mockItemBackend({ items: [{ id: '900', name: 'Tủ lạnh', version: 2 }] })
+  server.use(
+    http.get('/api/registry/items/900/versions', () =>
+      HttpResponse.json({
+        items: [
+          { versionNo: 2, action: 'UPDATE', changedFields: ['ownerPersonId'], changedBy: '42', changedAt: '2026-11-01T03:00:00Z', note: null },
+        ],
+        nextCursor: null,
+      }),
+    ),
+  )
+  renderApp({ route: '/w/7/items/900?tab=history', userId: '42' })
+
+  expect(await screen.findByText('Đã đổi: Chủ')).toBeInTheDocument()
+})

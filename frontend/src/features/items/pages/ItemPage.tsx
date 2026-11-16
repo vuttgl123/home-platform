@@ -1,4 +1,4 @@
-import { ArrowRightLeftIcon, FolderInputIcon, HashIcon, MoreHorizontalIcon, PackageMinusIcon, PencilIcon, Trash2Icon, Undo2Icon } from 'lucide-react'
+import { ArrowRightLeftIcon, FolderInputIcon, HashIcon, MoreHorizontalIcon, UserRoundIcon, PackageMinusIcon, PencilIcon, Trash2Icon, Undo2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
@@ -20,6 +20,7 @@ import { AttributeView, useFieldDefs } from '@/features/catalog'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { isId } from '@/lib/ids'
 
+import { ChangeOwnerDialog } from '../components/ChangeOwnerDialog'
 import { DeleteItemDialog } from '../components/DeleteItemDialog'
 import { ItemFormDialog } from '../components/ItemFormDialog'
 import { ItemHistoryTab } from '../components/ItemHistoryTab'
@@ -32,7 +33,7 @@ import { ITEM_STATUS_LABEL } from '../labels'
 import { useItem } from '../queries'
 import type { ItemDetail } from '../types'
 
-type Dialog = 'edit' | 'move' | 'remove' | 'replace' | 'reissueCode' | 'putBack' | 'delete'
+type Dialog = 'edit' | 'move' | 'remove' | 'replace' | 'owner' | 'reissueCode' | 'putBack' | 'delete'
 
 /** Trang `/w/:workspaceId/items/:itemId`: một món đồ và vòng đời của nó. Món đã gỡ chỉ đọc, trừ đưa lại và xoá. */
 export function ItemPage() {
@@ -75,6 +76,14 @@ export function ItemPage() {
           <Link to={`/w/${workspaceId}/places/${detail.placeId}?tab=items`} className="font-medium text-foreground hover:underline">
             {detail.placeName}
           </Link>
+          {detail.ownerPersonId && (
+            <>
+              {' · của '}
+              <Link to={`/w/${workspaceId}/people/${detail.ownerPersonId}`} className="font-medium text-foreground hover:underline">
+                {detail.ownerName}
+              </Link>
+            </>
+          )}
         </p>
         <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
           <h1 className="min-w-0 flex-1 text-2xl font-semibold tracking-tight break-words">{detail.name}</h1>
@@ -108,6 +117,10 @@ export function ItemPage() {
                     <DropdownMenuItem onClick={open('replace')}>
                       <ArrowRightLeftIcon aria-hidden="true" />
                       Thay
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={open('owner')}>
+                      <UserRoundIcon aria-hidden="true" />
+                      Đổi chủ
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={open('reissueCode')}>
                       <HashIcon aria-hidden="true" />
@@ -186,6 +199,7 @@ export function ItemPage() {
           <MoveItemDialog ws={workspaceId} item={detail} open={dialog === 'move'} onOpenChange={close('move')} />
           <RemoveItemDialog ws={workspaceId} item={detail} open={dialog === 'remove'} onOpenChange={close('remove')} />
           <ReplaceItemDialog ws={workspaceId} item={detail} open={dialog === 'replace'} onOpenChange={close('replace')} />
+          <ChangeOwnerDialog ws={workspaceId} item={detail} open={dialog === 'owner'} onOpenChange={close('owner')} />
           <ReissueItemCodeDialog ws={workspaceId} item={detail} open={dialog === 'reissueCode'} onOpenChange={close('reissueCode')} />
         </>
       )}

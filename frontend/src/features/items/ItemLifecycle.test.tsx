@@ -4,7 +4,7 @@ import { expect, test } from 'vitest'
 
 import { todayInBusinessZone } from '@/lib/dates'
 import { formatDate } from '@/lib/format'
-import { itemCategory, placeType } from '@/test/fixtures'
+import { itemCategory, page, person, placeType } from '@/test/fixtures'
 import { mockShell, recordRequests } from '@/test/handlers'
 import { mockItemBackend } from '@/test/itemBackend'
 import { mockPlaceBackend } from '@/test/placeBackend'
@@ -20,10 +20,16 @@ function setUp(items: Parameters<typeof mockItemBackend>[0]['items']) {
     { id: '301', parentId: '1', name: 'P301' },
     { id: '302', parentId: '1', name: 'P302' },
   ])
-  server.use(http.get('/api/registry/item-categories', () => HttpResponse.json([itemCategory({ id: '600', name: 'Nội thất' })])))
+  server.use(
+    http.get('/api/registry/item-categories', () => HttpResponse.json([itemCategory({ id: '600', name: 'Nội thất' })])),
+    http.get('/api/registry/people/search', () =>
+      HttpResponse.json(page([person({ id: '8000', fullName: 'An' }), person({ id: '8001', fullName: 'Bình' })])),
+    ),
+  )
   return mockItemBackend({
     items,
     today: TODAY,
+    ownerNames: { '8000': 'An', '8001': 'Bình' },
     placeNames: { '1': 'Toà A', '301': 'P301', '302': 'P302' },
     categoryNames: { '600': 'Nội thất' },
   })
@@ -254,4 +260,72 @@ test('removedItemHasNoReissueAction', async () => {
   await user.click(await (await main()).findByRole('button', { name: 'Thao tác khác' }))
   await screen.findByRole('menuitem', { name: 'Xoá' })
   expect(screen.queryByRole('menuitem', { name: /Cấp mã/ })).not.toBeInTheDocument()
+})
+
+const ownedFridge = { ...fridge, ownerPersonId: '8000', ownerName: 'An' }
+
+test('showsTheOwnerWithALinkToThePerson', async () => {
+  setUp([ownedFridge])
+  renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  expect(await (await main()).findByRole('link', { name: 'An' })).toHaveAttribute('href', '/w/7/people/8000')
+})
+
+test('changesTheOwner', async () => {
+  const backend = setUp([fridge])
+  const { user } = renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  await openMenuItem(user, 'Đổi chủ')
+  const dialog = within(await screen.findByRole('dialog', { name: 'Đổi chủ Tủ lạnh' }))
+  await user.click(dialog.getByRole('radio', { name: 'Của một người' }))
+  await user.type(dialog.getByRole('searchbox', { name: 'Tìm người' }), 'An')
+  await user.click(await dialog.findByRole('radio', { name: 'An' }))
+  await user.click(dialog.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0]).toMatchObject({ path: '/items/900/owner', body: { version: 1, ownerPersonId: '8000' } })
+  expect(await (await main()).findByRole('link', { name: 'An' })).toBeInTheDocument()
+})
+
+test('givesTheItemBackToThePlace', async () => {
+  const backend = setUp([ownedFridge])
+  const { user } = renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  await openMenuItem(user, 'Đổi chủ')
+  const dialog = within(await screen.findByRole('dialog', { name: 'Đổi chủ Tủ lạnh' }))
+  await user.click(dialog.getByRole('radio', { name: 'Của địa điểm này' }))
+  await user.click(dialog.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).toEqual({ version: 1, ownerPersonId: null })
+})
+
+test('saveIsDisabledUntilTheOwnerChanges', async () => {
+  setUp([ownedFridge])
+  const { user } = renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  await openMenuItem(user, 'Đổi chủ')
+  const dialog = within(await screen.findByRole('dialog', { name: 'Đổi chủ Tủ lạnh' }))
+
+  expect(dialog.getByRole('radio', { name: 'Của một người' })).toBeChecked()
+  expect(dialog.getByRole('button', { name: 'Lưu' })).toBeDisabled()
+})
+
+test('removedItemHasNoChangeOwnerAction', async () => {
+  setUp([{ ...ownedFridge, removedAt: '2026-03-01', status: 'REMOVED' }])
+  const { user } = renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  await user.click(await (await main()).findByRole('button', { name: 'Thao tác khác' }))
+  await screen.findByRole('menuitem', { name: 'Xoá' })
+  expect(screen.queryByRole('menuitem', { name: 'Đổi chủ' })).not.toBeInTheDocument()
+})
+
+test('replaceDialogSaysTheNewItemKeepsTheOwner', async () => {
+  setUp([ownedFridge])
+  const { user } = renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  await openMenuItem(user, 'Thay')
+  const dialog = within(await screen.findByRole('dialog', { name: 'Thay Tủ lạnh' }))
+
+  expect(dialog.getByText('Món mới cũng là của An.')).toBeInTheDocument()
 })

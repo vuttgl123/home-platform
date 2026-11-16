@@ -257,6 +257,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/items/{id}/owner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["changeOwner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/items/{id}/put-back": {
         parameters: {
             query?: never;
@@ -1064,6 +1080,8 @@ export interface components {
             placeName?: string;
             categoryId?: string;
             categoryName?: string;
+            ownerPersonId?: string;
+            ownerName?: string;
             code?: string;
             name?: string;
             /** Format: int32 */
@@ -1098,6 +1116,12 @@ export interface components {
             placeId: string;
             note?: string;
         };
+        ItemOwnerRequest: {
+            /** Format: int32 */
+            version: number;
+            ownerPersonId?: string;
+            note?: string;
+        };
         ItemRemoveRequest: {
             /** Format: int32 */
             version: number;
@@ -1118,6 +1142,7 @@ export interface components {
         };
         ItemRequest: {
             placeId?: string;
+            ownerPersonId?: string;
             categoryId?: string;
             name: string;
             /** Format: int32 */
@@ -1140,6 +1165,8 @@ export interface components {
             placeName?: string;
             categoryId?: string;
             categoryName?: string;
+            ownerPersonId?: string;
+            ownerName?: string;
             code?: string;
             name?: string;
             /** Format: int32 */
@@ -1168,6 +1195,7 @@ export interface components {
             /** Format: date */
             removedAt?: string;
             replacedByItemId?: string;
+            ownerPersonId?: string;
             description?: string;
             attributes?: {
                 [key: string]: unknown;
@@ -2316,6 +2344,7 @@ export interface operations {
                 removed?: boolean;
                 subtreeOf?: string;
                 categoryId?: string;
+                ownerId?: string;
                 /** @description nextCursor of the previous page; omit for the first page */
                 cursor?: string;
                 /** @description Maximum number of items in the page */
@@ -2520,6 +2549,46 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ItemMoveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ItemDetailResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    changeOwner: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemOwnerRequest"];
             };
         };
         responses: {

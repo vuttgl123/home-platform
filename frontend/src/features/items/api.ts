@@ -1,4 +1,4 @@
-import { registry, unwrap, workspaceHeaders, type CursorPage } from '@/api'
+import { registry, unwrap, workspaceHeaders, type CursorPage, type RegistrySchemas } from '@/api'
 
 import type { ItemBody, ItemDetail, ItemSummary, ItemUpdateBody } from './types'
 
@@ -42,6 +42,20 @@ export async function moveItem(ws: string, id: string, version: number, placeId:
     params: { header: workspaceHeaders(ws), path: { id } },
     body: { version, placeId },
   })
+  return (await unwrap(call)) as ItemDetail
+}
+
+/** Đồ chưa gỡ của riêng một người, theo tên. */
+export async function listItemsOwnedBy(ws: string, personId: string, cursor?: string): Promise<CursorPage<ItemSummary>> {
+  const call = registry.GET('/items', { params: { header: workspaceHeaders(ws), query: { ownerId: personId, cursor } } })
+  return (await unwrap(call)) as CursorPage<ItemSummary>
+}
+
+/** Đổi chủ; `ownerPersonId` `null` là trả món về cho địa điểm. */
+export async function changeItemOwner(ws: string, id: string, version: number, ownerPersonId: string | null): Promise<ItemDetail> {
+  // Kiểu sinh từ OpenAPI không cho `null`, nhưng backend hiểu `null` là "của địa điểm"; gửi rõ ra.
+  const body = { version, ownerPersonId } as RegistrySchemas['ItemOwnerRequest']
+  const call = registry.POST('/items/{id}/owner', { params: { header: workspaceHeaders(ws), path: { id } }, body })
   return (await unwrap(call)) as ItemDetail
 }
 

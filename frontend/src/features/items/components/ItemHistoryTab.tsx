@@ -22,6 +22,7 @@ const FIELD_LABELS: Record<string, string> = {
   removedAt: 'Ngày gỡ',
   placeId: 'Chỗ đặt',
   replacedByItemId: 'Món thay',
+  ownerPersonId: 'Chủ',
   description: 'Mô tả',
   attributes: 'Mục tuỳ biến',
   coverFileId: 'Ảnh bìa',

@@ -29,6 +29,7 @@ export const FIELD_LABEL: Record<string, string> = {
   removedAt: 'Ngày gỡ',
   placeId: 'Chỗ đặt',
   replacedByItemId: 'Món thay',
+  ownerPersonId: 'Chủ',
   parentId: 'Chỗ chứa',
   coverFileId: 'Ảnh bìa',
   avatarFileId: 'Ảnh đại diện',

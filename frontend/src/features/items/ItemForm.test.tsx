@@ -5,7 +5,7 @@ import { expect, test } from 'vitest'
 
 import { setCurrentUser } from '@/api'
 import { Toaster } from '@/components/ui/toast'
-import { fieldDef, itemCategory } from '@/test/fixtures'
+import { fieldDef, itemCategory, page, person } from '@/test/fixtures'
 import { mockItemBackend } from '@/test/itemBackend'
 import { renderWithProviders } from '@/test/render'
 import { server } from '@/test/server'
@@ -15,6 +15,7 @@ import type { ItemDetail } from './types'
 
 function mockCatalog() {
   server.use(
+    http.get('/api/registry/people/search', () => HttpResponse.json(page([person({ id: '8000', fullName: 'An' })]))),
     http.get('/api/registry/item-categories', () =>
       HttpResponse.json([
         itemCategory({ id: '600', name: 'Nội thất', sortOrder: 10 }),
@@ -196,4 +197,66 @@ test('editKeepsTheCategoryWhenCategoriesLoadLate', async () => {
 
   await waitFor(() => expect(backend.writes).toHaveLength(1))
   expect(backend.writes[0].body).toMatchObject({ categoryId: '600' })
+})
+
+async function chooseOwner(user: Awaited<ReturnType<typeof openCreate>>['user'], form: Awaited<ReturnType<typeof openCreate>>['form']) {
+  await user.click(form.getByRole('radio', { name: 'Của một người' }))
+  await user.type(form.getByRole('searchbox', { name: 'Tìm người' }), 'An')
+  await user.click(await form.findByRole('radio', { name: 'An' }))
+}
+
+test('newItemBelongsToThePlaceByDefault', async () => {
+  const backend = mockItemBackend({})
+  const { user, form } = await openCreate()
+
+  expect(form.getByRole('radio', { name: 'Của địa điểm này' })).toBeChecked()
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Ghế')
+  await user.click(form.getByRole('button', { name: 'Thêm' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).not.toHaveProperty('ownerPersonId')
+})
+
+test('createsAnItemOwnedByAPerson', async () => {
+  const backend = mockItemBackend({})
+  const { user, form } = await openCreate()
+
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Tủ lạnh')
+  await chooseOwner(user, form)
+  await user.click(form.getByRole('button', { name: 'Thêm' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).toMatchObject({ name: 'Tủ lạnh', ownerPersonId: '8000' })
+})
+
+test('switchingBackToThePlaceSendsNoOwner', async () => {
+  const backend = mockItemBackend({})
+  const { user, form } = await openCreate()
+
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Tủ lạnh')
+  await chooseOwner(user, form)
+  await user.click(form.getByRole('radio', { name: 'Của địa điểm này' }))
+  await user.click(form.getByRole('button', { name: 'Thêm' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).not.toHaveProperty('ownerPersonId')
+})
+
+test('choosingAPersonIsRequiredOnceAsked', async () => {
+  const backend = mockItemBackend({})
+  const { user, form } = await openCreate()
+
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Tủ lạnh')
+  await user.click(form.getByRole('radio', { name: 'Của một người' }))
+  await user.click(form.getByRole('button', { name: 'Thêm' }))
+
+  expect(await form.findByText('Chọn một người')).toBeInTheDocument()
+  expect(backend.writes).toEqual([])
+})
+
+test('editFormHasNoOwnerField', async () => {
+  const backend = mockItemBackend({ items: [{ id: '900', name: 'Tủ lạnh' }] })
+  const { form } = await openEdit(backend.items.get('900')!)
+
+  expect(form.queryByRole('radio', { name: 'Của địa điểm này' })).not.toBeInTheDocument()
 })

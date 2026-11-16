@@ -180,6 +180,8 @@ export function itemDetail(overrides: Partial<ItemDetail> = {}): ItemDetail {
     placeName: 'P301',
     categoryId: null,
     categoryName: null,
+    ownerPersonId: null,
+    ownerName: null,
     code: null,
     name: 'Tủ lạnh',
     quantity: 1,
@@ -202,7 +204,7 @@ export function itemDetail(overrides: Partial<ItemDetail> = {}): ItemDetail {
 }
 
 export function item(overrides: Partial<ItemSummary> = {}): ItemSummary {
-  const { id, placeId, placeName, categoryId, categoryName, code, name, quantity, unit, status, removedAt, version } =
+  const { id, placeId, placeName, categoryId, categoryName, ownerPersonId, ownerName, code, name, quantity, unit, status, removedAt, version } =
     itemDetail(overrides as Partial<ItemDetail>)
-  return { id, placeId, placeName, categoryId, categoryName, code, name, quantity, unit, status, removedAt, version }
+  return { id, placeId, placeName, categoryId, categoryName, ownerPersonId, ownerName, code, name, quantity, unit, status, removedAt, version }
 }
