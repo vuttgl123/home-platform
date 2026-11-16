@@ -122,3 +122,12 @@ export async function restorePerson(ws: string, id: string, version: number): Pr
   const call = registry.POST('/people/{id}/restore', { params: { header: workspaceHeaders(ws), path: { id } }, body: { version } })
   return (await unwrap(call)) as PersonDetail
 }
+
+/** Tìm nhanh cho ô tìm chung: theo tên, và theo số điện thoại khi `term` chỉ gồm chữ số (từ 3 số); tối đa 5 mỗi kiểu. */
+export async function quickFindPeople(ws: string, term: string): Promise<PersonSummary[]> {
+  const find = async (by: 'name' | 'phone') =>
+    ((await unwrap(registry.GET('/people/search', { params: { header: workspaceHeaders(ws), query: { [by]: term, limit: 5 } } }))) as CursorPage<PersonSummary>).items
+  const lists = await Promise.all(/^\d{3,}$/.test(term) ? [find('name'), find('phone')] : [find('name')])
+  const seen = new Set<string>()
+  return lists.flat().filter((person) => !seen.has(person.id) && seen.add(person.id))
+}

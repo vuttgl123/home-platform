@@ -126,3 +126,11 @@ export async function restoreItem(ws: string, id: string, version: number): Prom
   const call = registry.POST('/items/{id}/restore', { params: { header: workspaceHeaders(ws), path: { id } }, body: { version } })
   return (await unwrap(call)) as ItemDetail
 }
+
+/** Tìm nhanh cho ô tìm chung: tên bắt đầu bằng (kể cả đồ đã gỡ) và đúng mã, song song, tối đa 5 mỗi kiểu. */
+export async function quickFindItems(ws: string, term: string): Promise<{ byCode: ItemSummary[]; byName: ItemSummary[] }> {
+  const find = async (query: { name?: string; code?: string }) =>
+    ((await unwrap(registry.GET('/items/search', { params: { header: workspaceHeaders(ws), query: { ...query, limit: 5 } } }))) as CursorPage<ItemSummary>).items
+  const [byCode, byName] = await Promise.all([find({ code: term }), find({ name: term })])
+  return { byCode, byName }
+}

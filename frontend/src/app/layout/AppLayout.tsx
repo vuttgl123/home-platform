@@ -1,9 +1,10 @@
-import { ActivityIcon, PackageIcon, TagsIcon, Trash2Icon, UsersIcon, type LucideIcon } from 'lucide-react'
-import { useEffect } from 'react'
+import { ActivityIcon, PackageIcon, SearchIcon, TagsIcon, Trash2Icon, UsersIcon, type LucideIcon } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
 import { ErrorState } from '@/components/common/ErrorState'
 import { Button } from '@/components/ui/button'
+import { Kbd } from '@/components/ui/kbd'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import {
   Sidebar,
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Spinner } from '@/components/ui/spinner'
 import { PlaceTree } from '@/features/places'
+import { SearchPalette, useSearchShortcut } from '@/features/search'
 import { useCurrentUser } from '@/features/users'
 import { useMyWorkspaces } from '@/features/workspaces'
 
@@ -49,6 +51,9 @@ export function AppLayout() {
   const me = useCurrentUser()
   const { signOut } = useSession()
   const { pathname } = useLocation()
+  const [searching, setSearching] = useState(false)
+  const openSearch = useCallback(() => setSearching(true), [])
+  useSearchShortcut(openSearch)
 
   // Id đã lưu không còn ứng với người dùng nào (database đã đổi): quay về chọn người dùng.
   const userIsGone = me.error?.isNotFound === true
@@ -133,7 +138,14 @@ export function AppLayout() {
       <SidebarInset>
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger aria-label="Ẩn hoặc hiện thanh bên" />
+          <Button variant="outline" size="sm" className="text-muted-foreground" onClick={openSearch}>
+            <SearchIcon aria-hidden="true" />
+            Tìm…
+            <Kbd className="ml-2">Ctrl K</Kbd>
+          </Button>
         </header>
+        {/* `key`: đổi không gian thì ô tìm bắt đầu lại. */}
+        <SearchPalette key={current.id} ws={current.id} open={searching} onOpenChange={setSearching} />
         <div className="flex-1 p-6">
           <Outlet />
         </div>

@@ -15,6 +15,7 @@ import {
   listItemsOwnedBy,
   moveItem,
   putBackItem,
+  quickFindItems,
   reissueItemCode,
   removeItem,
   replaceItem,
@@ -192,5 +193,14 @@ export function useRestoreItem(ws: string) {
   return useMutation<ItemDetail, ApiError, { id: string; version: number }>({
     mutationFn: ({ id, version }) => restoreItem(ws, id, version),
     onSuccess: (restored) => refreshItems(queryClient, ws, restored),
+  })
+}
+
+/** Tìm nhanh cho ô tìm chung; `term` rỗng thì không gọi. */
+export function useItemQuickFind(ws: string, term: string) {
+  return useQuery<{ byCode: ItemSummary[]; byName: ItemSummary[] }, ApiError>({
+    queryKey: [...itemKeys.lists(ws), 'quick', term],
+    queryFn: () => quickFindItems(ws, term),
+    enabled: term !== '',
   })
 }

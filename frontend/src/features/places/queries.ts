@@ -12,6 +12,7 @@ import {
   listSubtree,
   listTopLevel,
   movePlace,
+  quickFindPlaces,
   reissuePlaceCode,
   removeAddress,
   restorePlace,
@@ -213,5 +214,14 @@ export function useRestorePlace(ws: string) {
   return useMutation<PlaceDetail, ApiError, { id: string; version: number }>({
     mutationFn: ({ id, version }) => restorePlace(ws, id, version),
     onSuccess: (restored) => refreshAfterWrite(queryClient, ws, restored, 'self'),
+  })
+}
+
+/** Tìm nhanh cho ô tìm chung; `term` rỗng thì không gọi. Khoá nằm dưới kết quả tìm nên lệnh ghi làm cũ nó. */
+export function usePlaceQuickFind(ws: string, term: string) {
+  return useQuery<{ byCode: PlaceSearchResult[]; byName: PlaceSearchResult[] }, ApiError>({
+    queryKey: [...placeKeys.searches(ws), 'quick', term],
+    queryFn: () => quickFindPlaces(ws, term),
+    enabled: term !== '',
   })
 }

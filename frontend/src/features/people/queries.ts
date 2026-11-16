@@ -15,6 +15,7 @@ import {
   listOccupanciesInSubtree,
   listOccupanciesOfPerson,
   listPeople,
+  quickFindPeople,
   restorePerson,
   searchPeople,
   updateOccupancy,
@@ -211,5 +212,14 @@ export function useRestorePerson(ws: string) {
   return useMutation<PersonDetail, ApiError, { id: string; version: number }>({
     mutationFn: ({ id, version }) => restorePerson(ws, id, version),
     onSuccess: (restored) => refreshAfterPersonWrite(queryClient, ws, restored),
+  })
+}
+
+/** Tìm nhanh cho ô tìm chung; `term` rỗng thì không gọi. */
+export function usePersonQuickFind(ws: string, term: string) {
+  return useQuery<PersonSummary[], ApiError>({
+    queryKey: [...personKeys.lists(ws), 'quick', term],
+    queryFn: () => quickFindPeople(ws, term),
+    enabled: term !== '',
   })
 }

@@ -108,3 +108,14 @@ export async function restorePlace(ws: string, id: string, version: number): Pro
   const call = registry.POST('/places/{id}/restore', { params: { header: workspaceHeaders(ws), path: { id } }, body: { version } })
   return (await unwrap(call)) as PlaceDetail
 }
+
+/** Số kết quả mỗi loại của ô tìm chung. */
+const QUICK_LIMIT = 5
+
+/** Tìm nhanh: tên bắt đầu bằng và đúng mã, song song, mỗi loại tối đa 5 kết quả. */
+export async function quickFindPlaces(ws: string, term: string): Promise<{ byCode: PlaceSearchResult[]; byName: PlaceSearchResult[] }> {
+  const find = async (query: { name?: string; code?: string }) =>
+    ((await unwrap(registry.GET('/places/search', { params: { header: workspaceHeaders(ws), query: { ...query, limit: QUICK_LIMIT } } }))) as CursorPage<PlaceSearchResult>).items
+  const [byCode, byName] = await Promise.all([find({ code: term }), find({ name: term })])
+  return { byCode, byName }
+}
