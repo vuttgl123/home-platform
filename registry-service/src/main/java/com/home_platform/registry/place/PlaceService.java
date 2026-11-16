@@ -129,7 +129,7 @@ public class PlaceService {
 	public Place move(WorkspaceContext ctx, long id, PlaceMoveRequest request) {
 		Place current = lockForChange(ctx.workspaceId(), id);
 		if (current.version() != request.version()) {
-			throw new ConflictException("Place " + id + " was changed by someone else");
+			throw ConflictException.versionConflict("Place", id);
 		}
 		if (Objects.equals(request.parentId(), current.parentId())) {
 			return current;

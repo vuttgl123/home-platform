@@ -36,6 +36,13 @@ class PlatformOpenApiTests {
 	MockMvc mvc;
 
 	@Test
+	void problemDetailSchemaHasCode() throws Exception {
+		this.mvc.perform(get("/v3/api-docs"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.components.schemas.ProblemDetail.properties.code.type").value("string"));
+	}
+
+	@Test
 	void documentDescribesContextPagingAndIds() throws Exception {
 		this.mvc.perform(get("/v3/api-docs"))
 			.andExpect(status().isOk())

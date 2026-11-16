@@ -143,7 +143,7 @@ public class ItemService {
 	public ItemReplacement replace(WorkspaceContext ctx, long id, ItemReplaceRequest request) {
 		Item old = requireNotRemoved(get(ctx.workspaceId(), id));
 		if (old.version() != request.version()) {
-			throw new ConflictException("Item " + id + " was changed by someone else");
+			throw ConflictException.versionConflict("Item", id);
 		}
 		LocalDate removedAt = removalDate(old, request.removedAt());
 		ItemRequest replacement = request.replacement();

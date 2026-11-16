@@ -27,7 +27,9 @@ public class ProblemDetailCustomizer implements GlobalOpenApiCustomizer {
 				.addProperty("title", new StringSchema())
 				.addProperty("status", new IntegerSchema())
 				.addProperty("detail", new StringSchema())
-				.addProperty("instance", new StringSchema().format("uri")));
+				.addProperty("instance", new StringSchema().format("uri"))
+				.addProperty("code", new StringSchema()
+					.description("Machine-readable reason, when there is one; VERSION_CONFLICT means read again")));
 	}
 
 }

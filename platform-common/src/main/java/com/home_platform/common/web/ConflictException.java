@@ -10,8 +10,25 @@ import org.springframework.web.ErrorResponseException;
  */
 public class ConflictException extends ErrorResponseException {
 
+	/** Tên thuộc tính chứa mã máy đọc của lỗi, nếu có. */
+	public static final String CODE_PROPERTY = "code";
+
+	/** Mã của lỗi "bản ghi đã được người khác sửa": client đọc lại rồi thử lại. */
+	public static final String VERSION_CONFLICT = "VERSION_CONFLICT";
+
 	public ConflictException(String detail) {
 		super(HttpStatus.CONFLICT, ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, detail), null);
+	}
+
+	/**
+	 * Bản ghi đã đổi {@code version} kể từ lúc client đọc. Kèm thuộc tính {@code code} là
+	 * {@value #VERSION_CONFLICT}, để client nhận ra mà không phải đọc câu chữ của {@code detail}.
+	 * @param entityName tên loại bản ghi trong thông báo, ví dụ {@code Place}
+	 */
+	public static ConflictException versionConflict(String entityName, long id) {
+		ConflictException ex = new ConflictException(entityName + " " + id + " was changed by someone else");
+		ex.getBody().setProperty(CODE_PROPERTY, VERSION_CONFLICT);
+		return ex;
 	}
 
 }

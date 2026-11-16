@@ -283,7 +283,7 @@ public abstract class WorkspaceRepository<T extends Record> {
 	}
 
 	private ConflictException stale(long id) {
-		return new ConflictException(this.entityName + " " + id + " was changed by someone else");
+		return ConflictException.versionConflict(this.entityName, id);
 	}
 
 	private long idOf(T entity) {

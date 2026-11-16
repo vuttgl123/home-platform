@@ -56,6 +56,24 @@ class ApiExceptionHandlerTests {
 	}
 
 	@Test
+	void staleCarriesVersionConflictCode() throws Exception {
+		this.mvc.perform(get("/stale"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.detail").value("Place 42 was changed by someone else"))
+			.andExpect(jsonPath("$.code").value(ConflictException.VERSION_CONFLICT));
+	}
+
+	@Test
+	void otherConflictsHaveNoCode() throws Exception {
+		this.mvc.perform(get("/conflict")).andExpect(jsonPath("$.code").doesNotExist());
+	}
+
+	@Test
+	void lockTimeoutIsNotAVersionConflict() throws Exception {
+		this.mvc.perform(get("/locked")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").doesNotExist());
+	}
+
+	@Test
 	void unexpectedErrorIsReportedAs500WithoutItsMessage() throws Exception {
 		this.mvc.perform(get("/boom"))
 			.andExpect(status().isInternalServerError())
@@ -190,6 +208,11 @@ class ApiExceptionHandlerTests {
 		@GetMapping("/conflict")
 		void conflict() {
 			throw new ConflictException("Place 42 was changed by someone else");
+		}
+
+		@GetMapping("/stale")
+		void stale() {
+			throw ConflictException.versionConflict("Place", 42);
 		}
 
 		@GetMapping("/boom")

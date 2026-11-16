@@ -190,7 +190,8 @@ class PlaceIT extends PlaceTestData {
 				{"version": 1, "placeTypeId": "%d", "name": "B", "status": "ACTIVE"}""".formatted(type);
 
 		putPlace(id, json).andExpect(status().isOk());
-		putPlace(id, json).andExpect(status().isConflict());
+		putPlace(id, json).andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("VERSION_CONFLICT"));
 	}
 
 	@Test
