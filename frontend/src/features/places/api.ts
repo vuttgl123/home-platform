@@ -49,3 +49,39 @@ export async function updatePlace(ws: string, id: string, body: PlaceUpdateBody)
   const call = registry.PUT('/places/{id}', { params: { header: workspaceHeaders(ws), path: { id } }, body })
   return (await unwrap(call)) as PlaceDetail
 }
+
+export type PlaceAddressBody = RegistrySchemas['PlaceAddressRequest']
+export type AddressBody = RegistrySchemas['AddressRequest']
+
+/**
+ * Chuyển một địa điểm (cùng cả cây con của nó) sang cha mới.
+ * @param parentId cha mới; `null` là lên cấp cao nhất
+ */
+export async function movePlace(ws: string, id: string, version: number, parentId: string | null): Promise<PlaceDetail> {
+  // Kiểu sinh từ OpenAPI không cho `null`, nhưng backend hiểu `parentId: null` là "lên cấp cao
+  // nhất"; gửi rõ ra cho dễ đọc khi xem request.
+  const body = { version, parentId } as RegistrySchemas['PlaceMoveRequest']
+  const call = registry.POST('/places/{id}/move', { params: { header: workspaceHeaders(ws), path: { id } }, body })
+  return (await unwrap(call)) as PlaceDetail
+}
+
+/** @throws ApiError 409 nếu còn chỗ con, người đang ở hay đồ đạc, hoặc `version` đã đổi */
+export async function deletePlace(ws: string, id: string, version: number): Promise<void> {
+  await unwrap(
+    registry.DELETE('/places/{id}', { params: { header: workspaceHeaders(ws), path: { id }, query: { version } } }),
+  )
+}
+
+/** Đặt (tạo hoặc thay) địa chỉ của chính địa điểm này. */
+export async function setAddress(ws: string, id: string, body: PlaceAddressBody): Promise<PlaceDetail> {
+  const call = registry.PUT('/places/{id}/address', { params: { header: workspaceHeaders(ws), path: { id } }, body })
+  return (await unwrap(call)) as PlaceDetail
+}
+
+/** Gỡ địa chỉ riêng; địa điểm lại dùng địa chỉ của tổ tiên, nếu có. */
+export async function removeAddress(ws: string, id: string, version: number): Promise<PlaceDetail> {
+  const call = registry.DELETE('/places/{id}/address', {
+    params: { header: workspaceHeaders(ws), path: { id }, query: { version } },
+  })
+  return (await unwrap(call)) as PlaceDetail
+}

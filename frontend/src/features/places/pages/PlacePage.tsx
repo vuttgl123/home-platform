@@ -10,7 +10,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { isId } from '@/lib/ids'
 
+import { AddressDialog } from '../components/AddressDialog'
+import { PlaceActionsMenu } from '../components/PlaceActionsMenu'
 import { PlaceChildrenTab } from '../components/PlaceChildrenTab'
+import { DeletePlaceDialog } from '../components/DeletePlaceDialog'
+import { MovePlaceDialog } from '../components/MovePlaceDialog'
 import { PlaceFormDialog } from '../components/PlaceFormDialog'
 import { PlaceHeader } from '../components/PlaceHeader'
 import { PlaceOverviewTab } from '../components/PlaceOverviewTab'
@@ -37,7 +41,7 @@ export function PlacePage() {
   const requested = searchParams.get('tab')
   const tab: Tab = isTab(requested) ? requested : 'overview'
   const place = usePlace(workspaceId, placeId)
-  const [dialog, setDialog] = useState<'edit' | 'addChild' | null>(null)
+  const [dialog, setDialog] = useState<'edit' | 'addChild' | 'move' | 'address' | 'delete' | null>(null)
 
   if (!isId(placeId) || place.error?.isNotFound) {
     return <NotFoundState description="Địa điểm này không có, hoặc đã bị xoá." homeHref={`/w/${workspaceId}`} />
@@ -67,10 +71,13 @@ export function PlacePage() {
         ws={workspaceId}
         place={detail}
         actions={
-          <Button variant="outline" onClick={() => setDialog('edit')}>
-            <PencilIcon aria-hidden="true" />
-            Sửa
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setDialog('edit')}>
+              <PencilIcon aria-hidden="true" />
+              Sửa
+            </Button>
+            <PlaceActionsMenu onSelect={setDialog} />
+          </>
         }
       />
       <Tabs value={tab} onValueChange={(value) => selectTab(value as Tab)}>
@@ -82,7 +89,15 @@ export function PlacePage() {
           ))}
         </TabsList>
         <TabsContent value="overview" className="pt-4">
-          <PlaceOverviewTab ws={workspaceId} place={detail} />
+          <PlaceOverviewTab
+            ws={workspaceId}
+            place={detail}
+            addressActions={
+              <Button variant="outline" size="sm" onClick={() => setDialog('address')}>
+                {detail.address ? 'Sửa địa chỉ' : 'Thêm địa chỉ'}
+              </Button>
+            }
+          />
         </TabsContent>
         <TabsContent value="children" className="pt-4">
           <PlaceChildrenTab
@@ -115,6 +130,24 @@ export function PlacePage() {
         parent={detail}
         open={dialog === 'addChild'}
         onOpenChange={(open) => setDialog(open ? 'addChild' : null)}
+      />
+      <MovePlaceDialog
+        ws={workspaceId}
+        place={detail}
+        open={dialog === 'move'}
+        onOpenChange={(open) => setDialog(open ? 'move' : null)}
+      />
+      <AddressDialog
+        ws={workspaceId}
+        place={detail}
+        open={dialog === 'address'}
+        onOpenChange={(open) => setDialog(open ? 'address' : null)}
+      />
+      <DeletePlaceDialog
+        ws={workspaceId}
+        place={detail}
+        open={dialog === 'delete'}
+        onOpenChange={(open) => setDialog(open ? 'delete' : null)}
       />
     </div>
   )

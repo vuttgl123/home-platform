@@ -6,11 +6,16 @@ import { isId } from '@/lib/ids'
 
 import {
   createPlace,
+  deletePlace,
   getPlace,
   listChildren,
   listTopLevel,
+  movePlace,
+  removeAddress,
   searchPlaces,
+  setAddress,
   updatePlace,
+  type AddressBody,
   type PlaceCreateBody,
   type PlaceUpdateBody,
 } from './api'
@@ -118,6 +123,52 @@ export function useUpdatePlace(ws: string) {
   const queryClient = useQueryClient()
   return useMutation<PlaceDetail, ApiError, { id: string; body: PlaceUpdateBody }>({
     mutationFn: ({ id, body }) => updatePlace(ws, id, body),
+    onSuccess: (updated) => refreshAfterWrite(queryClient, ws, updated, 'descendants'),
+  })
+}
+
+export function useMovePlace(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<PlaceDetail, ApiError, { place: PlaceDetail; parentId: string | null }>({
+    mutationFn: ({ place, parentId }) => movePlace(ws, place.id, place.version, parentId),
+    // Cả cây con đổi chỗ: đường dẫn tổ tiên, địa chỉ thừa hưởng và hai nhánh của cây đều cũ.
+    onSuccess: (moved) => refreshAfterWrite(queryClient, ws, moved, 'tree'),
+  })
+}
+
+/**
+ * Xoá một địa điểm. Chi tiết của nó vẫn nằm trong cache: nơi gọi rời trang của nó trước rồi mới
+ * bỏ (`forgetPlace`), để trang đang mở không tải lại một địa điểm đã xoá.
+ */
+export function useDeletePlace(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<void, ApiError, PlaceDetail>({
+    mutationFn: (place) => deletePlace(ws, place.id, place.version),
+    onSuccess: (_, place) => {
+      void queryClient.invalidateQueries({ queryKey: placeKeys.children(ws, place.parentId) })
+      void queryClient.invalidateQueries({ queryKey: placeKeys.searches(ws) })
+    },
+  })
+}
+
+/** Bỏ chi tiết của một địa điểm khỏi cache. */
+export function forgetPlace(queryClient: QueryClient, ws: string, id: string): void {
+  queryClient.removeQueries({ queryKey: placeKeys.detail(ws, id), exact: true })
+}
+
+export function useSetAddress(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<PlaceDetail, ApiError, { place: PlaceDetail; address: AddressBody }>({
+    mutationFn: ({ place, address }) => setAddress(ws, place.id, { version: place.version, address }),
+    // Con cháu không có địa chỉ riêng thừa hưởng địa chỉ này.
+    onSuccess: (updated) => refreshAfterWrite(queryClient, ws, updated, 'descendants'),
+  })
+}
+
+export function useRemoveAddress(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<PlaceDetail, ApiError, PlaceDetail>({
+    mutationFn: (place) => removeAddress(ws, place.id, place.version),
     onSuccess: (updated) => refreshAfterWrite(queryClient, ws, updated, 'descendants'),
   })
 }

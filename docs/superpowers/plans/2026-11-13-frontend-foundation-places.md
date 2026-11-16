@@ -365,11 +365,14 @@ export function movePlace(ws: string, id: string, body: S['PlaceMoveRequest']): 
 export function deletePlace(ws: string, id: string, version: number): Promise<void>
 export function setAddress(ws: string, id: string, body: S['PlaceAddressRequest']): Promise<PlaceDetail>
 export function removeAddress(ws: string, id: string, version: number): Promise<PlaceDetail>
-export function useMovePlace(ws: string), useDeletePlace(ws: string), useSetAddress(ws: string), useRemoveAddress(ws: string)
+export function useMovePlace(ws: string)        // biến: { place, parentId }
+export function useDeletePlace(ws: string)      // biến: place; nơi gọi rời trang rồi mới forgetPlace(queryClient, ws, id)
+export function useSetAddress(ws: string)       // biến: { place, address }
+export function useRemoveAddress(ws: string)    // biến: place
 ```
 
   - Menu `⋯` trên đầu trang địa điểm: Di chuyển, Địa chỉ, Xoá.
-  - Di chuyển: hộp thoại có lựa chọn "Lên cấp cao nhất" (ẩn khi đang ở cấp cao nhất) và ô tìm địa điểm; kết quả không gồm chính nó; chọn một kết quả rồi "Chuyển". Backend chặn con cháu và độ sâu quá 20: 409 hiện nguyên văn.
+  - Di chuyển: hộp thoại có lựa chọn "Lên cấp cao nhất" (ẩn khi đang ở cấp cao nhất) và ô tìm địa điểm; kết quả không gồm chính nó và chỗ đang chứa nó; chọn một kết quả rồi "Chuyển". Backend chặn con cháu và độ sâu quá 20: 409 hiện nguyên văn.
   - Xoá: `AlertDialog` xác nhận có tên địa điểm; 409 "still has …" hiện nguyên văn trong hộp thoại; xong thì về trang của cha (hoặc trang chủ không gian), báo "Đã xoá <tên>".
   - Địa chỉ: form gồm địa chỉ đầy đủ (bắt buộc, tối đa 500), đường, phường/xã, tỉnh/thành, vĩ độ, kinh độ (phải có cả hai hoặc không có cả hai; −90…90, −180…180). Các trường của địa chỉ cũ mà form không có ô (mã tỉnh, quận…) được gửi lại nguyên. Nút "Gỡ địa chỉ" khi địa điểm có địa chỉ riêng. Tổng quan có nút "Thêm địa chỉ"/"Sửa địa chỉ" mở cùng hộp thoại.
   - 409 version lệch ở cả ba hộp thoại → `VersionConflictAlert`; "Tải bản mới" lấy lại chi tiết, hộp thoại dùng `version` mới.
