@@ -1,4 +1,4 @@
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import { MapPinPlusIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
@@ -14,6 +14,8 @@ import { formatDate } from '@/lib/format'
 import { isId } from '@/lib/ids'
 
 import { DeletePersonDialog } from '../components/DeletePersonDialog'
+import { OccupancyActions } from '../components/OccupancyActions'
+import { OccupancyFormDialog } from '../components/OccupancyFormDialog'
 import { OccupancyList } from '../components/OccupancyList'
 import { PersonFormDialog } from '../components/PersonFormDialog'
 import { PersonInfoTab } from '../components/PersonInfoTab'
@@ -167,9 +169,29 @@ function PersonHeader({
 /** Tab "Nơi ở": mọi nơi người này đã và đang ở, mới nhất trước. */
 function PersonPlacesTab({ ws, person }: { ws: string; person: PersonDetail }) {
   const stays = useOccupanciesOfPerson(ws, person.id)
+  const [adding, setAdding] = useState(false)
   return (
     <div className="flex max-w-4xl flex-col gap-3">
-      <OccupancyList ws={ws} list={stays} show="place" empty="Chưa ở đâu." />
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={() => setAdding(true)}>
+          <MapPinPlusIcon aria-hidden="true" />
+          Thêm nơi ở
+        </Button>
+      </div>
+      <OccupancyList
+        ws={ws}
+        list={stays}
+        show="place"
+        empty="Chưa ở đâu."
+        actions={(row) => <OccupancyActions ws={ws} row={row} />}
+      />
+      <OccupancyFormDialog
+        ws={ws}
+        mode="create"
+        person={{ id: person.id, fullName: person.fullName }}
+        open={adding}
+        onOpenChange={setAdding}
+      />
     </div>
   )
 }

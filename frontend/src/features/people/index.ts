@@ -1,4 +1,5 @@
 export { PersonFormDialog } from './components/PersonFormDialog'
+export { PlaceOccupantsTab } from './components/PlaceOccupantsTab'
 export { GENDER_LABEL, RELATION_LABEL, STATUS_LABEL } from './labels'
 export { PeoplePage } from './pages/PeoplePage'
 export { PersonPage } from './pages/PersonPage'

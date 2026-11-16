@@ -1,5 +1,5 @@
 import { PencilIcon, PlusIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 
 import { ComingSoonState } from '@/components/common/ComingSoonState'
@@ -19,6 +19,7 @@ import { PlaceFormDialog } from '../components/PlaceFormDialog'
 import { PlaceHeader } from '../components/PlaceHeader'
 import { PlaceOverviewTab } from '../components/PlaceOverviewTab'
 import { usePlace } from '../queries'
+import type { PlaceDetail } from '../types'
 
 const TABS = [
   { value: 'overview', label: 'Tổng quan' },
@@ -30,12 +31,18 @@ const TABS = [
 
 type Tab = (typeof TABS)[number]['value']
 
+/**
+ * Nội dung của những tab thuộc nghiệp vụ khác (người ở, đồ đạc, lịch sử). Trang địa điểm không
+ * nhập các feature đó; `app/` ghép chúng vào. Tab chưa có nội dung hiện "Sắp có".
+ */
+export type PlaceTabSlots = Partial<Record<'people' | 'items' | 'history', (ws: string, place: PlaceDetail) => ReactNode>>
+
 function isTab(value: string | null): value is Tab {
   return TABS.some((tab) => tab.value === value)
 }
 
 /** Trang `/w/:workspaceId/places/:placeId`, màn hình chính. Tab đang mở nằm trên URL (`?tab=`). */
-export function PlacePage() {
+export function PlacePage({ tabs = {} }: { tabs?: PlaceTabSlots }) {
   const { workspaceId = '', placeId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const requested = searchParams.get('tab')
@@ -113,7 +120,7 @@ export function PlacePage() {
         </TabsContent>
         {(['people', 'items', 'history'] as const).map((value) => (
           <TabsContent key={value} value={value} className="pt-4">
-            <ComingSoonState />
+            {tabs[value]?.(workspaceId, detail) ?? <ComingSoonState />}
           </TabsContent>
         ))}
       </Tabs>
