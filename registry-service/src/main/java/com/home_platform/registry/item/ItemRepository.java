@@ -1,5 +1,7 @@
 package com.home_platform.registry.item;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.home_platform.common.jdbc.RepositorySupport;
@@ -13,6 +15,20 @@ public class ItemRepository extends WorkspaceRepository<Item> {
 
 	ItemRepository(RepositorySupport support) {
 		super(support, "reg_item", Item.class);
+	}
+
+	/** Tên của các món đồ (kể cả đã xoá) theo {@code id}. */
+	public Map<Long, String> names(long workspaceId, List<Long> ids) {
+		Map<Long, String> names = new HashMap<>();
+		if (ids.isEmpty()) {
+			return names;
+		}
+		jdbc().sql("SELECT id, name FROM reg_item WHERE workspace_id = :workspaceId AND id IN (:ids)")
+			.param("workspaceId", workspaceId)
+			.param("ids", ids)
+			.query((rs, rowNum) -> names.put(rs.getLong("id"), rs.getString("name")))
+			.list();
+		return names;
 	}
 
 	/**

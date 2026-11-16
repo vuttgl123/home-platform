@@ -1,12 +1,13 @@
 package com.home_platform.registry.history;
 
-import com.home_platform.common.history.EntityChange;
 import com.home_platform.common.mapping.PlatformMapperConfig;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(config = PlatformMapperConfig.class)
 public interface ActivityMapper {
 
-	ActivityResponse toResponse(EntityChange change);
+	@Mapping(target = ".", source = "change")
+	ActivityResponse toResponse(ActivityEntry entry);
 
 }

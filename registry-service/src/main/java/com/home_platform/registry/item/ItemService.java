@@ -339,4 +339,9 @@ public class ItemService {
 		this.history.record(ctx, ENTITY_TYPE, item.id(), item.version(), action, ItemSnapshot.of(item), note);
 	}
 
+	/** Tên của các món đồ (kể cả đã xoá) theo {@code id}. */
+	public Map<Long, String> names(long workspaceId, List<Long> ids) {
+		return this.repository.names(workspaceId, ids);
+	}
+
 }
