@@ -12,6 +12,7 @@ import {
   listItemsInSubtree,
   moveItem,
   putBackItem,
+  reissueItemCode,
   removeItem,
   replaceItem,
   restoreItem,
@@ -105,6 +106,14 @@ export function useMoveItem(ws: string) {
   return useMutation<ItemDetail, ApiError, { item: ItemDetail; placeId: string }>({
     mutationFn: ({ item, placeId }) => moveItem(ws, item.id, item.version, placeId),
     onSuccess: (moved) => refreshItems(queryClient, ws, moved),
+  })
+}
+
+export function useReissueItemCode(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<ItemDetail, ApiError, ItemDetail>({
+    mutationFn: (item) => reissueItemCode(ws, item.id, item.version),
+    onSuccess: (updated) => refreshItems(queryClient, ws, updated),
   })
 }
 

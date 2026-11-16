@@ -45,6 +45,15 @@ export async function moveItem(ws: string, id: string, version: number, placeId:
   return (await unwrap(call)) as ItemDetail
 }
 
+/** Cấp mã mới theo dạng mã của nhóm hiện tại; mã cũ không còn tìm ra món này. */
+export async function reissueItemCode(ws: string, id: string, version: number): Promise<ItemDetail> {
+  const call = registry.POST('/items/{id}/reissue-code', {
+    params: { header: workspaceHeaders(ws), path: { id } },
+    body: { version },
+  })
+  return (await unwrap(call)) as ItemDetail
+}
+
 /** Gỡ: món vẫn hiện trong danh sách "đã gỡ" của địa điểm. */
 export async function removeItem(ws: string, id: string, version: number, removedAt: string): Promise<ItemDetail> {
   const call = registry.POST('/items/{id}/remove', {

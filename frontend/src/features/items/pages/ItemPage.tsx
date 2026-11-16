@@ -1,4 +1,4 @@
-import { ArrowRightLeftIcon, FolderInputIcon, MoreHorizontalIcon, PackageMinusIcon, PencilIcon, Trash2Icon, Undo2Icon } from 'lucide-react'
+import { ArrowRightLeftIcon, FolderInputIcon, HashIcon, MoreHorizontalIcon, PackageMinusIcon, PencilIcon, Trash2Icon, Undo2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
@@ -25,13 +25,14 @@ import { ItemFormDialog } from '../components/ItemFormDialog'
 import { ItemHistoryTab } from '../components/ItemHistoryTab'
 import { MoveItemDialog } from '../components/MoveItemDialog'
 import { PutBackItemDialog } from '../components/PutBackItemDialog'
+import { ReissueItemCodeDialog } from '../components/ReissueItemCodeDialog'
 import { RemoveItemDialog } from '../components/RemoveItemDialog'
 import { ReplaceItemDialog } from '../components/ReplaceItemDialog'
 import { ITEM_STATUS_LABEL } from '../labels'
 import { useItem } from '../queries'
 import type { ItemDetail } from '../types'
 
-type Dialog = 'edit' | 'move' | 'remove' | 'replace' | 'putBack' | 'delete'
+type Dialog = 'edit' | 'move' | 'remove' | 'replace' | 'reissueCode' | 'putBack' | 'delete'
 
 /** Trang `/w/:workspaceId/items/:itemId`: một món đồ và vòng đời của nó. Món đã gỡ chỉ đọc, trừ đưa lại và xoá. */
 export function ItemPage() {
@@ -108,6 +109,10 @@ export function ItemPage() {
                       <ArrowRightLeftIcon aria-hidden="true" />
                       Thay
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={open('reissueCode')}>
+                      <HashIcon aria-hidden="true" />
+                      {detail.code ? 'Cấp mã mới' : 'Cấp mã'}
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
                 )}
@@ -181,6 +186,7 @@ export function ItemPage() {
           <MoveItemDialog ws={workspaceId} item={detail} open={dialog === 'move'} onOpenChange={close('move')} />
           <RemoveItemDialog ws={workspaceId} item={detail} open={dialog === 'remove'} onOpenChange={close('remove')} />
           <ReplaceItemDialog ws={workspaceId} item={detail} open={dialog === 'replace'} onOpenChange={close('replace')} />
+          <ReissueItemCodeDialog ws={workspaceId} item={detail} open={dialog === 'reissueCode'} onOpenChange={close('reissueCode')} />
         </>
       )}
       {removed && (

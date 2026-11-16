@@ -65,6 +65,15 @@ export async function movePlace(ws: string, id: string, version: number, parentI
   return (await unwrap(call)) as PlaceDetail
 }
 
+/** Cấp mã mới theo dạng mã của loại hiện tại; mã cũ không còn tìm ra địa điểm này. */
+export async function reissuePlaceCode(ws: string, id: string, version: number): Promise<PlaceDetail> {
+  const call = registry.POST('/places/{id}/reissue-code', {
+    params: { header: workspaceHeaders(ws), path: { id } },
+    body: { version },
+  })
+  return (await unwrap(call)) as PlaceDetail
+}
+
 /** @throws ApiError 409 nếu còn chỗ con, người đang ở hay đồ đạc, hoặc `version` đã đổi */
 export async function deletePlace(ws: string, id: string, version: number): Promise<void> {
   await unwrap(

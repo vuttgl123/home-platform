@@ -7,6 +7,7 @@ import type { ApiError } from '@/api'
 import { applyServerErrors } from '@/components/common/serverErrors'
 import { FormError } from '@/components/common/FormError'
 import { TextField } from '@/components/common/TextField'
+import { CodeNote } from '@/components/common/CodeNote'
 import { VersionConflictAlert } from '@/components/common/VersionConflictAlert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -25,7 +26,7 @@ type Mode = { mode: 'create'; parent: PlaceDetail | null } | { mode: 'edit'; pla
 
 const NO_DEFS: FieldDef[] = []
 
-const FIXED_FIELDS = new Set(['placeTypeId', 'name', 'code', 'status', 'description'])
+const FIXED_FIELDS = new Set(['placeTypeId', 'name', 'status', 'description'])
 
 /**
  * Hộp thoại thêm hoặc sửa một địa điểm.
@@ -70,7 +71,6 @@ function PlaceForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } &
       : {
           placeTypeId: suggestedTypeId(types, mode.mode === 'create' ? (mode.parent?.placeTypeId ?? null) : null),
           name: '',
-          code: '',
           status: 'ACTIVE',
           description: '',
           attributes: {},
@@ -127,7 +127,6 @@ function PlaceForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } &
     const common = {
       placeTypeId: values.placeTypeId,
       name: values.name,
-      code: values.code || undefined,
       status: values.status,
       description: values.description || undefined,
       attributes: attributePayload(defs, values.attributes, base?.attributes ?? null) ?? undefined,
@@ -150,7 +149,7 @@ function PlaceForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } &
         { ...common, parentId },
         {
           onSuccess: (created) => {
-            toast.add({ title: `Đã thêm ${created.name}`, type: 'success' })
+            toast.add({ title: created.code ? `Đã thêm ${created.name} (${created.code})` : `Đã thêm ${created.name}`, type: 'success' })
             onDone()
             void navigate(placeUrl(ws, created.id))
           },
@@ -186,16 +185,14 @@ function PlaceForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } &
           {errors.placeTypeId && <FieldError>{errors.placeTypeId.message}</FieldError>}
         </Field>
         <TextField label="Tên" required autoComplete="off" error={errors.name?.message} {...form.register('name')} />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField label="Mã" autoComplete="off" error={errors.code?.message} {...form.register('code')} />
-          <Field>
-            <FieldLabel htmlFor={statusFieldId}>Trạng thái</FieldLabel>
-            <NativeSelect id={statusFieldId} className="w-full" {...form.register('status')}>
-              <NativeSelectOption value="ACTIVE">Đang dùng</NativeSelectOption>
-              <NativeSelectOption value="INACTIVE">Tạm ngưng</NativeSelectOption>
-            </NativeSelect>
-          </Field>
-        </div>
+        <CodeNote code={editing ? (base?.code ?? null) : undefined} />
+        <Field>
+          <FieldLabel htmlFor={statusFieldId}>Trạng thái</FieldLabel>
+          <NativeSelect id={statusFieldId} className="w-full" {...form.register('status')}>
+            <NativeSelectOption value="ACTIVE">Đang dùng</NativeSelectOption>
+            <NativeSelectOption value="INACTIVE">Tạm ngưng</NativeSelectOption>
+          </NativeSelect>
+        </Field>
         <Field data-invalid={errors.description ? true : undefined}>
           <FieldLabel htmlFor={descriptionId}>Mô tả</FieldLabel>
           <Textarea id={descriptionId} rows={3} {...form.register('description')} />

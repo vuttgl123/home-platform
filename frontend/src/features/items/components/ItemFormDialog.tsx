@@ -4,6 +4,7 @@ import { useForm, type Resolver } from 'react-hook-form'
 
 import type { ApiError } from '@/api'
 import { FormError } from '@/components/common/FormError'
+import { CodeNote } from '@/components/common/CodeNote'
 import { applyServerErrors } from '@/components/common/serverErrors'
 import { VersionConflictAlert } from '@/components/common/VersionConflictAlert'
 import { Button } from '@/components/ui/button'
@@ -104,7 +105,7 @@ function ItemForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } & 
         { ...body, placeId: mode.place.id },
         {
           onSuccess: (created) => {
-            toast.add({ title: `Đã thêm ${created.name}`, type: 'success' })
+            toast.add({ title: created.code ? `Đã thêm ${created.name} (${created.code})` : `Đã thêm ${created.name}`, type: 'success' })
             onDone()
           },
           onError,
@@ -116,6 +117,7 @@ function ItemForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } & 
   return (
     <form noValidate onSubmit={submit} className="flex flex-col gap-4">
       {mode.mode === 'create' && <p className="text-sm text-muted-foreground">Đặt ở {mode.place.name}</p>}
+      <CodeNote code={base ? (base.code ?? null) : undefined} />
       <ItemFields ws={ws} form={form} defs={defs} keep={base} />
       {conflict && <VersionConflictAlert onReload={() => void reload()} isReloading={reloading} />}
       <FormError messages={formErrors} />

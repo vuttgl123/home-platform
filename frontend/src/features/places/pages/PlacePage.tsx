@@ -19,6 +19,7 @@ import { PlaceFormDialog } from '../components/PlaceFormDialog'
 import { PlaceHistoryTab } from '../components/PlaceHistoryTab'
 import { PlaceHeader } from '../components/PlaceHeader'
 import { PlaceOverviewTab } from '../components/PlaceOverviewTab'
+import { ReissuePlaceCodeDialog } from '../components/ReissuePlaceCodeDialog'
 import { usePlace } from '../queries'
 import type { PlaceDetail } from '../types'
 
@@ -49,7 +50,7 @@ export function PlacePage({ tabs = {} }: { tabs?: PlaceTabSlots }) {
   const requested = searchParams.get('tab')
   const tab: Tab = isTab(requested) ? requested : 'overview'
   const place = usePlace(workspaceId, placeId)
-  const [dialog, setDialog] = useState<'edit' | 'addChild' | 'move' | 'address' | 'delete' | null>(null)
+  const [dialog, setDialog] = useState<'edit' | 'addChild' | 'move' | 'address' | 'reissueCode' | 'delete' | null>(null)
 
   if (!isId(placeId) || place.error?.isNotFound) {
     return <NotFoundState description="Địa điểm này không có, hoặc đã bị xoá." homeHref={`/w/${workspaceId}`} />
@@ -84,7 +85,7 @@ export function PlacePage({ tabs = {} }: { tabs?: PlaceTabSlots }) {
               <PencilIcon aria-hidden="true" />
               Sửa
             </Button>
-            <PlaceActionsMenu onSelect={setDialog} />
+            <PlaceActionsMenu hasCode={detail.code != null} onSelect={setDialog} />
           </>
         }
       />
@@ -153,6 +154,12 @@ export function PlacePage({ tabs = {} }: { tabs?: PlaceTabSlots }) {
         place={detail}
         open={dialog === 'address'}
         onOpenChange={(open) => setDialog(open ? 'address' : null)}
+      />
+      <ReissuePlaceCodeDialog
+        ws={workspaceId}
+        place={detail}
+        open={dialog === 'reissueCode'}
+        onOpenChange={(open) => setDialog(open ? 'reissueCode' : null)}
       />
       <DeletePlaceDialog
         ws={workspaceId}

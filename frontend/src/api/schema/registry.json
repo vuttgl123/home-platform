@@ -9,7 +9,7 @@
         "tags": [
           "activity-controller"
         ],
-        "operationId": "list_6",
+        "operationId": "list_7",
         "parameters": [
           {
             "name": "entityType",
@@ -67,6 +67,300 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CursorPageActivityResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/code-rules": {
+      "get": {
+        "tags": [
+          "code-rule-controller"
+        ],
+        "operationId": "list_6",
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CodeRuleResponse"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/code-rules/{target}/{typeId}": {
+      "put": {
+        "tags": [
+          "code-rule-controller"
+        ],
+        "operationId": "put",
+        "parameters": [
+          {
+            "name": "target",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PLACE",
+                "ITEM"
+              ]
+            }
+          },
+          {
+            "name": "typeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeRuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeRuleResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "code-rule-controller"
+        ],
+        "operationId": "delete_6",
+        "parameters": [
+          {
+            "name": "target",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PLACE",
+                "ITEM"
+              ]
+            }
+          },
+          {
+            "name": "typeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/codes/backfill": {
+      "post": {
+        "tags": [
+          "code-controller"
+        ],
+        "operationId": "backfill",
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeBackfillResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/codes/status": {
+      "get": {
+        "tags": [
+          "code-controller"
+        ],
+        "operationId": "status",
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeStatusResponse"
                 }
               }
             }
@@ -1318,6 +1612,74 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ItemVersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetailResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{id}/reissue-code": {
+      "post": {
+        "tags": [
+          "item-controller"
+        ],
+        "operationId": "reissueCode_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeReissueRequest"
               }
             }
           },
@@ -4003,6 +4365,74 @@
         }
       }
     },
+    "/places/{id}/reissue-code": {
+      "post": {
+        "tags": [
+          "place-controller"
+        ],
+        "operationId": "reissueCode",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeReissueRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceDetailResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/places/{id}/restore": {
       "post": {
         "tags": [
@@ -4871,6 +5301,108 @@
           }
         }
       },
+      "CodeBackfillResponse": {
+        "type": "object",
+        "properties": {
+          "placesAssigned": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "itemsAssigned": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "placesRemaining": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "itemsRemaining": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CodeReissueRequest": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "CodeRuleRequest": {
+        "type": "object",
+        "properties": {
+          "prefix": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[A-Z][A-Z0-9]{0,9}"
+          },
+          "digits": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 9,
+            "minimum": 3
+          },
+          "yearly": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "digits",
+          "prefix"
+        ]
+      },
+      "CodeRuleResponse": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "PLACE",
+              "ITEM"
+            ]
+          },
+          "typeId": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "digits": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yearly": {
+            "type": "boolean"
+          },
+          "builtIn": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CodeStatusResponse": {
+        "type": "object",
+        "properties": {
+          "placesWithoutCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "itemsWithoutCode": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "CursorPageActivityResponse": {
         "type": "object",
         "properties": {
@@ -5367,11 +5899,6 @@
           "categoryId": {
             "type": "string"
           },
-          "code": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 0
-          },
           "name": {
             "type": "string",
             "maxLength": 255,
@@ -5542,11 +6069,6 @@
           },
           "categoryId": {
             "type": "string"
-          },
-          "code": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 0
           },
           "name": {
             "type": "string",
@@ -6268,11 +6790,6 @@
           "placeTypeId": {
             "type": "string"
           },
-          "code": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 0
-          },
           "name": {
             "type": "string",
             "maxLength": 255,
@@ -6672,11 +7189,6 @@
           },
           "placeTypeId": {
             "type": "string"
-          },
-          "code": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 0
           },
           "name": {
             "type": "string",

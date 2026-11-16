@@ -140,6 +140,16 @@ test('replaceMovesTheOldOneToRemovedAndLinksTheNewOne', async () => {
   expect(old.getByRole('button', { name: 'Đưa lại' })).toBeDisabled()
 })
 
+test('replaceFormHasNoCodeBox', async () => {
+  setUp([{ ...fridge, code: 'TS-000001' }])
+  const { user } = renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  await openMenuItem(user, 'Thay')
+  const dialog = within(await screen.findByRole('dialog', { name: 'Thay Tủ lạnh' }))
+
+  expect(dialog.queryByRole('textbox', { name: 'Mã' })).not.toBeInTheDocument()
+})
+
 test('replaceAtAnotherPlace', async () => {
   const backend = setUp([fridge])
   const { user } = renderApp({ route: '/w/7/items/900', userId: '42' })
@@ -221,4 +231,27 @@ test('unknownItemShowsNotFound', async () => {
   renderApp({ route: '/w/7/items/999', userId: '42' })
 
   expect(await (await main()).findByText('Không tìm thấy')).toBeInTheDocument()
+})
+
+test('reissuesAnItemCode', async () => {
+  const backend = setUp([{ ...fridge, code: 'TS-000007' }])
+  const { user } = renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  await openMenuItem(user, 'Cấp mã mới')
+  const dialog = within(await screen.findByRole('alertdialog', { name: 'Cấp mã mới cho Tủ lạnh?' }))
+  expect(dialog.getByText(/Mã hiện tại TS-000007/)).toBeInTheDocument()
+  await user.click(dialog.getByRole('button', { name: 'Cấp mã mới' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0]).toMatchObject({ path: '/items/900/reissue-code', body: { version: 1 } })
+  expect(await screen.findByText('Mã mới: TS-000001')).toBeInTheDocument()
+})
+
+test('removedItemHasNoReissueAction', async () => {
+  setUp([{ ...fridge, removedAt: '2026-03-01', status: 'REMOVED' }])
+  const { user } = renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  await user.click(await (await main()).findByRole('button', { name: 'Thao tác khác' }))
+  await screen.findByRole('menuitem', { name: 'Xoá' })
+  expect(screen.queryByRole('menuitem', { name: /Cấp mã/ })).not.toBeInTheDocument()
 })

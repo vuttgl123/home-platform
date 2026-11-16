@@ -8,7 +8,6 @@ import type { ItemBody, ItemDetail, ItemStatus } from '../types'
 export type ItemFormValues = {
   categoryId: string
   name: string
-  code: string
   quantity: string
   unit: string
   status: Exclude<ItemStatus, 'REMOVED'>
@@ -25,7 +24,6 @@ export function itemFormSchema(defs: FieldDef[]) {
     .object({
       categoryId: z.string(),
       name: z.string().trim().min(1, 'Nhập tên').max(255, 'Tối đa 255 ký tự'),
-      code: z.string().trim().max(50, 'Tối đa 50 ký tự'),
       quantity: z
         .string()
         .trim()
@@ -47,7 +45,6 @@ export function emptyItemForm(): ItemFormValues {
   return {
     categoryId: '',
     name: '',
-    code: '',
     quantity: '1',
     unit: '',
     status: 'IN_USE',
@@ -61,7 +58,6 @@ export function itemFormValues(item: ItemDetail, defs: FieldDef[]): ItemFormValu
   return {
     categoryId: item.categoryId ?? '',
     name: item.name,
-    code: item.code ?? '',
     quantity: String(item.quantity),
     unit: item.unit ?? '',
     status: item.status === 'REMOVED' ? 'IN_USE' : item.status,
@@ -80,7 +76,6 @@ export function itemPayload(
   const or = (value: string) => value || undefined
   return {
     categoryId: or(values.categoryId),
-    code: or(values.code),
     name: values.name,
     quantity: Number(values.quantity),
     unit: or(values.unit),

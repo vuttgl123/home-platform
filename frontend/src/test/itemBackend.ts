@@ -31,6 +31,8 @@ export function mockItemBackend(options: {
   }
   const writes: ItemWrite[] = []
   let nextId = 9500
+  // Mã do backend cấp, như mẫu có sẵn "TS" 6 chữ số; client gửi `code` thì bị bỏ qua.
+  let nextCode = 1
 
   function withNames(item: ItemDetail): ItemDetail {
     return {
@@ -63,7 +65,7 @@ export function mockItemBackend(options: {
       id: String(nextId++),
       placeId,
       categoryId: (body.categoryId as string | undefined) ?? null,
-      code: (body.code as string | undefined) ?? null,
+      code: `TS-${String(nextCode++).padStart(6, '0')}`,
       name: body.name as string,
       quantity: (body.quantity as number | undefined) ?? 1,
       unit: (body.unit as string | undefined) ?? null,
@@ -121,11 +123,10 @@ export function mockItemBackend(options: {
       const body = (await record(request))!
       const result = check(params.id as string, body.version)
       if (result.error) return result.error
-      const { version: _version, note: _note, ...fields } = body
+      const { version: _version, note: _note, code: _code, ...fields } = body
       return HttpResponse.json(
         save(result.item, {
           categoryId: null,
-          code: null,
           unit: null,
           placedAt: null,
           description: null,
@@ -140,6 +141,12 @@ export function mockItemBackend(options: {
       const result = check(params.id as string, body.version)
       if (result.error) return result.error
       return HttpResponse.json(save(result.item, { placeId: body.placeId as string }))
+    }),
+    http.post('/api/registry/items/:id/reissue-code', async ({ request, params }) => {
+      const body = (await record(request))!
+      const result = check(params.id as string, body.version)
+      if (result.error) return result.error
+      return HttpResponse.json(save(result.item, { code: `TS-${String(nextCode++).padStart(6, '0')}` }))
     }),
     http.post('/api/registry/items/:id/remove', async ({ request, params }) => {
       const body = (await record(request))!

@@ -7,7 +7,6 @@ import type { PlaceDetail, PlaceStatus } from '../types'
 export type PlaceFormValues = {
   placeTypeId: string
   name: string
-  code: string
   status: PlaceStatus
   description: string
   attributes: AttributeFormValues
@@ -19,7 +18,6 @@ export function placeFormSchema(defs: FieldDef[]) {
     .object({
       placeTypeId: z.string().min(1, 'Chọn loại'),
       name: z.string().trim().min(1, 'Nhập tên').max(255, 'Tối đa 255 ký tự'),
-      code: z.string().trim().max(50, 'Tối đa 50 ký tự'),
       status: z.enum(['ACTIVE', 'INACTIVE']),
       description: z.string().trim().max(10000, 'Tối đa 10000 ký tự'),
       attributes: z.record(z.string(), z.union([z.string(), z.boolean()])),
@@ -36,7 +34,6 @@ export function placeFormValues(place: PlaceDetail, defs: FieldDef[]): PlaceForm
   return {
     placeTypeId: place.placeTypeId,
     name: place.name,
-    code: place.code ?? '',
     status: place.status,
     description: place.description ?? '',
     attributes: attributeDefaults(defs, place.attributes),

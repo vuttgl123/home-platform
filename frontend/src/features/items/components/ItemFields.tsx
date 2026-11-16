@@ -59,10 +59,9 @@ export function ItemFields({
         />
       </Field>
       <TextField label="Tên" required autoComplete="off" error={errors.name?.message} {...form.register('name')} />
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <TextField label="Số lượng" inputMode="numeric" error={errors.quantity?.message} {...form.register('quantity')} />
         <TextField label="Đơn vị" list={unitList} autoComplete="off" error={errors.unit?.message} {...form.register('unit')} />
-        <TextField label="Mã" autoComplete="off" error={errors.code?.message} {...form.register('code')} />
       </div>
       <datalist id={unitList}>
         {UNITS.map((unit) => (

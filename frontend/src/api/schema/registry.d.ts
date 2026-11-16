@@ -8,7 +8,71 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get: operations["list_7"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/code-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get: operations["list_6"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/code-rules/{target}/{typeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["put"];
+        post?: never;
+        delete: operations["delete_6"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/codes/backfill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["backfill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/codes/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["status"];
         put?: never;
         post?: never;
         delete?: never;
@@ -203,6 +267,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["putBack"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/items/{id}/reissue-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reissueCode_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -625,6 +705,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/places/{id}/reissue-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reissueCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/places/{id}/restore": {
         parameters: {
             query?: never;
@@ -828,6 +924,43 @@ export interface components {
             longitude?: number;
             geohash?: string;
         };
+        CodeBackfillResponse: {
+            /** Format: int32 */
+            placesAssigned?: number;
+            /** Format: int32 */
+            itemsAssigned?: number;
+            /** Format: int32 */
+            placesRemaining?: number;
+            /** Format: int32 */
+            itemsRemaining?: number;
+        };
+        CodeReissueRequest: {
+            /** Format: int32 */
+            version: number;
+            note?: string;
+        };
+        CodeRuleRequest: {
+            prefix: string;
+            /** Format: int32 */
+            digits: number;
+            yearly?: boolean;
+        };
+        CodeRuleResponse: {
+            /** @enum {string} */
+            target?: "PLACE" | "ITEM";
+            typeId?: string;
+            prefix?: string;
+            /** Format: int32 */
+            digits?: number;
+            yearly?: boolean;
+            builtIn?: boolean;
+        };
+        CodeStatusResponse: {
+            /** Format: int32 */
+            placesWithoutCode?: number;
+            /** Format: int32 */
+            itemsWithoutCode?: number;
+        };
         CursorPageActivityResponse: {
             items?: components["schemas"]["ActivityResponse"][];
             nextCursor?: string;
@@ -986,7 +1119,6 @@ export interface components {
         ItemRequest: {
             placeId?: string;
             categoryId?: string;
-            code?: string;
             name: string;
             /** Format: int32 */
             quantity?: number;
@@ -1048,7 +1180,6 @@ export interface components {
             /** Format: int32 */
             version: number;
             categoryId?: string;
-            code?: string;
             name: string;
             /** Format: int32 */
             quantity?: number;
@@ -1282,7 +1413,6 @@ export interface components {
         PlaceCreateRequest: {
             parentId?: string;
             placeTypeId: string;
-            code?: string;
             name: string;
             description?: string;
             /** @enum {string} */
@@ -1421,7 +1551,6 @@ export interface components {
             /** Format: int32 */
             version: number;
             placeTypeId: string;
-            code?: string;
             name: string;
             description?: string;
             /** @enum {string} */
@@ -1485,7 +1614,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 entityType?: string;
@@ -1512,6 +1641,184 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CursorPageActivityResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_6: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CodeRuleResponse"][];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    put: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                target: "PLACE" | "ITEM";
+                typeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CodeRuleResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    delete_6: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                target: "PLACE" | "ITEM";
+                typeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    backfill: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CodeBackfillResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    status: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CodeStatusResponse"];
                 };
             };
             /** @description Error, described as Problem Details */
@@ -2253,6 +2560,46 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ItemVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ItemDetailResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    reissueCode_1: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeReissueRequest"];
             };
         };
         responses: {
@@ -3761,6 +4108,46 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PlaceMoveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlaceDetailResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    reissueCode: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeReissueRequest"];
             };
         };
         responses: {

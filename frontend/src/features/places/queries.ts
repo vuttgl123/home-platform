@@ -11,6 +11,7 @@ import {
   listChildren,
   listTopLevel,
   movePlace,
+  reissuePlaceCode,
   removeAddress,
   restorePlace,
   searchPlaces,
@@ -174,6 +175,15 @@ export function useRemoveAddress(ws: string) {
   return useMutation<PlaceDetail, ApiError, PlaceDetail>({
     mutationFn: (place) => removeAddress(ws, place.id, place.version),
     onSuccess: (updated) => refreshAfterWrite(queryClient, ws, updated, 'descendants'),
+  })
+}
+
+/** Cấp mã mới: mã hiện trên cây, trong kết quả tìm và ở đầu trang. */
+export function useReissuePlaceCode(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<PlaceDetail, ApiError, PlaceDetail>({
+    mutationFn: (place) => reissuePlaceCode(ws, place.id, place.version),
+    onSuccess: (updated) => refreshAfterWrite(queryClient, ws, updated, 'self'),
   })
 }
 

@@ -35,7 +35,7 @@ function setUp(options: { addressOfA?: typeof tranTien } = {}) {
     { id: '1', name: 'Toà A', placeTypeId: '100', address: options.addressOfA ?? null },
     { id: '2', name: 'Toà B', placeTypeId: '100' },
     { id: '13', parentId: '1', name: 'Tầng 3', placeTypeId: '101' },
-    { id: '301', parentId: '13', name: 'P301', placeTypeId: '102' },
+    { id: '301', parentId: '13', name: 'P301', placeTypeId: '102', code: 'DD-000041', version: 3 },
     { id: '302', parentId: '13', name: 'P302', placeTypeId: '102' },
   ])
 }
@@ -45,11 +45,15 @@ async function main() {
 }
 
 /** Mở trang của địa điểm `id`, chọn `action` trong menu thao tác, trả về hộp thoại mở ra. */
-async function openAction(id: string, action: 'Di chuyển' | 'Địa chỉ' | 'Xoá', dialogName: string | RegExp) {
+async function openAction(
+  id: string,
+  action: 'Di chuyển' | 'Địa chỉ' | 'Xoá' | 'Cấp mã mới' | 'Cấp mã',
+  dialogName: string | RegExp,
+) {
   const app = renderApp({ route: `/w/7/places/${id}`, userId: '42' })
   await app.user.click(await (await main()).findByRole('button', { name: 'Thao tác khác' }))
   await app.user.click(await screen.findByRole('menuitem', { name: action }))
-  const role = action === 'Xoá' ? 'alertdialog' : 'dialog'
+  const role = action === 'Xoá' || action.startsWith('Cấp mã') ? 'alertdialog' : 'dialog'
   return { ...app, dialog: within(await screen.findByRole(role, { name: dialogName })) }
 }
 
@@ -276,4 +280,41 @@ test('deletingTheLastChildMakesTheParentALeaf', async () => {
 
   await waitFor(() => expect(tree.queryByRole('button', { name: /Toà A/ })).not.toBeInTheDocument())
   expect(tree.getByRole('link', { name: 'Toà A' })).toBeInTheDocument()
+})
+
+test('reissueWarnsAboutTheOldCode', async () => {
+  setUp()
+  const { dialog } = await openAction('301', 'Cấp mã mới', 'Cấp mã mới cho P301?')
+
+  expect(dialog.getByText(/Mã hiện tại DD-000041 sẽ không còn tìm ra bản ghi này/)).toBeInTheDocument()
+  expect(dialog.getByText(/Nhãn đã in theo mã cũ sẽ sai/)).toBeInTheDocument()
+})
+
+test('reissueSendsTheVersionAndShowsTheNewCode', async () => {
+  const backend = setUp()
+  const { user, dialog } = await openAction('301', 'Cấp mã mới', 'Cấp mã mới cho P301?')
+
+  await user.click(dialog.getByRole('button', { name: 'Cấp mã mới' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0]).toEqual({ method: 'POST', path: '/places/301/reissue-code', body: { version: 3 } })
+  expect(await screen.findByText('Mã mới: DD-000001')).toBeInTheDocument()
+  expect(await (await main()).findByText('DD-000001')).toBeInTheDocument()
+})
+
+test('recordWithoutCodeOffersToAssignOne', async () => {
+  setUp()
+  const { dialog } = await openAction('302', 'Cấp mã', 'Cấp mã cho P302?')
+
+  expect(dialog.getByText(/Hệ thống sẽ cấp một mã theo dạng mã đang đặt trong Danh mục/)).toBeInTheDocument()
+})
+
+test('reissueConflictOffersToReload', async () => {
+  const backend = setUp()
+  const { user, dialog } = await openAction('301', 'Cấp mã mới', 'Cấp mã mới cho P301?')
+  backend.editElsewhere('301')
+
+  await user.click(dialog.getByRole('button', { name: 'Cấp mã mới' }))
+
+  expect(await dialog.findByRole('button', { name: 'Tải bản mới' })).toBeInTheDocument()
 })

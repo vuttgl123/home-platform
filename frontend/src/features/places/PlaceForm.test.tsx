@@ -131,10 +131,50 @@ test('editSendsUntouchedFieldsBack', async () => {
     version: 4,
     placeTypeId: '102',
     name: 'P301',
-    code: 'R-301',
     status: 'ACTIVE',
     coverFileId: '900',
   })
+})
+
+test('formHasNoCodeBox', async () => {
+  setUp()
+  const { user } = renderApp({ route: '/w/7', userId: '42' })
+
+  await user.click(await (await main()).findByRole('button', { name: 'Thêm địa điểm' }))
+  const form = await dialog('Thêm địa điểm')
+
+  expect(form.queryByRole('textbox', { name: 'Mã' })).not.toBeInTheDocument()
+  expect(form.getByText('Mã được cấp khi lưu.')).toBeInTheDocument()
+})
+
+test('createdToastShowsTheIssuedCode', async () => {
+  setUp()
+  const { user } = renderApp({ route: '/w/7', userId: '42' })
+
+  await user.click(await (await main()).findByRole('button', { name: 'Thêm địa điểm' }))
+  const form = await dialog('Thêm địa điểm')
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Toà B')
+  await user.click(form.getByRole('button', { name: 'Thêm' }))
+
+  expect(await screen.findByText('Đã thêm Toà B (DD-000001)')).toBeInTheDocument()
+})
+
+test('editShowsTheLockedCode', async () => {
+  setUp()
+  const { form } = await editP301()
+
+  expect(form.queryByRole('textbox', { name: 'Mã' })).not.toBeInTheDocument()
+  expect(form.getByText('Mã R-301 · do hệ thống cấp, không sửa được')).toBeInTheDocument()
+})
+
+test('editOfARecordWithoutCodeShowsNoCodeLine', async () => {
+  setUp()
+  const { user } = renderApp({ route: '/w/7/places/13', userId: '42' })
+  await user.click(await (await main()).findByRole('button', { name: 'Sửa' }))
+  const form = await dialog('Sửa địa điểm')
+  await waitFor(() => expect(form.getByRole('button', { name: 'Lưu' })).toBeEnabled())
+
+  expect(form.queryByText(/do hệ thống cấp/)).not.toBeInTheDocument()
 })
 
 test('numberAttributeIsSentAsNumber', async () => {

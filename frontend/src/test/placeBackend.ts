@@ -24,6 +24,8 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
   }
   const writes: WriteRequest[] = []
   let nextId = 9000
+  // Mã do backend cấp, như mẫu có sẵn "DD" 6 chữ số; client gửi `code` thì bị bỏ qua.
+  let nextCode = 1
 
   function chain(id: string): PlaceDetail[] {
     const lineage: PlaceDetail[] = []
@@ -110,7 +112,7 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
           parentId: (body.parentId as string | undefined) ?? null,
           placeTypeId: body.placeTypeId as string,
           name: body.name as string,
-          code: (body.code as string | undefined) ?? null,
+          code: `DD-${String(nextCode++).padStart(6, '0')}`,
           description: (body.description as string | undefined) ?? null,
           status: (body.status as PlaceDetail['status'] | undefined) ?? 'ACTIVE',
           attributes: (body.attributes as Record<string, unknown> | undefined) ?? null,
@@ -121,9 +123,8 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
     http.put('/api/registry/places/:id', async ({ request, params }) => {
       const result = await write(request, params.id as string, null)
       if (result.error) return result.error
-      const { version: _version, note: _note, ...changes } = result.body
+      const { version: _version, note: _note, code: _code, ...changes } = result.body
       return save(result.place, {
-        code: null,
         description: null,
         attributes: null,
         coverFileId: null,
@@ -134,6 +135,11 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
       const result = await write(request, params.id as string, null)
       if (result.error) return result.error
       return save(result.place, { parentId: (result.body.parentId as string | null) ?? null })
+    }),
+    http.post('/api/registry/places/:id/reissue-code', async ({ request, params }) => {
+      const result = await write(request, params.id as string, null)
+      if (result.error) return result.error
+      return save(result.place, { code: `DD-${String(nextCode++).padStart(6, '0')}` })
     }),
     http.put('/api/registry/places/:id/address', async ({ request, params }) => {
       const result = await write(request, params.id as string, null)

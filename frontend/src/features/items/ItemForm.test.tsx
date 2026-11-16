@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { expect, test } from 'vitest'
 
 import { setCurrentUser } from '@/api'
+import { Toaster } from '@/components/ui/toast'
 import { fieldDef, itemCategory } from '@/test/fixtures'
 import { mockItemBackend } from '@/test/itemBackend'
 import { renderWithProviders } from '@/test/render'
@@ -37,6 +38,7 @@ async function openCreate() {
   mockCatalog()
   const app = renderWithProviders(
     <MemoryRouter>
+      <Toaster />
       <ItemFormDialog ws="7" mode="create" place={{ id: '301', name: 'P301' }} open onOpenChange={() => {}} />
     </MemoryRouter>,
   )
@@ -67,6 +69,35 @@ test('createsAnItemInThePlace', async () => {
 
   await waitFor(() => expect(backend.writes).toHaveLength(1))
   expect(backend.writes[0].body).toEqual({ placeId: '301', name: 'Tủ lạnh', quantity: 1, status: 'IN_USE' })
+})
+
+test('itemFormHasNoCodeBox', async () => {
+  mockItemBackend({})
+  const { form } = await openCreate()
+
+  expect(form.queryByRole('textbox', { name: 'Mã' })).not.toBeInTheDocument()
+  expect(form.getByText('Mã được cấp khi lưu.')).toBeInTheDocument()
+})
+
+test('createdItemToastShowsTheIssuedCode', async () => {
+  mockItemBackend({})
+  const { user, form } = await openCreate()
+
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Tủ lạnh')
+  await user.click(form.getByRole('button', { name: 'Thêm' }))
+
+  expect(await screen.findByText('Đã thêm Tủ lạnh (TS-000001)')).toBeInTheDocument()
+})
+
+test('submittedItemBodyHasNoCode', async () => {
+  const backend = mockItemBackend({ items: [{ id: '900', name: 'Tủ lạnh', code: 'TS-000005' }] })
+  const { user, form } = await openEdit(backend.items.get('900')!)
+
+  expect(form.getByText('Mã TS-000005 · do hệ thống cấp, không sửa được')).toBeInTheDocument()
+  await user.click(form.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).not.toHaveProperty('code')
 })
 
 test('quantityMustBeAPositiveWholeNumber', async () => {
