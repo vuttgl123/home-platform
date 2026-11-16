@@ -1,5 +1,6 @@
 import type { RouteObject } from 'react-router'
 
+import { PlaceItemsTab } from '@/features/items'
 import { PeoplePage, PersonPage, PlaceOccupantsTab } from '@/features/people'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
 
@@ -13,6 +14,7 @@ import { RequireUser } from './session/RequireUser'
 /** Các tab của trang địa điểm thuộc nghiệp vụ khác; trang địa điểm không nhập các feature đó. */
 const placeTabs: PlaceTabSlots = {
   people: (ws, place) => <PlaceOccupantsTab ws={ws} place={place} />,
+  items: (ws, place) => <PlaceItemsTab ws={ws} place={place} />,
 }
 
 /**
