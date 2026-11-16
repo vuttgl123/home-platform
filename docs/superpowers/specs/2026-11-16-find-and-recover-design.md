@@ -1,6 +1,6 @@
 # Tìm nhanh và lấy lại: tìm kiếm chung, trang Đồ đạc, thùng rác, hoàn tác
 
-Ngày: 2026-11-16 · Trạng thái: **chờ duyệt**
+Ngày: 2026-11-16 · Trạng thái: **đã duyệt, đã xây** (2026-11-16)
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 

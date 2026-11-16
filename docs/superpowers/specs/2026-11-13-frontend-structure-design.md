@@ -101,7 +101,9 @@ Phiên bản cụ thể chốt lúc lập kế hoạch, sau khi kiểm tra trên
 /w/:workspaceId/places/:placeId    trang một địa điểm (màn hình chính)
 /w/:workspaceId/people             danh sách, tìm người
 /w/:workspaceId/people/:personId   hồ sơ một người (thông tin, nơi đang ở, lịch sử)
+/w/:workspaceId/items              đồ đạc của cả không gian, lọc theo trạng thái và nhóm (2026-11-16)
 /w/:workspaceId/items/:itemId      một món đồ
+/w/:workspaceId/trash              thùng rác (2026-11-16); Ctrl+K mở ô tìm chung ở mọi trang
 /w/:workspaceId/catalog            loại địa điểm, nhóm đồ, mục tuỳ biến
 /w/:workspaceId/activity           hoạt động gần đây
 ```

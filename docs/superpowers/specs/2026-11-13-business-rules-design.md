@@ -248,7 +248,7 @@ Món đã gỡ chỉ đọc được, ngoại trừ "đưa lại" và xoá. **(t
 
 **Xoá** (mềm) dành cho món nhập nhầm. **Khôi phục** khi địa điểm của nó chưa bị xoá.
 
-**Đọc**: đồ đang có ở một địa điểm (theo tên); đồ đã gỡ; đồ trong cả cây con; theo nhóm; tìm theo tên bắt đầu bằng hoặc theo mã.
+**Đọc**: đồ đang có ở một địa điểm (theo tên); đồ đã gỡ; đồ trong cả cây con; theo nhóm; của một người; đồ của cả không gian, lọc theo trạng thái (**2026-11-16**); tìm theo tên bắt đầu bằng hoặc theo mã.
 
 ### 5.10 Lịch sử và khôi phục version
 
@@ -259,6 +259,8 @@ Món đã gỡ chỉ đọc được, ngoại trừ "đưa lại" và xoá. **(t
   - Với địa điểm: khôi phục cả địa chỉ của version đó.
   - Nội dung cũ phải qua kiểm tra như một lần sửa (loại còn dùng được, `attributes` hợp lệ theo mục tuỳ biến hiện tại). Không qua thì trả 400 nói rõ lý do, người dùng sửa tay. **(tôi chọn)**
   - Bản ghi đang bị xoá thì phải bỏ xoá trước; trả 409.
+
+- **Thùng rác**: địa điểm, người, đồ đạc đang bị xoá mềm, mỗi loại một danh sách, mới xoá trước, kèm `version` để khôi phục bằng đúng lệnh khôi phục của loại đó. Không có xoá hẳn. **(2026-11-16)**
 
 ## 6. Media
 
@@ -293,4 +295,4 @@ Món đã gỡ chỉ đọc được, ngoại trừ "đưa lại" và xoá. **(t
 
 - Kho lưu trữ file cho media (mục 6).
 - Có cần danh mục đơn vị hành chính chuẩn (tỉnh, phường) thay cho chữ tự do không.
-- Cần "thùng rác" liệt kê thứ đã xoá ngoài cách tìm qua hoạt động gần đây không.
+- ~~Cần "thùng rác" liệt kê thứ đã xoá ngoài cách tìm qua hoạt động gần đây không.~~ Đã có: `GET /trash`, xem `2026-11-16-find-and-recover-design.md`.

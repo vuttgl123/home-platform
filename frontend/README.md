@@ -65,7 +65,8 @@ src/
 │   ├── ownership/      tab Sở hữu của địa điểm và của một người: thêm chủ, sửa, thôi sở hữu, chuyển nhượng
 │   ├── items/          tab Đồ đạc của địa điểm, trang món đồ: thêm, sửa, chuyển chỗ, gỡ, thay, đưa lại, xoá
 │   ├── history/        tab Lịch sử dùng chung: danh sách version, xem và khôi phục một version
-│   └── activity/       trang Hoạt động: mọi thay đổi của không gian, khôi phục thứ đã xoá
+│   ├── activity/       trang Hoạt động và Thùng rác: mọi thay đổi của không gian, khôi phục thứ đã xoá
+│   └── search/         ô tìm chung (Ctrl+K): địa điểm, người, đồ đạc theo tên và theo mã
 ├── components/
 │   ├── ui/         component shadcn, không sửa tay; thêm bằng `npx shadcn add <tên>`
 │   └── common/     component dùng chung tự viết: ô nhập có nhãn, lỗi, trạng thái trống, "Tải thêm"
@@ -88,6 +89,8 @@ Luật phụ thuộc:
   Đồ đạc) được `app/router.tsx` ghép vào qua prop `tabs` (`PlaceTabSlots`).
 - `people` không nhập `items` hay `ownership`; tab "Sở hữu" và "Đồ đạc" của trang một người cũng được ghép vào
   như vậy (`PersonTabSlots`). `places` không nhập `ownership`; tab "Sở hữu" của địa điểm là một slot.
+- `search` và `activity` đứng trên ba feature bản ghi (places, people, items) và nhập chúng qua `index.ts`;
+  chiều ngược lại không có.
 - `components/ui` không biết gì về nghiệp vụ.
 
 ## Cây địa điểm
@@ -153,3 +156,15 @@ nhập, "Tải bản mới" lấy bản mới nhất và dùng `version` của n
    (`src/test/render.tsx`) và trả lời API bằng MSW (`server.use(...)`); request không có handler làm test
    hỏng. `mockShell()` (`src/test/handlers.ts`) trả lời những request mà khung trang luôn gọi.
 3. Thêm route trong `src/app/router.tsx`.
+
+## Tìm chung và hoàn tác
+
+Ctrl+K (⌘K) mở ô tìm chung ở mọi trang (`features/search`). Ô này chờ 300 ms sau phím cuối rồi gọi song
+song các API tìm có sẵn (`/places/search`, `/people/search`, `/items/search`, mỗi loại 5 kết quả; số
+điện thoại khi chuỗi chỉ có chữ số), gộp bằng `groupResults`: khớp mã đứng đầu và không lặp lại ở nhóm
+theo tên. Kết quả nằm dưới khoá danh sách của từng feature, nên lệnh ghi nào làm cũ danh sách cũng làm
+cũ kết quả tìm.
+
+Xoá một địa điểm, người hay món đồ hiện thông báo có nút "Hoàn tác" trong 8 giây (`deletedToast`).
+Hoàn tác gửi lệnh khôi phục với `version` lúc xoá cộng 1; bản ghi đã đổi sau lần xoá thì báo rõ, không
+thử lại.
