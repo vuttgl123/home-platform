@@ -127,6 +127,12 @@ bằng số version của dòng "Xoá" và làm mới như sau một lần tạo
 Ô chọn mà danh sách lựa chọn tải sau khi form dựng (nhóm đồ) phải có điều khiển (`Controller`): ô không
 điều khiển rơi về lựa chọn đầu tiên và gửi đi giá trị đó.
 
+Mã của địa điểm và đồ đạc do backend cấp khi tạo: form không có ô mã (`CodeNote` chỉ báo mã sẽ được
+cấp, hoặc hiện mã đã khoá khi sửa), thông báo sau khi thêm kèm mã. "Cấp mã mới" là thao tác riêng
+trong menu `⋯` (`ReissueCodeDialog`) và làm mới như một lần sửa. Phần "Mã tự cấp" của trang Danh mục
+đặt dạng mã; "Cấp mã" cho bản ghi cũ chạy từng lô rồi làm cũ mọi cache, vì mọi danh sách và chi tiết
+đều mang mã.
+
 "Hôm nay" (ngày mặc định khi chuyển đến, chuyển đi, gỡ đồ) tính theo giờ Việt Nam như backend
 (`todayInBusinessZone`, `src/lib/dates.ts`), không theo múi giờ của máy.
 

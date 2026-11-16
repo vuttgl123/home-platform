@@ -46,7 +46,7 @@ Ba câu hỏi hệ thống phải trả lời nhanh, vì đó là lý do nó t�
 
 **Chặn sửa đè.** Bản ghi có cột `version` (địa điểm, người, cư trú, đồ đạc) chỉ sửa, xoá, khôi phục được khi client gửi kèm `version` đã đọc. `version` đã đổi thì trả 409 và client phải đọc lại. **(bạn)**
 
-**Sửa là gửi lại cả phần sửa được.** Lệnh sửa nhận toàn bộ các trường người dùng được sửa, không phải từng trường. Service đọc dòng hiện tại, đặt các trường đó lên, rồi ghi. Các trường do hệ thống quản lý (`parent_id`, `path`, `depth`, `place_id` của đồ đạc, `removed_at`, `replaced_by_item_id`) không bao giờ lấy từ lệnh sửa; mỗi trường có thao tác riêng. **(tôi chọn)** Lý do: một client giữ bản cũ không thể vô tình kéo một địa điểm về chỗ cũ.
+**Sửa là gửi lại cả phần sửa được.** Lệnh sửa nhận toàn bộ các trường người dùng được sửa, không phải từng trường. Service đọc dòng hiện tại, đặt các trường đó lên, rồi ghi. Các trường do hệ thống quản lý (`parent_id`, `path`, `depth`, `place_id` của đồ đạc, `removed_at`, `replaced_by_item_id`, `code`; **bổ sung 2026-11-16**) không bao giờ lấy từ lệnh sửa; mỗi trường có thao tác riêng. **(tôi chọn)** Lý do: một client giữ bản cũ không thể vô tình kéo một địa điểm về chỗ cũ.
 
 **Version.** Mỗi lần tạo, sửa, xoá, khôi phục một địa điểm, một người hay một món đồ ghi thêm một version (`EntityHistory.record`) trong cùng transaction. Client có thể gửi kèm ghi chú (`note`, tối đa 255 ký tự). **(bạn)** Cư trú không có version riêng: lịch sử của nó chính là các dòng cư trú với ngày bắt đầu, ngày kết thúc. **(tôi chọn)**
 
@@ -152,7 +152,7 @@ Mọi lỗi liệt kê theo từng khoá trong danh sách `errors` (field là `a
 
 **Tạo**
 
-- `name` bắt buộc, tối đa 255. `place_type_id` là loại `ACTIVE`. `code` tuỳ chọn, tối đa 50, **không bắt buộc duy nhất** (mỗi toà nhà đều có thể có phòng P101). **(tôi chọn)**
+- `name` bắt buộc, tối đa 255. `place_type_id` là loại `ACTIVE`. `code` do hệ thống cấp khi tạo, không sửa được, duy nhất trong không gian kể cả với bản ghi đã xoá; xem `2026-11-16-auto-codes-design.md`. **(thay luật cũ "không bắt buộc duy nhất", 2026-11-16)**
 - `status` mặc định `ACTIVE`; `INACTIVE` chỉ là nhãn "tạm ngưng sử dụng", không chặn thao tác nào. **(tôi chọn)**
 - Có `parent_id` thì cha phải tồn tại và chưa xoá. `depth` bằng `depth` của cha cộng 1, tối đa 19 (20 cấp). `path` bằng `path` của cha nối thêm `id` của chính nó và dấu `/`. Không có cha thì `depth` là 0, `path` là `/<id>/`. **(bạn: 20 cấp, path)**
 - `id` được sinh trước khi ghi để tính `path`. **(bạn)**
@@ -160,7 +160,7 @@ Mọi lỗi liệt kê theo từng khoá trong danh sách `errors` (field là `a
 - `cover_file_id` là `id` bên media; registry không kiểm tra được vì hai service không gọi nhau. **(tôi chọn)**
 - Ghi version `CREATE`.
 
-**Sửa** `name`, `code`, `description`, `status`, `place_type_id`, `attributes`, `cover_file_id`. Đổi sang loại khác thì loại mới phải `ACTIVE`; giữ nguyên loại cũ đã lưu trữ thì vẫn được. Ghi version `UPDATE`.
+**Sửa** `name`, `description`, `status`, `place_type_id`, `attributes`, `cover_file_id`. Đổi sang loại khác thì loại mới phải `ACTIVE`; giữ nguyên loại cũ đã lưu trữ thì vẫn được. Ghi version `UPDATE`.
 
 **Di chuyển** sang cha khác hoặc lên cấp cao nhất.
 
@@ -226,7 +226,9 @@ Một dòng nghĩa là: người X có quan hệ R với địa điểm Y từ n
 
 **Tạo** trong một địa điểm chưa xoá. `name` bắt buộc, tối đa 255. `category_id` tuỳ chọn, phải là nhóm `ACTIVE`. `quantity` là số nguyên ≥ 1, mặc định 1. `status` là IN_USE (mặc định), BROKEN hoặc STORED. `placed_at` tuỳ chọn. `attributes` kiểm tra theo mục 5.3 (`target` ITEM). Version `CREATE`.
 
-**Sửa** `name`, `code`, `category_id`, `quantity`, `unit`, `status` (IN_USE, BROKEN, STORED), `placed_at`, `description`, `attributes`, `cover_file_id`. Version `UPDATE`.
+**Mã** do hệ thống cấp khi tạo (cả món mới khi thay), như địa điểm; xem `2026-11-16-auto-codes-design.md`.
+
+**Sửa** `name`, `category_id`, `quantity`, `unit`, `status` (IN_USE, BROKEN, STORED), `placed_at`, `description`, `attributes`, `cover_file_id`. Version `UPDATE`.
 
 **Chuyển** sang địa điểm khác chưa xoá. Version `UPDATE`; vị trí cũ xem được trong version trước. **(bạn)**
 
