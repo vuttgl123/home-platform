@@ -71,6 +71,14 @@ class OwnershipController {
 		return view(ctx, this.service.end(ctx, id, request).id());
 	}
 
+	/** Chuyển nhượng; trả cả dòng vừa kết thúc và dòng vừa bắt đầu. */
+	@PostMapping("/{id}/transfer")
+	OwnershipTransferResponse transfer(WorkspaceContext ctx, @PathVariable long id,
+			@Valid @RequestBody OwnershipTransferRequest request) {
+		OwnershipTransfer done = this.service.transfer(ctx, id, request);
+		return new OwnershipTransferResponse(view(ctx, done.ended().id()), view(ctx, done.started().id()));
+	}
+
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void delete(WorkspaceContext ctx, @PathVariable long id, @RequestParam int version) {

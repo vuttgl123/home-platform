@@ -120,6 +120,42 @@ public class OwnershipService {
 		return this.repository.update(ctx, current.withVersion(request.version()).withEndDate(endDate));
 	}
 
+	/**
+	 * Chuyển nhượng cả dòng: dòng cũ kết thúc hôm trước ngày chuyển, một dòng mới cùng địa điểm, cùng
+	 * tỷ lệ bắt đầu từ ngày chuyển cho người nhận. Mọi kiểm tra chạy trước lần ghi đầu tiên, nên lỗi thì
+	 * không dòng nào đổi.
+	 * @throws ConflictException nếu dòng đã kết thúc, {@code version} lệch, địa điểm đã xoá, hoặc người
+	 * nhận đã có dòng giao thời gian ở đây
+	 * @throws BadRequestException nếu người nhận là chủ hiện tại, hoặc ngày chuyển không sau ngày bắt đầu
+	 */
+	@Transactional
+	public OwnershipTransfer transfer(WorkspaceContext ctx, long id, OwnershipTransferRequest request) {
+		long workspaceId = ctx.workspaceId();
+		Ownership current = lockForChange(workspaceId, id);
+		if (current.version() != request.version()) {
+			throw ConflictException.versionConflict("Ownership", id);
+		}
+		if (current.endDate() != null) {
+			throw new ConflictException("Ownership " + id + " has already ended");
+		}
+		if (request.toPersonId() == current.personId()) {
+			throw new BadRequestException("toPersonId must be a different person");
+		}
+		LocalDate day = (request.transferDate() != null) ? request.transferDate() : this.businessDate.today();
+		if (!day.isAfter(current.startDate())) {
+			throw new BadRequestException("transferDate must be after startDate");
+		}
+		if (this.places.findForUpdate(workspaceId, current.placeId()).isEmpty()) {
+			throw new ConflictException("Restore place " + current.placeId() + " first");
+		}
+		this.people.getForUpdate(workspaceId, request.toPersonId());
+		requireValid(workspaceId, request.toPersonId(), current.placeId(), current.sharePercent(), day, null, id);
+		Ownership ended = this.repository.update(ctx, current.withEndDate(day.minusDays(1)));
+		Ownership started = this.repository.insert(ctx, new Ownership(0, 0, current.placeId(), request.toPersonId(),
+				current.sharePercent(), day, null, request.documentNo(), request.note(), null, 0, null, 0, 0, null));
+		return new OwnershipTransfer(ended, started);
+	}
+
 	/** Xoá mềm; chỉ dành cho dòng nhập nhầm. Thôi sở hữu thì dùng {@link #end}. */
 	@Transactional
 	public void delete(WorkspaceContext ctx, long id, int version) {
