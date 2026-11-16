@@ -1,10 +1,11 @@
 import { useParams } from 'react-router'
 
+import { CodeRuleSection } from '../components/CodeRuleSection'
 import { FieldDefSection } from '../components/FieldDefSection'
 import { ItemCategorySection } from '../components/ItemCategorySection'
 import { PlaceTypeSection } from '../components/PlaceTypeSection'
 
-/** Trang `/w/:workspaceId/catalog`: loại địa điểm, nhóm đồ và mục tuỳ biến của không gian. */
+/** Trang `/w/:workspaceId/catalog`: loại địa điểm, nhóm đồ, mục tuỳ biến và dạng mã tự cấp của không gian. */
 export function CatalogPage() {
   const { workspaceId = '' } = useParams()
   return (
@@ -16,6 +17,7 @@ export function CatalogPage() {
       <PlaceTypeSection ws={workspaceId} />
       <ItemCategorySection ws={workspaceId} />
       <FieldDefSection ws={workspaceId} />
+      <CodeRuleSection ws={workspaceId} />
     </div>
   )
 }

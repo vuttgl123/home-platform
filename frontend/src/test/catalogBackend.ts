@@ -13,6 +13,9 @@ export type CatalogWrite = { method: string; path: string; body: unknown }
  *
  * @param options.usedPlaceTypeIds loại đang có địa điểm dùng
  * @param options.usedCategoryIds nhóm đang có món đồ dùng
+ * @param options.codeRules mẫu mã đã lưu; mẫu chung có sẵn (DD, TS) tự thêm khi đích chưa đặt
+ * @param options.withoutCode số địa điểm, món đồ chưa có mã
+ * @param options.backfillBatch số bản ghi mỗi lượt cấp mã (mặc định 100)
  */
 export function mockCatalogBackend(options: {
   placeTypes?: Partial<PlaceType>[]
@@ -20,7 +23,24 @@ export function mockCatalogBackend(options: {
   fieldDefs?: Partial<FieldDef>[]
   usedPlaceTypeIds?: string[]
   usedCategoryIds?: string[]
+  codeRules?: { target: 'PLACE' | 'ITEM'; typeId: string; prefix: string; digits: number; yearly: boolean }[]
+  withoutCode?: { places: number; items: number }
+  backfillBatch?: number
 }) {
+  const rules = [...(options.codeRules ?? [])]
+  const withoutCode = { ...(options.withoutCode ?? { places: 0, items: 0 }) }
+  const batch = options.backfillBatch ?? 100
+  const builtIn = { PLACE: 'DD', ITEM: 'TS' } as const
+  function listRules() {
+    const shown = (['PLACE', 'ITEM'] as const).flatMap((target) => {
+      const own = rules.filter((rule) => rule.target === target).sort((a, b) => Number(a.typeId) - Number(b.typeId))
+      const shared = own.some((rule) => rule.typeId === '0')
+        ? []
+        : [{ target, typeId: '0', prefix: builtIn[target], digits: 6, yearly: false, builtIn: true }]
+      return [...shared, ...own.map((rule) => ({ ...rule, builtIn: false }))]
+    })
+    return shown.sort((a, b) => (a.target === b.target ? Number(a.typeId) - Number(b.typeId) : a.target === 'PLACE' ? -1 : 1))
+  }
   const types = (options.placeTypes ?? []).map((seed) => placeType(seed))
   const categories = (options.itemCategories ?? []).map((seed) => itemCategory(seed))
   const defs = (options.fieldDefs ?? []).map((seed) => fieldDef(seed))
@@ -121,6 +141,40 @@ export function mockCatalogBackend(options: {
       return HttpResponse.json(def)
     }),
     ...statusHandlers('field-defs', defs),
+    http.get('/api/registry/code-rules', () => HttpResponse.json(listRules())),
+    http.put('/api/registry/code-rules/:target/:typeId', async ({ request, params }) => {
+      const body = (await record(request))! as { prefix: string; digits: number; yearly: boolean }
+      const target = params.target as 'PLACE' | 'ITEM'
+      const typeId = params.typeId as string
+      const index = rules.findIndex((rule) => rule.target === target && rule.typeId === typeId)
+      const rule = { target, typeId, prefix: body.prefix, digits: body.digits, yearly: body.yearly }
+      if (index >= 0) rules[index] = rule
+      else rules.push(rule)
+      return HttpResponse.json({ ...rule, builtIn: false })
+    }),
+    http.delete('/api/registry/code-rules/:target/:typeId', async ({ request, params }) => {
+      await record(request)
+      const index = rules.findIndex((rule) => rule.target === params.target && rule.typeId === params.typeId)
+      if (index < 0) return HttpResponse.json(problem(404, 'Code rule not found'), { status: 404 })
+      rules.splice(index, 1)
+      return new HttpResponse(null, { status: 204 })
+    }),
+    http.get('/api/registry/codes/status', () =>
+      HttpResponse.json({ placesWithoutCode: withoutCode.places, itemsWithoutCode: withoutCode.items }),
+    ),
+    http.post('/api/registry/codes/backfill', async ({ request }) => {
+      await record(request)
+      const placesAssigned = Math.min(batch, withoutCode.places)
+      const itemsAssigned = Math.min(batch - placesAssigned, withoutCode.items)
+      withoutCode.places -= placesAssigned
+      withoutCode.items -= itemsAssigned
+      return HttpResponse.json({
+        placesAssigned,
+        itemsAssigned,
+        placesRemaining: withoutCode.places,
+        itemsRemaining: withoutCode.items,
+      })
+    }),
   )
 
   return { types, categories, defs, writes }

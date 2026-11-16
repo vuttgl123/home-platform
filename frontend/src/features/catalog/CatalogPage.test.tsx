@@ -51,6 +51,7 @@ test('placeTypeCodeIsUppercased', async () => {
 
   await user.click(await (await section('Loại địa điểm')).findByRole('button', { name: 'Thêm loại' }))
   const dialog = within(await screen.findByRole('dialog', { name: 'Thêm loại địa điểm' }))
+  await user.click(dialog.getByRole('button', { name: 'Tự đặt mã' }))
   await user.type(dialog.getByRole('textbox', { name: 'Mã' }), 'kho_lanh')
   expect(dialog.getByRole('textbox', { name: 'Mã' })).toHaveValue('KHO_LANH')
   await user.type(dialog.getByRole('textbox', { name: 'Tên' }), 'Kho lạnh')
@@ -188,4 +189,140 @@ test('itemCategoryIsAddedAndArchived', async () => {
   await rowAction(categories, 'Nội thất', 'Lưu trữ', user)
 
   await waitFor(() => expect(backend.categories.find((category) => category.id === '600')?.status).toBe('ARCHIVED'))
+})
+
+test('placeTypeCodeComesFromTheName', async () => {
+  const backend = setUp()
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+
+  await user.click(await (await section('Loại địa điểm')).findByRole('button', { name: 'Thêm loại' }))
+  const dialog = within(await screen.findByRole('dialog', { name: 'Thêm loại địa điểm' }))
+  expect(dialog.queryByRole('textbox', { name: 'Mã' })).not.toBeInTheDocument()
+  await user.type(dialog.getByRole('textbox', { name: 'Tên' }), 'Kho lạnh')
+  expect(dialog.getByText('Mã: KHO_LANH')).toBeInTheDocument()
+  await user.click(dialog.getByRole('button', { name: 'Thêm' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0]).toMatchObject({ path: '/place-types', body: { code: 'KHO_LANH', name: 'Kho lạnh' } })
+})
+
+test('listsBuiltInRulesWithExamples', async () => {
+  setUp()
+  renderApp({ route: '/w/7/catalog', userId: '42' })
+
+  const codes = await section('Mã tự cấp')
+  const places = within(await codes.findByRole('row', { name: /Mọi địa điểm/ }))
+  expect(places.getByText('DD')).toBeInTheDocument()
+  expect(places.getByText('DD-000001')).toBeInTheDocument()
+  expect(places.getByText('(có sẵn)')).toBeInTheDocument()
+  expect(within(codes.getByRole('row', { name: /Mọi đồ đạc/ })).getByText('TS-000001')).toBeInTheDocument()
+})
+
+test('exampleChangesWhileTyping', async () => {
+  setUp()
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  const codes = await section('Mã tự cấp')
+
+  await user.click(await codes.findByRole('button', { name: 'Sửa Mọi địa điểm' }))
+  const dialog = within(await screen.findByRole('dialog', { name: 'Dạng mã: Mọi địa điểm' }))
+  const prefix = dialog.getByRole('textbox', { name: 'Tiền tố' })
+  await user.clear(prefix)
+  await user.type(prefix, 'p')
+  await user.selectOptions(dialog.getByRole('combobox', { name: 'Số chữ số' }), '4')
+  await user.click(dialog.getByRole('switch', { name: 'Bắt đầu lại mỗi năm' }))
+
+  expect(prefix).toHaveValue('P')
+  expect(dialog.getByText(new RegExp(`Ví dụ: P-\\d{4}-0001`))).toBeInTheDocument()
+})
+
+test('savesARuleForOnePlaceType', async () => {
+  const backend = setUp()
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  const codes = await section('Mã tự cấp')
+
+  await user.click(await codes.findByRole('button', { name: 'Thêm dạng riêng' }))
+  const dialog = within(await screen.findByRole('dialog', { name: 'Thêm dạng riêng' }))
+  await user.selectOptions(dialog.getByRole('combobox', { name: 'Áp dụng cho' }), 'Loại: Kho')
+  await user.type(dialog.getByRole('textbox', { name: 'Tiền tố' }), 'K')
+  await user.selectOptions(dialog.getByRole('combobox', { name: 'Số chữ số' }), '4')
+  await user.click(dialog.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0]).toEqual({ method: 'PUT', path: '/code-rules/PLACE/101', body: { prefix: 'K', digits: 4, yearly: false } })
+  expect(await codes.findByRole('row', { name: /Loại: Kho/ })).toBeInTheDocument()
+})
+
+test('removingAnOwnRuleFallsBackToTheSharedOne', async () => {
+  const backend = setUp({ codeRules: [{ target: 'PLACE', typeId: '101', prefix: 'K', digits: 4, yearly: false }] })
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  const codes = await section('Mã tự cấp')
+
+  await user.click(await codes.findByRole('button', { name: 'Bỏ Loại: Kho' }))
+
+  await waitFor(() => expect(backend.writes).toEqual([{ method: 'DELETE', path: '/code-rules/PLACE/101', body: null }]))
+  await waitFor(() => expect(codes.queryByRole('row', { name: /Loại: Kho/ })).not.toBeInTheDocument())
+})
+
+test('warnsWhenThePrefixIsUsedByTheOtherTarget', async () => {
+  setUp()
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  const codes = await section('Mã tự cấp')
+
+  await user.click(await codes.findByRole('button', { name: 'Sửa Mọi địa điểm' }))
+  const dialog = within(await screen.findByRole('dialog', { name: 'Dạng mã: Mọi địa điểm' }))
+  const prefix = dialog.getByRole('textbox', { name: 'Tiền tố' })
+  await user.clear(prefix)
+  await user.type(prefix, 'TS')
+
+  expect(dialog.getByText('Địa điểm và đồ đạc sẽ có mã giống nhau')).toBeInTheDocument()
+  expect(dialog.getByRole('button', { name: 'Lưu' })).toBeEnabled()
+})
+
+test('invalidPrefixIsBlockedBeforeSending', async () => {
+  const backend = setUp()
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  const codes = await section('Mã tự cấp')
+
+  await user.click(await codes.findByRole('button', { name: 'Sửa Mọi địa điểm' }))
+  const dialog = within(await screen.findByRole('dialog', { name: 'Dạng mã: Mọi địa điểm' }))
+  const prefix = dialog.getByRole('textbox', { name: 'Tiền tố' })
+  await user.clear(prefix)
+  await user.type(prefix, '1A')
+  await user.click(dialog.getByRole('button', { name: 'Lưu' }))
+
+  expect(await dialog.findByText('1 đến 10 chữ cái không dấu hoặc số, bắt đầu bằng chữ')).toBeInTheDocument()
+  expect(backend.writes).toEqual([])
+})
+
+test('backfillBannerIsHiddenWhenEverythingHasACode', async () => {
+  setUp({ withoutCode: { places: 0, items: 0 } })
+  renderApp({ route: '/w/7/catalog', userId: '42' })
+  const codes = await section('Mã tự cấp')
+
+  await codes.findByRole('row', { name: /Mọi địa điểm/ })
+  expect(codes.queryByRole('button', { name: 'Cấp mã' })).not.toBeInTheDocument()
+})
+
+test('backfillRunsUntilNothingRemains', async () => {
+  const backend = setUp({ withoutCode: { places: 200, items: 40 } })
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  const codes = await section('Mã tự cấp')
+
+  expect(await codes.findByText('Có 200 địa điểm và 40 món đồ chưa có mã.')).toBeInTheDocument()
+  await user.click(codes.getByRole('button', { name: 'Cấp mã' }))
+
+  expect(await screen.findByText('Đã cấp mã cho 240 bản ghi')).toBeInTheDocument()
+  expect(backend.writes.filter((write) => write.path === '/codes/backfill')).toHaveLength(3)
+  await waitFor(() => expect(codes.queryByRole('button', { name: 'Cấp mã' })).not.toBeInTheDocument())
+})
+
+test('backfillStopsWhenARoundAssignsNothing', async () => {
+  const backend = setUp({ withoutCode: { places: 3, items: 0 }, backfillBatch: 0 })
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  const codes = await section('Mã tự cấp')
+
+  await user.click(await codes.findByRole('button', { name: 'Cấp mã' }))
+
+  expect(await screen.findByText('Đã cấp mã cho 0 bản ghi')).toBeInTheDocument()
+  expect(backend.writes.filter((write) => write.path === '/codes/backfill')).toHaveLength(1)
 })

@@ -1,6 +1,6 @@
 import { registry, unwrap, workspaceHeaders, type RegistrySchemas } from '@/api'
 
-import type { FieldDef, FieldTarget, ItemCategory, PlaceType } from './types'
+import type { CodeBackfillResult, CodeRule, CodeStatus, CodeTarget, FieldDef, FieldTarget, ItemCategory, PlaceType } from './types'
 
 /**
  * Tạo danh mục mặc định (loại địa điểm, nhóm đồ, mục tuỳ biến) cho một không gian. Gọi lại
@@ -68,4 +68,26 @@ export const fieldDefApi = {
   archive: (ws: string, id: string) => run(registry.POST('/field-defs/{id}/archive', { params: { header: headers(ws), path: { id } } })),
   unarchive: (ws: string, id: string) =>
     run(registry.POST('/field-defs/{id}/unarchive', { params: { header: headers(ws), path: { id } } })),
+}
+
+/** Các dạng mã tự cấp của không gian: dạng chung của từng đích trước, rồi dạng riêng. */
+export async function listCodeRules(ws: string): Promise<CodeRule[]> {
+  return (await unwrap(registry.GET('/code-rules', { params: { header: headers(ws) } }))) as CodeRule[]
+}
+
+export const codeRuleApi = {
+  put: (ws: string, target: CodeTarget, typeId: string, body: S['CodeRuleRequest']) =>
+    run(registry.PUT('/code-rules/{target}/{typeId}', { params: { header: headers(ws), path: { target, typeId } }, body })),
+  remove: (ws: string, target: CodeTarget, typeId: string) =>
+    run(registry.DELETE('/code-rules/{target}/{typeId}', { params: { header: headers(ws), path: { target, typeId } } })),
+}
+
+/** Số địa điểm và món đồ chưa có mã. */
+export async function getCodeStatus(ws: string): Promise<CodeStatus> {
+  return (await unwrap(registry.GET('/codes/status', { params: { header: headers(ws) } }))) as CodeStatus
+}
+
+/** Cấp mã cho một lô bản ghi chưa có mã (tối đa 100), cũ trước. */
+export async function backfillCodes(ws: string): Promise<CodeBackfillResult> {
+  return (await unwrap(registry.POST('/codes/backfill', { params: { header: headers(ws) } }))) as CodeBackfillResult
 }

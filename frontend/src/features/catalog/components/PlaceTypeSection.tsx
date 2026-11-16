@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast'
 
 import { placeTypeApi } from '../api'
+import { suggestTypeCode } from '../codeRules'
 import { useCatalogWrite, usePlaceTypes } from '../queries'
 import type { PlaceType } from '../types'
 import { CatalogActions } from './CatalogActions'
@@ -64,7 +65,14 @@ export function PlaceTypeSection({ ws }: { ws: string }) {
           ))}
         </CatalogTable>
       )}
-      {editing && <PlaceTypeDialog ws={ws} type={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
+      {editing && (
+        <PlaceTypeDialog
+          ws={ws}
+          type={editing === 'new' ? null : editing}
+          takenCodes={(types.data ?? []).map((type) => type.code)}
+          onClose={() => setEditing(null)}
+        />
+      )}
       {deleting && (
         <DeleteCatalogDialog
           ws={ws}
@@ -78,16 +86,32 @@ export function PlaceTypeSection({ ws }: { ws: string }) {
   )
 }
 
-function PlaceTypeDialog({ ws, type, onClose }: { ws: string; type: PlaceType | null; onClose: () => void }) {
-  const [code, setCode] = useState(type?.code ?? '')
+/**
+ * Thêm hoặc sửa một loại địa điểm. Khi thêm, mã được suy từ tên (`suggestTypeCode`); người dùng vẫn
+ * có thể "Tự đặt mã". Mã không đổi được sau khi tạo.
+ */
+function PlaceTypeDialog({
+  ws,
+  type,
+  takenCodes,
+  onClose,
+}: {
+  ws: string
+  type: PlaceType | null
+  takenCodes: string[]
+  onClose: () => void
+}) {
+  const [ownCode, setOwnCode] = useState<string | null>(null)
   const [name, setName] = useState(type?.name ?? '')
   const [description, setDescription] = useState(type?.description ?? '')
   const [sortOrder, setSortOrder] = useState(type ? String(type.sortOrder) : '')
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const code = type?.code ?? ownCode ?? suggestTypeCode(name, takenCodes)
 
   function validate() {
     const next: Record<string, string> = {}
-    if (!type && !CODE.test(code)) next.code = 'Chỉ chữ in hoa không dấu, số và _'
+    if (!type && ownCode == null && code === '') next.code = 'Tên cần có chữ hoặc số để làm mã; hoặc tự đặt mã'
+    else if (!type && !CODE.test(code)) next.code = 'Chỉ chữ in hoa không dấu, số và _'
     if (code.length > 50) next.code = 'Tối đa 50 ký tự'
     if (name.trim() === '') next.name = 'Nhập tên'
     if (name.length > 100) next.name = 'Tối đa 100 ký tự'
@@ -116,18 +140,30 @@ function PlaceTypeDialog({ ws, type, onClose }: { ws: string; type: PlaceType | 
         <p className="text-sm text-muted-foreground">
           Mã <span className="font-mono">{type.code}</span> không đổi được sau khi tạo.
         </p>
-      ) : (
-        <TextField
-          label="Mã"
-          required
-          autoComplete="off"
-          description="Ví dụ KHO_LANH; dùng để tích hợp, không đổi được sau khi tạo."
-          value={code}
-          onChange={(event) => setCode(event.target.value.toUpperCase())}
-          error={errors.code}
-        />
-      )}
+      ) : null}
       <TextField label="Tên" required value={name} onChange={(event) => setName(event.target.value)} error={errors.name} />
+      {!type &&
+        (ownCode == null ? (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">{`Mã: ${code || '—'}`}</span>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setOwnCode(code)}>
+                Tự đặt mã
+              </Button>
+            </div>
+            {errors.code && <p className="text-sm text-destructive">{errors.code}</p>}
+          </div>
+        ) : (
+          <TextField
+            label="Mã"
+            required
+            autoComplete="off"
+            description="Ví dụ KHO_LANH; dùng để tích hợp, không đổi được sau khi tạo."
+            value={ownCode}
+            onChange={(event) => setOwnCode(event.target.value.toUpperCase())}
+            error={errors.code}
+          />
+        ))}
       <TextField label="Mô tả" value={description} onChange={(event) => setDescription(event.target.value)} error={errors.description} />
       <TextField
         label="Thứ tự"
