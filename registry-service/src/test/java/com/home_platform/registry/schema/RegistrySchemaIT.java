@@ -17,7 +17,7 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 	@Test
 	void registryTablesExist() {
 		assertThat(tables("reg_")).containsExactly("reg_code_counter", "reg_code_rule", "reg_entity_version", "reg_field_def", "reg_item",
-				"reg_item_category", "reg_occupancy", "reg_person", "reg_place", "reg_place_address",
+				"reg_item_category", "reg_occupancy", "reg_ownership", "reg_person", "reg_place", "reg_place_address",
 				"reg_place_type");
 	}
 
@@ -51,6 +51,9 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 				entry("reg_occupancy.idx_reg_occupancy_place",
 						List.of("workspace_id", "place_id", "end_date", "start_date")),
 				entry("reg_occupancy.idx_reg_occupancy_person", List.of("workspace_id", "person_id", "start_date")),
+				entry("reg_ownership.idx_reg_ownership_place",
+						List.of("workspace_id", "place_id", "end_date", "start_date")),
+				entry("reg_ownership.idx_reg_ownership_person", List.of("workspace_id", "person_id", "start_date")),
 				entry("reg_item_category.uk_reg_item_category_name", List.of("workspace_id", "name")),
 				entry("reg_item.idx_reg_item_place", List.of("workspace_id", "place_id", "removed_at", "name")),
 				entry("reg_item.idx_reg_item_category", List.of("workspace_id", "category_id", "name")),
@@ -163,6 +166,16 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 	}
 
 	@Test
+	void ownershipOfAPlaceInAnotherWorkspaceIsRejected() {
+		type(WS_A, 10, "HOTEL");
+		place(WS_A, 100, null, 10, "/100/", "A");
+		person(WS_B, 500, "B");
+		assertThatThrownBy(() -> jdbc.update("INSERT INTO reg_ownership (workspace_id, id, place_id, person_id, start_date, "
+				+ "created_by, updated_by) VALUES (?, 800, 100, 500, '2026-01-01', -1, -1)", WS_B))
+			.isInstanceOf(DataIntegrityViolationException.class);
+	}
+
+	@Test
 	void hardDeleteOfPlaceInUseIsRejected() {
 		type(WS_A, 10, "HOTEL");
 		place(WS_A, 100, null, 10, "/100/", "A");
@@ -171,7 +184,10 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 		person(WS_A, 500, "An");
 		occupancy(WS_A, 600, 101, 500);
 		item(WS_A, 700, 102, "Tủ lạnh");
-		for (long placeId : List.of(100L, 101L, 102L)) {
+		place(WS_A, 103, 100L, 10, "/100/103/", "P103");
+		jdbc.update("INSERT INTO reg_ownership (workspace_id, id, place_id, person_id, start_date, created_by, updated_by)"
+				+ " VALUES (?, 800, 103, 500, '2026-01-01', -1, -1)", WS_A);
+		for (long placeId : List.of(100L, 101L, 102L, 103L)) {
 			assertThatThrownBy(
 					() -> jdbc.update("DELETE FROM reg_place WHERE workspace_id = ? AND id = ?", WS_A, placeId))
 					.as("place " + placeId)

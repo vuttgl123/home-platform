@@ -37,6 +37,7 @@ public abstract class CommittedDataIT extends RegistryIT {
 	private static final List<String> WIPE = List.of(
 			"UPDATE reg_item SET replaced_by_item_id = NULL WHERE workspace_id = :ws",
 			"DELETE FROM reg_item WHERE workspace_id = :ws", "DELETE FROM reg_occupancy WHERE workspace_id = :ws",
+			"DELETE FROM reg_ownership WHERE workspace_id = :ws",
 			"DELETE FROM reg_place_address WHERE workspace_id = :ws",
 			"UPDATE reg_place SET parent_id = NULL WHERE workspace_id = :ws",
 			"DELETE FROM reg_place WHERE workspace_id = :ws", "DELETE FROM reg_person WHERE workspace_id = :ws",

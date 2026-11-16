@@ -101,6 +101,20 @@ public class PlaceService {
 	}
 
 	/**
+	 * Như {@link #get}, và giữ riêng địa điểm tới hết transaction: lệnh khác không ghi được nó và cũng
+	 * không giữ riêng được nó. Lệnh ghi sở hữu dùng hàm này để hai lệnh trên cùng một địa điểm chạy lần lượt.
+	 * @throws NotFoundException nếu không có hoặc đã xoá
+	 */
+	public Place getForUpdate(long workspaceId, long id) {
+		return findForUpdate(workspaceId, id).orElseThrow(() -> NotFoundException.of("Place", id));
+	}
+
+	/** Như {@link #getForUpdate}, trả rỗng thay vì ném lỗi khi địa điểm không có hoặc đã xoá. */
+	public Optional<Place> findForUpdate(long workspaceId, long id) {
+		return this.repository.findByIdForUpdate(workspaceId, id);
+	}
+
+	/**
 	 * Giữ riêng địa điểm tới hết transaction, trước khi kiểm tra rồi ghi chính nó. Phải là câu đầu
 	 * tiên của lệnh: các câu đếm chạy sau đó mới thấy mọi thứ đã commit vào địa điểm này.
 	 */
