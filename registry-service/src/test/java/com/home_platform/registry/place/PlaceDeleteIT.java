@@ -49,7 +49,26 @@ class PlaceDeleteIT extends PlaceTestData {
 		item(a, null);
 
 		remove(a, 1).andExpect(status().isConflict())
-			.andExpect(jsonPath("$.detail").value("Place " + a + " still has 1 child places, 1 occupancies and 1 items"));
+			.andExpect(jsonPath("$.detail")
+				.value("Place " + a + " still has 1 child places, 1 occupancies, 0 ownerships and 1 items"));
+	}
+
+	@Test
+	void placeWithACurrentOrUpcomingOwnerCannotBeDeleted() throws Exception {
+		long a = place(null, type("T"), "A");
+		ownership(a, LocalDate.of(2020, 1, 1), null);
+		ownership(a, this.businessDate.today().plusDays(30), null);
+
+		remove(a, 1).andExpect(status().isConflict())
+			.andExpect(jsonPath("$.detail").value("Place " + a + " still has 0 child places, 0 occupancies, 2 ownerships and 0 items"));
+	}
+
+	@Test
+	void placeWhoseOwnershipsAllEndedCanBeDeleted() throws Exception {
+		long a = place(null, type("T"), "A");
+		ownership(a, LocalDate.of(2020, 1, 1), this.businessDate.today().minusDays(1));
+
+		remove(a, 1).andExpect(status().isNoContent());
 	}
 
 	@Test
@@ -137,6 +156,19 @@ class PlaceDeleteIT extends PlaceTestData {
 	private ResultActions restore(long id, int version) throws Exception {
 		return this.mvc.perform(asA(post("/places/" + id + "/restore")).contentType(MediaType.APPLICATION_JSON)
 			.content("{\"version\": " + version + "}"));
+	}
+
+	private void ownership(long placeId, LocalDate start, LocalDate end) {
+		long person = this.ids.incrementAndGet();
+		this.jdbc.sql("""
+				INSERT INTO reg_person (workspace_id, id, full_name, created_by, updated_by)
+				VALUES (:ws, :id, 'Chủ', :user, :user)""").param("ws", WS_A).param("id", person).param("user", USER)
+			.update();
+		this.jdbc.sql("""
+				INSERT INTO reg_ownership (workspace_id, id, place_id, person_id, start_date, end_date, created_by, updated_by)
+				VALUES (:ws, :id, :place, :person, :start, :end, :user, :user)""")
+			.param("ws", WS_A).param("id", this.ids.incrementAndGet()).param("place", placeId).param("person", person)
+			.param("start", start).param("end", end).param("user", USER).update();
 	}
 
 	private void occupancy(long placeId, LocalDate start, LocalDate end) {

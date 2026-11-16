@@ -176,18 +176,20 @@ public class PlaceService {
 	}
 
 	/**
-	 * Xoá mềm. Chỉ được khi không còn địa điểm con, người đang hoặc sắp ở, đồ đạc chưa gỡ.
-	 * @throws ConflictException nếu còn một trong ba thứ đó, kèm số lượng từng thứ
+	 * Xoá mềm. Chỉ được khi không còn địa điểm con, người đang hoặc sắp ở, chủ đang hoặc sắp sở hữu,
+	 * đồ đạc chưa gỡ.
+	 * @throws ConflictException nếu còn một trong bốn thứ đó, kèm số lượng từng thứ
 	 */
 	@Transactional
 	public void delete(WorkspaceContext ctx, long id, int version, String note) {
 		lockForChange(ctx.workspaceId(), id);
 		int children = this.repository.countChildren(ctx.workspaceId(), id);
 		int occupancies = this.repository.countCurrentOccupancies(ctx.workspaceId(), id, this.businessDate.today());
+		int ownerships = this.repository.countCurrentOwnerships(ctx.workspaceId(), id, this.businessDate.today());
 		int items = this.repository.countCurrentItems(ctx.workspaceId(), id);
-		if (children + occupancies + items > 0) {
+		if (children + occupancies + ownerships + items > 0) {
 			throw new ConflictException("Place " + id + " still has " + children + " child places, " + occupancies
-					+ " occupancies and " + items + " items");
+					+ " occupancies, " + ownerships + " ownerships and " + items + " items");
 		}
 		Place stored = this.repository.softDelete(ctx, id, version);
 		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.DELETE, note);

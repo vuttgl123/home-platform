@@ -68,6 +68,17 @@ public class PersonRepository extends WorkspaceRepository<Person> {
 			.optional();
 	}
 
+	/** Số dòng sở hữu chưa xoá đang hoặc sắp có hiệu lực. Index (workspace_id, person_id, start_date). */
+	public int countCurrentOwnerships(long workspaceId, long personId, LocalDate today) {
+		return jdbc().sql("SELECT COUNT(*) FROM reg_ownership WHERE workspace_id = :workspaceId "
+				+ "AND person_id = :personId AND deleted_at IS NULL AND (end_date IS NULL OR end_date >= :today)")
+			.param("workspaceId", workspaceId)
+			.param("personId", personId)
+			.param("today", today)
+			.query(Integer.class)
+			.single();
+	}
+
 	/** Số món đồ chưa xoá, chưa gỡ mà người này là chủ. Index (workspace_id, owner_person_id, removed_at, name). */
 	public int countOwnedItems(long workspaceId, long personId) {
 		return jdbc().sql("SELECT COUNT(*) FROM reg_item WHERE workspace_id = :workspaceId "

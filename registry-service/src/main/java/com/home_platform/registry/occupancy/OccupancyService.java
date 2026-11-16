@@ -94,6 +94,7 @@ public class OccupancyService {
 	/** @throws com.home_platform.common.web.NotFoundException nếu địa điểm hoặc người không có hay đã xoá */
 	@Transactional
 	public Occupancy create(WorkspaceContext ctx, OccupancyCreateRequest request) {
+		requireNotNewOwner(request.relation(), null);
 		this.places.getForShare(ctx.workspaceId(), request.placeId());
 		this.people.getForUpdate(ctx.workspaceId(), request.personId());
 		requireValidRange(ctx.workspaceId(), request.personId(), request.placeId(), request.startDate(),
@@ -112,6 +113,7 @@ public class OccupancyService {
 		long workspaceId = ctx.workspaceId();
 		Occupancy current = this.repository.findByIdForUpdate(workspaceId, id)
 			.orElseThrow(() -> NotFoundException.of("Occupancy", id));
+		requireNotNewOwner(request.relation(), current.relation());
 		if (this.places.findForShare(workspaceId, current.placeId()).isEmpty()) {
 			throw new ConflictException("Restore place " + current.placeId() + " first");
 		}
@@ -154,6 +156,17 @@ public class OccupancyService {
 		requireOrdered(start, end);
 		if (this.repository.overlaps(workspaceId, personId, placeId, start, end, selfId)) {
 			throw new ConflictException("Person " + personId + " already has an overlapping occupancy at this place");
+		}
+	}
+
+	/**
+	 * Chủ được ghi ở bảng sở hữu, không còn là một quan hệ cư trú. Dòng đang là OWNER (có từ trước)
+	 * vẫn sửa được và giữ quan hệ đó; không dòng nào mới trở thành OWNER.
+	 * @param existing quan hệ hiện tại của dòng đang sửa; {@code null} khi tạo
+	 */
+	private static void requireNotNewOwner(Relation requested, Relation existing) {
+		if (requested == Relation.OWNER && existing != Relation.OWNER) {
+			throw new BadRequestException("relation OWNER is no longer accepted; record an ownership instead");
 		}
 	}
 

@@ -23,6 +23,9 @@ import com.home_platform.registry.occupancy.Occupancy;
 import com.home_platform.registry.occupancy.OccupancyCreateRequest;
 import com.home_platform.registry.occupancy.OccupancyService;
 import com.home_platform.registry.occupancy.Relation;
+import com.home_platform.registry.ownership.Ownership;
+import com.home_platform.registry.ownership.OwnershipCreateRequest;
+import com.home_platform.registry.ownership.OwnershipService;
 import com.home_platform.registry.person.Person;
 import com.home_platform.registry.person.PersonRequest;
 import com.home_platform.registry.person.PersonService;
@@ -69,6 +72,9 @@ class ConcurrentWritesIT extends CommittedDataIT {
 	FieldDefService fieldDefs;
 
 	@Autowired
+	OwnershipService ownerships;
+
+	@Autowired
 	AttributeValidation attributeValidation;
 
 	long type;
@@ -91,7 +97,7 @@ class ConcurrentWritesIT extends CommittedDataIT {
 
 		assertThatThrownBy(deleting::get).cause()
 			.isInstanceOfSatisfying(ConflictException.class, ex -> assertThat(ex.getBody().getDetail())
-				.contains("0 child places, 0 occupancies and 1 items"));
+				.contains("0 child places, 0 occupancies, 0 ownerships and 1 items"));
 		assertThat(this.places.get(WS, room).version()).isEqualTo(1);
 		assertThat(this.history.list(WS, "PLACE", room, new CursorRequest(null, 20)).items()).hasSize(1);
 	}
@@ -257,6 +263,55 @@ class ConcurrentWritesIT extends CommittedDataIT {
 	}
 
 	@Test
+	void twoOwnersAddedTogetherCannotExceedOneHundredPercent() throws Exception {
+		long room = place(null, "P101");
+		long an = person("An");
+		long binh = person("Bình");
+		OpenTransaction<Ownership> first = holdOpen(() -> this.ownerships.create(CTX, owns(room, an, "60")));
+		Future<Ownership> second = inBackground(() -> this.ownerships.create(CTX, owns(room, binh, "60")));
+		letItBlock();
+		first.commit();
+
+		assertThatThrownBy(second::get).cause()
+			.isInstanceOfSatisfying(ConflictException.class, ex -> assertThat(ex.getBody().getDetail())
+				.contains("would total 120%"));
+		assertThat(rows("reg_ownership")).isEqualTo(1);
+	}
+
+	@Test
+	void placeDeleteSeesAnOwnershipAddedConcurrently() throws Exception {
+		long room = place(null, "P101");
+		long an = person("An");
+		OpenTransaction<Ownership> adding = holdOpen(() -> this.ownerships.create(CTX, owns(room, an, null)));
+		Future<Void> deleting = inBackground(() -> {
+			this.places.delete(CTX, room, 1, null);
+			return null;
+		});
+		letItBlock();
+		adding.commit();
+
+		assertThatThrownBy(deleting::get).cause()
+			.isInstanceOfSatisfying(ConflictException.class, ex -> assertThat(ex.getBody().getDetail())
+				.contains("1 ownerships"));
+	}
+
+	@Test
+	void ownershipAddedDuringAPersonDeleteIsRefused() throws Exception {
+		long room = place(null, "P101");
+		long an = person("An");
+		OpenTransaction<Void> deleting = holdOpen(() -> {
+			this.people.delete(CTX, an, 1, null);
+			return null;
+		});
+		Future<Ownership> adding = inBackground(() -> this.ownerships.create(CTX, owns(room, an, null)));
+		letItBlock();
+		deleting.commit();
+
+		assertThatThrownBy(adding::get).cause().isInstanceOf(NotFoundException.class);
+		assertThat(rows("reg_ownership")).isZero();
+	}
+
+	@Test
 	void sameDocumentCreatedTogetherLeavesOnePerson() throws Exception {
 		OpenTransaction<Person> first = holdOpen(() -> this.people.create(CTX, withDocument("An")));
 		Future<Person> second = inBackground(() -> this.people.create(CTX, withDocument("Bình")));
@@ -310,6 +365,11 @@ class ConcurrentWritesIT extends CommittedDataIT {
 	/** Cư trú từ hôm nay, chưa có ngày cuối. */
 	private OccupancyCreateRequest stay(long placeId, long personId) {
 		return new OccupancyCreateRequest(placeId, personId, Relation.RESIDENT, this.businessDate.today(), null, null);
+	}
+
+	private OwnershipCreateRequest owns(long placeId, long personId, String share) {
+		return new OwnershipCreateRequest(placeId, personId, (share != null) ? new java.math.BigDecimal(share) : null,
+				this.businessDate.today(), null, null, null);
 	}
 
 	private static ItemRequest owned(long placeId, long ownerId, String name) {

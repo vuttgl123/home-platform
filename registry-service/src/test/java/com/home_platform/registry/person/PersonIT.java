@@ -141,7 +141,7 @@ class PersonIT extends PersonTestData {
 		this.mvc.perform(asA(delete("/people/" + busy)).param("version", "1"))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.detail")
-				.value("Person " + busy + " still has 1 current or upcoming occupancies and 0 items"));
+				.value("Person " + busy + " still has 1 current or upcoming occupancies, 0 ownerships and 0 items"));
 		this.mvc.perform(asA(delete("/people/" + moved)).param("version", "1")).andExpect(status().isNoContent());
 	}
 
@@ -154,7 +154,26 @@ class PersonIT extends PersonTestData {
 		this.mvc.perform(asA(delete("/people/" + owner)).param("version", "1"))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.detail")
-				.value("Person " + owner + " still has 0 current or upcoming occupancies and 2 items"));
+				.value("Person " + owner + " still has 0 current or upcoming occupancies, 0 ownerships and 2 items"));
+	}
+
+	@Test
+	void personWhoStillOwnsAPlaceCannotBeDeleted() throws Exception {
+		long owner = named("Owner");
+		ownedPlace(owner, LocalDate.of(2020, 1, 1), null);
+
+		this.mvc.perform(asA(delete("/people/" + owner)).param("version", "1"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.detail")
+				.value("Person " + owner + " still has 0 current or upcoming occupancies, 1 ownerships and 0 items"));
+	}
+
+	@Test
+	void personWhoOnlyOwnedInThePastCanBeDeleted() throws Exception {
+		long owner = named("Owner");
+		ownedPlace(owner, LocalDate.of(2020, 1, 1), this.businessDate.today().minusDays(1));
+
+		this.mvc.perform(asA(delete("/people/" + owner)).param("version", "1")).andExpect(status().isNoContent());
 	}
 
 	@Test

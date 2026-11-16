@@ -64,14 +64,46 @@ class OccupancyIT extends OccupancyTestData {
 	}
 
 	@Test
+	void newOccupancyAsOwnerIsRejected() throws Exception {
+		this.mvc.perform(asA(post("/occupancies")).contentType(MediaType.APPLICATION_JSON).content("""
+				{"placeId": "%d", "personId": "%d", "relation": "OWNER", "startDate": "2025-01-01"}"""
+			.formatted(place(null, "P"), person("A"))))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("relation OWNER is no longer accepted; record an ownership instead"));
+	}
+
+	@Test
+	void changingARelationToOwnerIsRejected() throws Exception {
+		long id = occupancy(place(null, "P"), person("A"), LocalDate.of(2025, 1, 1), null);
+
+		this.mvc.perform(asA(put("/occupancies/" + id)).contentType(MediaType.APPLICATION_JSON).content("""
+				{"version": 1, "relation": "OWNER", "startDate": "2025-01-01"}"""))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("relation OWNER is no longer accepted; record an ownership instead"));
+	}
+
+	@Test
+	void existingOwnerRowKeepsItsRelationWhenEdited() throws Exception {
+		long id = occupancy(place(null, "P"), person("A"), LocalDate.of(2025, 1, 1), null);
+		this.jdbc.sql("UPDATE reg_occupancy SET relation = 'OWNER' WHERE workspace_id = :ws AND id = :id")
+			.param("ws", WS_A).param("id", id).update();
+
+		this.mvc.perform(asA(put("/occupancies/" + id)).contentType(MediaType.APPLICATION_JSON).content("""
+				{"version": 1, "relation": "OWNER", "startDate": "2025-02-01", "note": "mới"}"""))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.relation").value("OWNER"))
+			.andExpect(jsonPath("$.note").value("mới"));
+	}
+
+	@Test
 	void editingADateDoesNotConflictWithItself() throws Exception {
 		long id = occupancy(place(null, "P"), person("A"), LocalDate.of(2025, 1, 1), null);
 
 		this.mvc.perform(asA(put("/occupancies/" + id)).contentType(MediaType.APPLICATION_JSON).content("""
-				{"version": 1, "relation": "OWNER", "startDate": "2024-06-01", "note": "chủ nhà"}"""))
+				{"version": 1, "relation": "STAFF", "startDate": "2024-06-01", "note": "chủ nhà"}"""))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.startDate").value("2024-06-01"))
-			.andExpect(jsonPath("$.relation").value("OWNER"))
+			.andExpect(jsonPath("$.relation").value("STAFF"))
 			.andExpect(jsonPath("$.note").value("chủ nhà"))
 			.andExpect(jsonPath("$.version").value(2));
 	}

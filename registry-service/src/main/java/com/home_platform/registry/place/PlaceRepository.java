@@ -166,6 +166,12 @@ public class PlaceRepository extends WorkspaceRepository<Place> {
 				+ "AND deleted_at IS NULL AND (end_date IS NULL OR end_date >= :today)", workspaceId, placeId, today);
 	}
 
+	/** Số dòng sở hữu chưa xoá đang hoặc sắp có hiệu lực. Index (workspace_id, place_id, end_date, start_date). */
+	public int countCurrentOwnerships(long workspaceId, long placeId, LocalDate today) {
+		return count("SELECT COUNT(*) FROM reg_ownership WHERE workspace_id = :workspaceId AND place_id = :placeId "
+				+ "AND deleted_at IS NULL AND (end_date IS NULL OR end_date >= :today)", workspaceId, placeId, today);
+	}
+
 	/** Số món đồ chưa xoá và chưa gỡ. */
 	public int countCurrentItems(long workspaceId, long placeId) {
 		return count("SELECT COUNT(*) FROM reg_item WHERE workspace_id = :workspaceId AND place_id = :placeId "

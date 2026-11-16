@@ -36,7 +36,9 @@ class OwnershipListIT extends OwnershipTestData {
 		long b = place(building, "B");
 		ownership(a, person("An"), null, LocalDate.of(2021, 1, 1), null);
 		ownership(b, person("Bình"), null, LocalDate.of(2021, 1, 2), null);
-		this.places.delete(CTX_A, b, 1, null);
+		// Địa điểm còn chủ không xoá được qua API; đánh dấu xoá thẳng để kiểm danh sách bỏ qua nó.
+		this.jdbc.sql("UPDATE reg_place SET deleted_at = UTC_TIMESTAMP(3) WHERE workspace_id = :ws AND id = :id")
+			.param("ws", WS_A).param("id", b).update();
 
 		this.mvc.perform(asA(get("/ownerships").param("subtreeOf", String.valueOf(building))))
 			.andExpect(jsonPath("$.items[*].personFullName", contains("An")));
