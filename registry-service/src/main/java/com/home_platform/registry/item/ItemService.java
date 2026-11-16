@@ -363,6 +363,11 @@ public class ItemService {
 		return removedAt;
 	}
 
+	/** Những bản ghi đang bị xoá mềm, mới xoá trước: thùng rác. */
+	public CursorPage<Item> deleted(long workspaceId, CursorRequest page) {
+		return this.repository.deleted(workspaceId, page);
+	}
+
 	/** @throws NotFoundException nếu địa điểm không có hoặc đã xoá */
 	public CursorPage<ItemView> atPlace(long workspaceId, long placeId, boolean removed, CursorRequest page) {
 		this.places.get(workspaceId, placeId);

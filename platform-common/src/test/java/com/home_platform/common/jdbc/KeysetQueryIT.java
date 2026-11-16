@@ -44,6 +44,33 @@ class KeysetQueryIT extends CommonIT {
 	}
 
 	@Test
+	void onlyDeletedPagesThroughDeletedRowsNewestFirst() {
+		SampleDoc a = add(CTX_A, 1, "A");
+		SampleDoc b = add(CTX_A, 1, "B");
+		SampleDoc c = add(CTX_A, 1, "C");
+		add(CTX_A, 1, "D");
+		SampleDoc other = add(CTX_B, 1, "E");
+		for (SampleDoc doc : List.of(a, b, c)) {
+			this.docs.softDelete(CTX_A, doc.id(), 1);
+		}
+		this.docs.softDelete(CTX_B, other.id(), 1);
+		deletedAt(a, "2026-01-01 00:00:01");
+		deletedAt(b, "2026-01-01 00:00:03");
+		deletedAt(c, "2026-01-01 00:00:02");
+
+		CursorPage<SampleDoc> first = this.docs.listDeleted(WS_A, new CursorRequest(null, 2));
+		assertThat(names(first)).containsExactly("B", "C");
+		CursorPage<SampleDoc> second = this.docs.listDeleted(WS_A, new CursorRequest(first.nextCursor(), 2));
+		assertThat(names(second)).containsExactly("A");
+		assertThat(second.nextCursor()).isNull();
+	}
+
+	private void deletedAt(SampleDoc doc, String at) {
+		this.jdbc.sql("UPDATE tmp_sample_doc SET deleted_at = :at WHERE workspace_id = :ws AND id = :id")
+			.param("at", at).param("ws", WS_A).param("id", doc.id()).update();
+	}
+
+	@Test
 	void exactMultipleOfLimitEndsWithoutEmptyPage() {
 		for (String name : List.of("A", "B", "C", "D")) {
 			add(CTX_A, 1, name);

@@ -18,7 +18,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
  * {@code (workspace_id, id)}. Lấy qua {@link WorkspaceRepository#keyset()}.
  *
  * <p>Truy vấn luôn có điều kiện {@code workspace_id}, và {@code deleted_at IS NULL} nếu bảng
- * có cột đó. {@code id} luôn là cột sắp xếp phụ để thứ tự ổn định khi nhiều dòng có cùng
+ * có cột đó ({@link #onlyDeleted()} đổi thành các dòng đã xoá). {@code id} luôn là cột sắp xếp phụ để thứ tự ổn định khi nhiều dòng có cùng
  * giá trị sắp xếp. Trang sau được lấy bằng điều kiện "đứng sau dòng cuối của trang trước",
  * không dùng {@code OFFSET}, nên trang sau cũng nhanh như trang đầu nếu có index phục vụ.
  *
@@ -56,6 +56,9 @@ public final class KeysetQuery<T extends Record> {
 
 	private boolean descending;
 
+	/** Lấy dòng đã xoá mềm thay vì dòng chưa xoá. */
+	private boolean onlyDeleted;
+
 	KeysetQuery(JdbcClient jdbc, String table, EntityMetadata<T> metadata, RowMapper<T> rowMapper) {
 		this.jdbc = jdbc;
 		this.table = table;
@@ -81,6 +84,19 @@ public final class KeysetQuery<T extends Record> {
 		}
 		this.conditions.add("(" + condition + ")");
 		this.params.putAll(params);
+		return this;
+	}
+
+	/**
+	 * Chỉ các dòng đã xoá mềm ({@code deleted_at IS NOT NULL}), thay cho điều kiện mặc định "chưa
+	 * xoá". Dùng cho thùng rác.
+	 * @throws IllegalStateException nếu bảng không có cột {@code deleted_at}
+	 */
+	public KeysetQuery<T> onlyDeleted() {
+		if (!this.metadata.has(CrudSql.DELETED_AT)) {
+			throw new IllegalStateException(this.table + " has no deleted_at column");
+		}
+		this.onlyDeleted = true;
 		return this;
 	}
 
@@ -120,7 +136,7 @@ public final class KeysetQuery<T extends Record> {
 			.append(this.table)
 			.append(" WHERE workspace_id = :workspaceId");
 		if (this.metadata.has(CrudSql.DELETED_AT)) {
-			sql.append(" AND deleted_at IS NULL");
+			sql.append(this.onlyDeleted ? " AND deleted_at IS NOT NULL" : " AND deleted_at IS NULL");
 		}
 		for (String condition : this.conditions) {
 			sql.append(" AND ").append(condition);

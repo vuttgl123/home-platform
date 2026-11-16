@@ -33,6 +33,11 @@ public class PersonRepository extends WorkspaceRepository<Person> {
 		return names;
 	}
 
+	/** Dòng đang bị xoá mềm, mới xoá trước. Index (workspace_id, deleted_at). */
+	public CursorPage<Person> deleted(long workspaceId, CursorRequest page) {
+		return keyset().onlyDeleted().orderByDesc("deleted_at").fetch(workspaceId, page);
+	}
+
 	/** Người chưa xoá, theo tên. Index (workspace_id, full_name). */
 	public CursorPage<Person> list(long workspaceId, CursorRequest page) {
 		return keyset().orderBy("full_name").fetch(workspaceId, page);

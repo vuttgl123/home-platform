@@ -56,6 +56,21 @@ class KeysetQueryTests {
 	}
 
 	@Test
+	void onlyDeletedSwapsTheDeletedFilter() {
+		String sql = this.docs.keyset().onlyDeleted().sql(false);
+
+		assertThat(sql).contains("AND deleted_at IS NOT NULL").doesNotContain("deleted_at IS NULL ");
+	}
+
+	@Test
+	void onlyDeletedNeedsADeletedAtColumn() {
+		SampleTagRepository tags = new SampleTagRepository(this.support);
+
+		org.assertj.core.api.Assertions.assertThatThrownBy(() -> tags.keyset().onlyDeleted())
+			.isInstanceOf(IllegalStateException.class);
+	}
+
+	@Test
 	void tableWithoutDeletedAtHasNoDeletedFilter() {
 		SampleTagRepository tags = new SampleTagRepository(this.support);
 

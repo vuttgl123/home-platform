@@ -78,6 +78,11 @@ public class ItemRepository extends WorkspaceRepository<Item> {
 		return query.orderBy("name").fetch(workspaceId, page);
 	}
 
+	/** Dòng đang bị xoá mềm, mới xoá trước. Index (workspace_id, deleted_at). */
+	public CursorPage<Item> deleted(long workspaceId, CursorRequest page) {
+		return keyset().onlyDeleted().orderByDesc("deleted_at").fetch(workspaceId, page);
+	}
+
 	/** Tên bắt đầu bằng, kể cả đồ đã gỡ; theo tên. Index (workspace_id, name). */
 	public CursorPage<Item> searchByName(long workspaceId, String likePrefix, CursorRequest page) {
 		return keyset().where("name LIKE :namePrefix", Map.of("namePrefix", likePrefix))

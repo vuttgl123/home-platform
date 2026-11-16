@@ -31,6 +31,11 @@ public class SampleDocRepository extends WorkspaceRepository<SampleDoc> {
 		return keyset().fetch(workspaceId, page);
 	}
 
+	/** Dòng đã xoá mềm, mới xoá trước. */
+	CursorPage<SampleDoc> listDeleted(long workspaceId, CursorRequest page) {
+		return keyset().onlyDeleted().orderByDesc("deleted_at").fetch(workspaceId, page);
+	}
+
 	/** Sắp theo một cột thời gian, để thử cursor mang giá trị {@code Instant}. */
 	CursorPage<SampleDoc> listByCreatedAt(long workspaceId, CursorRequest page) {
 		return keyset().orderBy("created_at").fetch(workspaceId, page);

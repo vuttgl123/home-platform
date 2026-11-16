@@ -44,6 +44,11 @@ public class PlaceRepository extends WorkspaceRepository<Place> {
 			.list());
 	}
 
+	/** Dòng đang bị xoá mềm, mới xoá trước. Index (workspace_id, deleted_at). */
+	public CursorPage<Place> deleted(long workspaceId, CursorRequest page) {
+		return keyset().onlyDeleted().orderByDesc("deleted_at").fetch(workspaceId, page);
+	}
+
 	/** Địa điểm cấp cao nhất, theo tên. Index (workspace_id, parent_id, name). */
 	public CursorPage<Place> topLevel(long workspaceId, CursorRequest page) {
 		return keyset().where("parent_id IS NULL", Map.of()).orderBy("name").fetch(workspaceId, page);

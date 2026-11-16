@@ -242,6 +242,11 @@ public class PlaceService {
 		return path.subList(0, path.size() - 1);
 	}
 
+	/** Những bản ghi đang bị xoá mềm, mới xoá trước: thùng rác. */
+	public CursorPage<Place> deleted(long workspaceId, CursorRequest page) {
+		return this.repository.deleted(workspaceId, page);
+	}
+
 	public CursorPage<Place> topLevel(long workspaceId, CursorRequest page) {
 		return this.repository.topLevel(workspaceId, page);
 	}

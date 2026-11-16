@@ -148,6 +148,11 @@ public class PersonService {
 		return this.repository.names(workspaceId, ids);
 	}
 
+	/** Những bản ghi đang bị xoá mềm, mới xoá trước: thùng rác. */
+	public CursorPage<Person> deleted(long workspaceId, CursorRequest page) {
+		return this.repository.deleted(workspaceId, page);
+	}
+
 	public CursorPage<Person> list(long workspaceId, CursorRequest page) {
 		return this.repository.list(workspaceId, page);
 	}
