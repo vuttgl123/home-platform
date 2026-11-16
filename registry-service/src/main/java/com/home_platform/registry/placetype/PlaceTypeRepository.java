@@ -38,6 +38,15 @@ public class PlaceTypeRepository extends WorkspaceRepository<PlaceType> {
 	 * nào dùng loại, nên không bản ghi nào giữ giá trị của các mục này. Bảng mục tuỳ biến không có
 	 * khoá ngoại tới loại, nên nếu không xoá, các mục sẽ trỏ tới một loại không còn tồn tại.
 	 */
+	/** Xoá mẫu mã riêng của loại này; gọi khi xoá hẳn nó. */
+	public int deleteOwnCodeRule(long workspaceId, long placeTypeId) {
+		return jdbc().sql("DELETE FROM reg_code_rule WHERE workspace_id = :workspaceId AND target = 'PLACE' "
+				+ "AND type_id = :placeTypeId")
+			.param("workspaceId", workspaceId)
+			.param("placeTypeId", placeTypeId)
+			.update();
+	}
+
 	public int deleteOwnFields(long workspaceId, long placeTypeId) {
 		return jdbc().sql("DELETE FROM reg_field_def WHERE workspace_id = :workspaceId AND target = 'PLACE' "
 				+ "AND type_id = :placeTypeId")

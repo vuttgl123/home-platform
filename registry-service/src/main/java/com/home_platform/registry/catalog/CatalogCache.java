@@ -28,6 +28,8 @@ public class CatalogCache {
 
 	public static final String FIELD_DEFS = "fieldDefs";
 
+	public static final String CODE_RULES = "codeRules";
+
 	/**
 	 * Đuôi của mọi truy vấn nạp cache danh mục. Câu đọc kèm khoá luôn thấy bản đã commit mới nhất,
 	 * bất kể transaction đang gọi đã chốt snapshot từ lúc nào; và lệnh sửa danh mục chạy cùng lúc

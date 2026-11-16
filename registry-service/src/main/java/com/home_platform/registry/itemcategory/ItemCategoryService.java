@@ -100,6 +100,8 @@ public class ItemCategoryService {
 		}
 		this.repository.deletePermanently(ctx.workspaceId(), id);
 		this.repository.deleteOwnFields(ctx.workspaceId(), id);
+		this.repository.deleteOwnCodeRule(ctx.workspaceId(), id);
+		this.catalogCache.evict(CatalogCache.CODE_RULES, ctx.workspaceId());
 		this.catalogCache.evict(CatalogCache.ITEM_CATEGORIES, ctx.workspaceId());
 		this.catalogCache.evict(CatalogCache.FIELD_DEFS, ctx.workspaceId());
 	}

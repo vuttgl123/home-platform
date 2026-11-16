@@ -38,6 +38,15 @@ public class ItemCategoryRepository extends WorkspaceRepository<ItemCategory> {
 	 * nào dùng nhóm, nên không bản ghi nào giữ giá trị của các mục này. Bảng mục tuỳ biến không có
 	 * khoá ngoại tới nhóm, nên nếu không xoá, các mục sẽ trỏ tới một nhóm không còn tồn tại.
 	 */
+	/** Xoá mẫu mã riêng của nhóm này; gọi khi xoá hẳn nó. */
+	public int deleteOwnCodeRule(long workspaceId, long categoryId) {
+		return jdbc().sql("DELETE FROM reg_code_rule WHERE workspace_id = :workspaceId AND target = 'ITEM' "
+				+ "AND type_id = :categoryId")
+			.param("workspaceId", workspaceId)
+			.param("categoryId", categoryId)
+			.update();
+	}
+
 	public int deleteOwnFields(long workspaceId, long categoryId) {
 		return jdbc().sql("DELETE FROM reg_field_def WHERE workspace_id = :workspaceId AND target = 'ITEM' "
 				+ "AND type_id = :categoryId")

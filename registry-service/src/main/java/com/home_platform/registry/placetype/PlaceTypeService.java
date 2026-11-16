@@ -96,6 +96,8 @@ public class PlaceTypeService {
 		}
 		this.repository.deletePermanently(ctx.workspaceId(), id);
 		this.repository.deleteOwnFields(ctx.workspaceId(), id);
+		this.repository.deleteOwnCodeRule(ctx.workspaceId(), id);
+		this.catalogCache.evict(CatalogCache.CODE_RULES, ctx.workspaceId());
 		this.catalogCache.evict(CatalogCache.PLACE_TYPES, ctx.workspaceId());
 		this.catalogCache.evict(CatalogCache.FIELD_DEFS, ctx.workspaceId());
 	}
