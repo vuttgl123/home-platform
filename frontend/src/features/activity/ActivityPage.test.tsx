@@ -188,3 +188,11 @@ test('restoresAPersonAndAnItem', async () => {
 
   await waitFor(() => expect(sent).toEqual({ person: { version: 4 }, item: { version: 2 } }))
 })
+
+test('linksToTheTrash', async () => {
+  mockShell()
+  mockActivity([])
+  renderApp({ route: '/w/7/activity', userId: '42' })
+
+  expect(await (await main()).findByRole('link', { name: 'Mở Thùng rác' })).toHaveAttribute('href', '/w/7/trash')
+})

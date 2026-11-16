@@ -1,7 +1,7 @@
 import { useCursorList, type CursorList } from '@/api'
 
-import { listActivity } from './api'
-import type { ActivityEntry, EntityType } from './types'
+import { listActivity, listTrash } from './api'
+import type { ActivityEntry, EntityType, TrashEntry } from './types'
 
 export const activityKeys = {
   all: (ws: string) => ['activity', ws] as const,
@@ -20,4 +20,13 @@ export function useActivity(ws: string, entityType: EntityType | null): CursorLi
       }
     },
   })
+}
+
+export const trashKeys = {
+  all: (ws: string) => ['trash', ws] as const,
+  list: (ws: string, entityType: EntityType) => ['trash', ws, entityType] as const,
+}
+
+export function useTrash(ws: string, entityType: EntityType): CursorList<TrashEntry> {
+  return useCursorList({ queryKey: trashKeys.list(ws, entityType), fetchPage: (cursor) => listTrash(ws, entityType, cursor) })
 }

@@ -9,3 +9,9 @@ export type ActivityEntry = Omit<
   Present<RegistrySchemas['ActivityResponse'], 'entityType' | 'entityId' | 'versionNo' | 'action' | 'changedBy' | 'changedAt'>,
   'entityType'
 > & { entityType: EntityType }
+
+/** Một bản ghi đang bị xoá, trong thùng rác. */
+export type TrashEntry = Omit<
+  Present<RegistrySchemas['TrashResponse'], 'entityType' | 'id' | 'name' | 'deletedAt' | 'deletedBy' | 'version'>,
+  'entityType'
+> & { entityType: EntityType }

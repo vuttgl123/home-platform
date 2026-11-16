@@ -1,6 +1,6 @@
 import type { RouteObject } from 'react-router'
 
-import { ActivityPage } from '@/features/activity'
+import { ActivityPage, TrashPage } from '@/features/activity'
 import { CatalogPage } from '@/features/catalog'
 import { ItemPage, ItemsPage, PersonItemsTab, PlaceItemsTab } from '@/features/items'
 import { PeoplePage, PersonPage, PlaceOccupantsTab, type PersonTabSlots } from '@/features/people'
@@ -47,6 +47,7 @@ export const routes: RouteObject[] = [
           { path: 'items/:itemId', element: <ItemPage /> },
           { path: 'catalog', element: <CatalogPage /> },
           { path: 'activity', element: <ActivityPage /> },
+          { path: 'trash', element: <TrashPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

@@ -1,4 +1,4 @@
-import { ActivityIcon, PackageIcon, TagsIcon, UsersIcon, type LucideIcon } from 'lucide-react'
+import { ActivityIcon, PackageIcon, TagsIcon, Trash2Icon, UsersIcon, type LucideIcon } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
@@ -33,6 +33,7 @@ const SECTIONS: { path: string; label: string; icon: LucideIcon }[] = [
   { path: 'items', label: 'Đồ đạc', icon: PackageIcon },
   { path: 'catalog', label: 'Danh mục', icon: TagsIcon },
   { path: 'activity', label: 'Hoạt động', icon: ActivityIcon },
+  { path: 'trash', label: 'Thùng rác', icon: Trash2Icon },
 ]
 
 /**

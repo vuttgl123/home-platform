@@ -1,4 +1,4 @@
-import { useParams, useSearchParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 
 import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
@@ -32,6 +32,13 @@ export function ActivityPage() {
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Hoạt động</h1>
         <p className="text-muted-foreground">Mọi lần tạo, sửa, xoá, khôi phục trong không gian này. Thứ đã xoá khôi phục được từ đây.</p>
+        <p className="text-sm text-muted-foreground">
+          Chỉ cần lấy lại thứ đã xoá?{' '}
+          <Link to={`/w/${workspaceId}/trash`} className="underline underline-offset-4">
+            Mở Thùng rác
+          </Link>
+          .
+        </p>
       </header>
       <Tabs value={type ?? 'ALL'} onValueChange={(value) => setSearchParams(value === 'ALL' ? {} : { type: value as string }, { replace: true })}>
         <TabsList variant="line" className="w-full justify-start overflow-x-auto">

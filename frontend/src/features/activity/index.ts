@@ -1,3 +1,4 @@
-export { activityKeys } from './queries'
+export { activityKeys, trashKeys } from './queries'
 export { ActivityPage } from './pages/ActivityPage'
-export type { ActivityEntry, EntityType } from './types'
+export { TrashPage } from './pages/TrashPage'
+export type { ActivityEntry, EntityType, TrashEntry } from './types'
