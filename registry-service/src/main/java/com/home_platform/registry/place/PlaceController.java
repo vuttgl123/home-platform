@@ -35,28 +35,28 @@ class PlaceController {
 
 	@GetMapping
 	CursorPage<PlaceResponse> topLevel(WorkspaceContext ctx, CursorRequest page) {
-		return this.service.topLevel(ctx.workspaceId(), page).map(this.mapper::toResponse);
+		return this.service.withChildFlags(ctx.workspaceId(), this.service.topLevel(ctx.workspaceId(), page)).map(this.mapper::toResponse);
 	}
 
 	@GetMapping("/{id}/children")
 	CursorPage<PlaceResponse> children(WorkspaceContext ctx, @PathVariable long id, CursorRequest page) {
-		return this.service.children(ctx.workspaceId(), id, page).map(this.mapper::toResponse);
+		return this.service.withChildFlags(ctx.workspaceId(), this.service.children(ctx.workspaceId(), id, page)).map(this.mapper::toResponse);
 	}
 
 	@GetMapping("/{id}/subtree")
 	CursorPage<PlaceResponse> subtree(WorkspaceContext ctx, @PathVariable long id, CursorRequest page) {
-		return this.service.subtree(ctx.workspaceId(), id, page).map(this.mapper::toResponse);
+		return this.service.withChildFlags(ctx.workspaceId(), this.service.subtree(ctx.workspaceId(), id, page)).map(this.mapper::toResponse);
 	}
 
 	@GetMapping("/by-type/{typeId}")
 	CursorPage<PlaceResponse> byType(WorkspaceContext ctx, @PathVariable long typeId, CursorRequest page) {
-		return this.service.byType(ctx.workspaceId(), typeId, page).map(this.mapper::toResponse);
+		return this.service.withChildFlags(ctx.workspaceId(), this.service.byType(ctx.workspaceId(), typeId, page)).map(this.mapper::toResponse);
 	}
 
 	@GetMapping("/by-area")
 	CursorPage<PlaceResponse> byArea(WorkspaceContext ctx, @RequestParam String province,
 			@RequestParam(required = false) String ward, CursorRequest page) {
-		return this.service.byArea(ctx.workspaceId(), province, ward, page).map(this.mapper::toResponse);
+		return this.service.withChildFlags(ctx.workspaceId(), this.service.byArea(ctx.workspaceId(), province, ward, page)).map(this.mapper::toResponse);
 	}
 
 	/** Tìm theo tên bắt đầu bằng ({@code name}) hoặc đúng mã ({@code code}); đúng một trong hai. */
@@ -68,7 +68,7 @@ class PlaceController {
 		}
 		CursorPage<Place> found = (name != null) ? this.service.searchByName(ctx.workspaceId(), name, page)
 				: this.service.findByCode(ctx.workspaceId(), code, page);
-		return found.map(this.mapper::toResponse);
+		return this.service.withChildFlags(ctx.workspaceId(), found).map(this.mapper::toResponse);
 	}
 
 	@PostMapping

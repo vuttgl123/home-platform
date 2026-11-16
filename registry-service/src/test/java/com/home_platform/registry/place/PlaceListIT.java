@@ -1,5 +1,6 @@
 package com.home_platform.registry.place;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
@@ -10,13 +11,63 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
+import java.util.Map;
+
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 class PlaceListIT extends PlaceTestData {
+
+	@Autowired
+	private PlaceRepository repository;
+
+	@Test
+	void childrenReportWhetherTheyHaveChildren() throws Exception {
+		long type = type("T");
+		long a = place(null, type, "A");
+		place(null, type, "B");
+		place(a, type, "A1");
+
+		list(get("/places")).andExpect(jsonPath("$.items[*].hasChildren", contains(true, false)));
+		list(get("/places/" + a + "/children")).andExpect(jsonPath("$.items[*].hasChildren", contains(false)));
+		list(get("/places/" + a + "/subtree")).andExpect(jsonPath("$.items[*].hasChildren", contains(false)));
+		list(get("/places/by-type/" + type)).andExpect(jsonPath("$.items[*].hasChildren", contains(true, false, false)));
+	}
+
+	@Test
+	void parentsWithChildrenIgnoresDeletedChildren() throws Exception {
+		long type = type("T");
+		long a = place(null, type, "A");
+		long gone = place(a, type, "Gone");
+		this.mvc.perform(asA(delete("/places/" + gone)).param("version", "1")).andExpect(status().isNoContent());
+
+		list(get("/places")).andExpect(jsonPath("$.items[*].hasChildren", contains(false)));
+		assertThat(this.repository.parentsWithChildren(WS_A, List.of(a))).isEmpty();
+	}
+
+	@Test
+	void parentsWithChildrenOfNothingIsEmpty() {
+		assertThat(this.repository.parentsWithChildren(WS_A, List.of())).isEmpty();
+	}
+
+	@Test
+	void parentsWithChildrenUsesAnIndex() {
+		List<Map<String, Object>> plan = this.jdbc.sql("EXPLAIN " + PlaceRepository.PARENTS_WITH_CHILDREN)
+			.param("workspaceId", WS_A)
+			.param("ids", List.of(1L, 2L))
+			.query()
+			.listOfRows();
+
+		assertThat(plan).singleElement().satisfies(row -> {
+			assertThat(row.get("type")).isNotEqualTo("ALL");
+			assertThat(row.get("key")).isEqualTo("idx_reg_place_parent");
+		});
+	}
 
 	@Test
 	void topLevelAndChildrenAreSortedByNameAndPaged() throws Exception {

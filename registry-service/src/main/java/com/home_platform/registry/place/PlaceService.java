@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -186,6 +187,13 @@ public class PlaceService {
 		Place stored = this.repository.restore(ctx, id, request.version());
 		record(ctx, stored, address(ctx.workspaceId(), id), ChangeAction.RESTORE, request.note());
 		return stored;
+	}
+
+	/** Cùng trang đó, mỗi địa điểm kèm việc nó có con hay không; một truy vấn cho cả trang. */
+	public CursorPage<PlaceListItem> withChildFlags(long workspaceId, CursorPage<Place> page) {
+		Set<Long> parents = this.repository.parentsWithChildren(workspaceId,
+				page.items().stream().map(Place::id).toList());
+		return page.map(place -> new PlaceListItem(place, parents.contains(place.id())));
 	}
 
 	public CursorPage<Place> topLevel(long workspaceId, CursorRequest page) {

@@ -2,9 +2,12 @@ package com.home_platform.registry.place;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.jdbc.RepositorySupport;
@@ -18,8 +21,27 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class PlaceRepository extends WorkspaceRepository<Place> {
 
+	/** Những địa điểm trong {@code :ids} có ít nhất một con chưa xoá. Index (workspace_id, parent_id, name). */
+	static final String PARENTS_WITH_CHILDREN = "SELECT DISTINCT parent_id FROM reg_place "
+			+ "WHERE workspace_id = :workspaceId AND parent_id IN (:ids) AND deleted_at IS NULL";
+
 	PlaceRepository(RepositorySupport support) {
 		super(support, "reg_place", Place.class);
+	}
+
+	/**
+	 * Trong {@code placeIds}, những địa điểm có ít nhất một con chưa xoá. Một truy vấn cho cả danh
+	 * sách; danh sách rỗng thì không chạy SQL.
+	 */
+	public Set<Long> parentsWithChildren(long workspaceId, Collection<Long> placeIds) {
+		if (placeIds.isEmpty()) {
+			return Set.of();
+		}
+		return new HashSet<>(jdbc().sql(PARENTS_WITH_CHILDREN)
+			.param("workspaceId", workspaceId)
+			.param("ids", placeIds)
+			.query(Long.class)
+			.list());
 	}
 
 	/** Địa điểm cấp cao nhất, theo tên. Index (workspace_id, parent_id, name). */
