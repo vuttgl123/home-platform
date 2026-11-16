@@ -46,7 +46,7 @@ Ba câu hỏi hệ thống phải trả lời nhanh, vì đó là lý do nó t�
 
 **Chặn sửa đè.** Bản ghi có cột `version` (địa điểm, người, cư trú, đồ đạc) chỉ sửa, xoá, khôi phục được khi client gửi kèm `version` đã đọc. `version` đã đổi thì trả 409 và client phải đọc lại. **(bạn)**
 
-**Sửa là gửi lại cả phần sửa được.** Lệnh sửa nhận toàn bộ các trường người dùng được sửa, không phải từng trường. Service đọc dòng hiện tại, đặt các trường đó lên, rồi ghi. Các trường do hệ thống quản lý (`parent_id`, `path`, `depth`, `place_id` của đồ đạc, `removed_at`, `replaced_by_item_id`, `code`; **bổ sung 2026-11-16**) không bao giờ lấy từ lệnh sửa; mỗi trường có thao tác riêng. **(tôi chọn)** Lý do: một client giữ bản cũ không thể vô tình kéo một địa điểm về chỗ cũ.
+**Sửa là gửi lại cả phần sửa được.** Lệnh sửa nhận toàn bộ các trường người dùng được sửa, không phải từng trường. Service đọc dòng hiện tại, đặt các trường đó lên, rồi ghi. Các trường do hệ thống quản lý (`parent_id`, `path`, `depth`, `place_id` của đồ đạc, `removed_at`, `replaced_by_item_id`, `code`, `owner_person_id` của đồ đạc; **bổ sung 2026-11-16**) không bao giờ lấy từ lệnh sửa; mỗi trường có thao tác riêng. **(tôi chọn)** Lý do: một client giữ bản cũ không thể vô tình kéo một địa điểm về chỗ cũ.
 
 **Version.** Mỗi lần tạo, sửa, xoá, khôi phục một địa điểm, một người hay một món đồ ghi thêm một version (`EntityHistory.record`) trong cùng transaction. Client có thể gửi kèm ghi chú (`note`, tối đa 255 ký tự). **(bạn)** Cư trú không có version riêng: lịch sử của nó chính là các dòng cư trú với ngày bắt đầu, ngày kết thúc. **(tôi chọn)**
 
@@ -202,7 +202,7 @@ Mọi lỗi liệt kê theo từng khoá trong danh sách `errors` (field là `a
 - Hai người chưa xoá trong cùng không gian không được trùng cặp (`id_type`, `id_number`); trùng thì trả 409 kèm `id` người đã có. **(tôi chọn)** Kiểm tra ở ứng dụng để có thông báo kèm `id`; khoá duy nhất `uk_reg_person_live_document` (migration `V2`) chặn trường hợp hai lệnh chạy cùng lúc, khi đó trả 409 "Another person already has this document". **(bổ sung 2026-11-14 sau đợt review)**
 - `attributes` kiểm tra theo mục 5.3 (`target` PERSON).
 - Sửa mọi trường trên. Version `CREATE`, `UPDATE`, `DELETE`, `RESTORE` như địa điểm.
-- Xoá: chỉ khi người đó không còn cư trú hiện tại hay sắp tới; ngược lại 409. **(tôi chọn)**
+- Xoá: chỉ khi người đó không còn cư trú hiện tại hay sắp tới, và không còn là chủ của món đồ chưa gỡ; ngược lại 409. **(tôi chọn; vế sau bổ sung 2026-11-16)**
 - Đọc: xem một người kèm các nơi đang ở; tìm theo tên bắt đầu bằng, theo số điện thoại, theo số giấy tờ; danh sách theo tên.
 
 ### 5.7 Cư trú (`reg_occupancy`)
@@ -229,6 +229,8 @@ Một dòng nghĩa là: người X có quan hệ R với địa điểm Y từ n
 **Mã** do hệ thống cấp khi tạo (cả món mới khi thay), như địa điểm; xem `2026-11-16-auto-codes-design.md`.
 
 **Sửa** `name`, `category_id`, `quantity`, `unit`, `status` (IN_USE, BROKEN, STORED), `placed_at`, `description`, `attributes`, `cover_file_id`. Version `UPDATE`.
+
+**Chủ**: món có thể là của riêng một người (trống là của địa điểm). Đặt khi tạo, món thay thừa hưởng, đổi bằng thao tác riêng có version; lệnh sửa và khôi phục version không đổi chủ. Xem `2026-11-16-ownership-design.md` mục 5.5. **(2026-11-16)**
 
 **Chuyển** sang địa điểm khác chưa xoá. Version `UPDATE`; vị trí cũ xem được trong version trước. **(bạn)**
 

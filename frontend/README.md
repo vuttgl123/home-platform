@@ -84,7 +84,8 @@ Luật phụ thuộc:
 - Một feature chỉ nhập feature khác qua `index.ts` của nó.
 - `features/` không nhập gì từ `app/`; `api/`, `components/`, `lib/` không nhập gì từ `features/` hay `app/`.
 - `places` không nhập feature nào dựa trên nó. Tab của trang địa điểm thuộc nghiệp vụ khác (Người ở,
-  sau này Đồ đạc, Lịch sử) được `app/router.tsx` ghép vào qua prop `tabs` (`PlaceTabSlots`).
+  Đồ đạc) được `app/router.tsx` ghép vào qua prop `tabs` (`PlaceTabSlots`).
+- `people` không nhập `items`; tab "Đồ đạc" của trang một người cũng được ghép vào như vậy (`PersonTabSlots`).
 - `components/ui` không biết gì về nghiệp vụ.
 
 ## Cây địa điểm
@@ -117,7 +118,8 @@ Với người và cư trú (`features/people/queries.ts`):
 
 Với đồ đạc (`features/items/queries.ts`), mọi lệnh ghi đặt chi tiết của (các) món nó trả về và làm cũ
 mọi danh sách đồ: một lệnh chuyển chỗ hay thay ở chỗ khác chạm hai địa điểm và các toà chứa chúng.
-Xoá thì rời trang rồi mới bỏ chi tiết khỏi cache.
+Xoá thì rời trang rồi mới bỏ chi tiết khỏi cache. "Đổi chủ" cũng vậy: danh sách đồ của người cũ và người mới
+đều nằm dưới `itemKeys.lists`.
 
 Danh mục (`features/catalog`): mọi lệnh ghi làm cũ cả danh mục của không gian, vì loại, nhóm và mục
 tuỳ biến được nhiều form đọc. Khôi phục một version (`features/history`) là một lần sửa: feature của bản
