@@ -70,6 +70,32 @@ class PlaceListIT extends PlaceTestData {
 	}
 
 	@Test
+	void searchResultsCarryAncestorsFromRootToParent() throws Exception {
+		long type = type("T");
+		long a = place(null, type, "A");
+		long f = place(a, type, "F3");
+		long inA = place(f, type, "P301");
+		long b = place(null, type, "B");
+		long inB = place(b, type, "P301");
+
+		list(get("/places/search").param("name", "P301"))
+			.andExpect(jsonPath("$.items", hasSize(2)))
+			.andExpect(jsonPath("$.items[?(@.id == '" + inA + "')].ancestors[*].name", contains("A", "F3")))
+			.andExpect(jsonPath("$.items[?(@.id == '" + inA + "')].ancestors[*].id", contains(a + "", f + "")))
+			.andExpect(jsonPath("$.items[?(@.id == '" + inB + "')].ancestors[*].name", contains("B")))
+			.andExpect(jsonPath("$.items[0].hasChildren").value(false));
+	}
+
+	@Test
+	void topLevelResultHasNoAncestors() throws Exception {
+		long type = type("T");
+		place(null, type, "Alone");
+
+		list(get("/places/search").param("name", "Alone")).andExpect(jsonPath("$.items[0].ancestors", hasSize(0)));
+		list(get("/places/search").param("code", "nothing")).andExpect(jsonPath("$.items", hasSize(0)));
+	}
+
+	@Test
 	void topLevelAndChildrenAreSortedByNameAndPaged() throws Exception {
 		long type = type("T");
 		place(null, type, "B");

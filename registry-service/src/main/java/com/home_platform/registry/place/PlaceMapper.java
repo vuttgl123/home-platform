@@ -23,6 +23,9 @@ public interface PlaceMapper {
 	@Mapping(target = ".", source = "place")
 	PlaceResponse toResponse(PlaceListItem item);
 
+	@Mapping(target = ".", source = "place")
+	PlaceSearchResponse toSearchResponse(PlaceSearchItem item);
+
 	PlaceVersionSummaryResponse toVersionSummary(EntityVersionSummary summary);
 
 	@Mapping(target = "snapshot", source = "content")

@@ -61,14 +61,15 @@ class PlaceController {
 
 	/** Tìm theo tên bắt đầu bằng ({@code name}) hoặc đúng mã ({@code code}); đúng một trong hai. */
 	@GetMapping("/search")
-	CursorPage<PlaceResponse> search(WorkspaceContext ctx, @RequestParam(required = false) String name,
+	CursorPage<PlaceSearchResponse> search(WorkspaceContext ctx, @RequestParam(required = false) String name,
 			@RequestParam(required = false) String code, CursorRequest page) {
 		if ((name == null) == (code == null)) {
 			throw new BadRequestException("Give exactly one of name or code");
 		}
 		CursorPage<Place> found = (name != null) ? this.service.searchByName(ctx.workspaceId(), name, page)
 				: this.service.findByCode(ctx.workspaceId(), code, page);
-		return this.service.withChildFlags(ctx.workspaceId(), found).map(this.mapper::toResponse);
+		return this.service.withAncestors(ctx.workspaceId(), this.service.withChildFlags(ctx.workspaceId(), found))
+			.map(this.mapper::toSearchResponse);
 	}
 
 	@PostMapping

@@ -196,6 +196,29 @@ public class PlaceService {
 		return page.map(place -> new PlaceListItem(place, parents.contains(place.id())));
 	}
 
+	/**
+	 * Cùng trang đó, mỗi địa điểm kèm tổ tiên từ gốc tới cha. Tên của mọi tổ tiên trong trang được
+	 * lấy bằng một truy vấn.
+	 */
+	public CursorPage<PlaceSearchItem> withAncestors(long workspaceId, CursorPage<PlaceListItem> page) {
+		List<Long> ancestorIds = page.items()
+			.stream()
+			.flatMap(item -> ancestorIds(item.place()).stream())
+			.distinct()
+			.toList();
+		Map<Long, String> names = names(workspaceId, ancestorIds);
+		return page.map(item -> new PlaceSearchItem(item.place(), item.hasChildren(),
+				ancestorIds(item.place()).stream()
+					.filter(names::containsKey)
+					.map(id -> new PlaceRef(id, names.get(id)))
+					.toList()));
+	}
+
+	private static List<Long> ancestorIds(Place place) {
+		List<Long> path = place.pathIds();
+		return path.subList(0, path.size() - 1);
+	}
+
 	public CursorPage<Place> topLevel(long workspaceId, CursorRequest page) {
 		return this.repository.topLevel(workspaceId, page);
 	}
