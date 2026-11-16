@@ -61,7 +61,8 @@ src/
 │   ├── workspaces/     danh sách, tạo không gian
 │   ├── catalog/        loại địa điểm, mục tuỳ biến (xem và ô nhập)
 │   ├── places/         cây, trang địa điểm, thêm, sửa, di chuyển, xoá, địa chỉ
-│   └── people/         danh sách và hồ sơ người, cư trú (tab Người ở của địa điểm, nơi ở của một người)
+│   ├── people/         danh sách và hồ sơ người, cư trú (tab Người ở của địa điểm, nơi ở của một người)
+│   └── items/          tab Đồ đạc của địa điểm, trang món đồ: thêm, sửa, chuyển chỗ, gỡ, thay, đưa lại, xoá
 ├── components/
 │   ├── ui/         component shadcn, không sửa tay; thêm bằng `npx shadcn add <tên>`
 │   └── common/     component dùng chung tự viết: ô nhập có nhãn, lỗi, trạng thái trống, "Tải thêm"
@@ -112,7 +113,14 @@ Với người và cư trú (`features/people/queries.ts`):
 | Sửa một người | danh sách người, mọi danh sách cư trú (dòng mang tên người) |
 | Xoá một người | như trên; rời trang rồi mới bỏ chi tiết khỏi cache |
 
-"Hôm nay" (ngày mặc định khi chuyển đến, chuyển đi) tính theo giờ Việt Nam như backend
+Với đồ đạc (`features/items/queries.ts`), mọi lệnh ghi đặt chi tiết của (các) món nó trả về và làm cũ
+mọi danh sách đồ: một lệnh chuyển chỗ hay thay ở chỗ khác chạm hai địa điểm và các toà chứa chúng.
+Xoá thì rời trang rồi mới bỏ chi tiết khỏi cache.
+
+Ô chọn mà danh sách lựa chọn tải sau khi form dựng (nhóm đồ) phải có điều khiển (`Controller`): ô không
+điều khiển rơi về lựa chọn đầu tiên và gửi đi giá trị đó.
+
+"Hôm nay" (ngày mặc định khi chuyển đến, chuyển đi, gỡ đồ) tính theo giờ Việt Nam như backend
 (`todayInBusinessZone`, `src/lib/dates.ts`), không theo múi giờ của máy.
 
 Lỗi 409 "đã có người sửa" (`ApiError.isVersionConflict`) hiện `VersionConflictAlert`: form giữ chữ đã
