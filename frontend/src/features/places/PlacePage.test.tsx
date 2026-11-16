@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 
 import { fieldDef, page, place, placeDetail, placeType, problem } from '@/test/fixtures'
 import { mockShell, recordRequests } from '@/test/handlers'
+import { mockPlaceBackend } from '@/test/placeBackend'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
 
@@ -191,3 +192,13 @@ function emptyAddress() {
     geohash: null,
   }
 }
+
+test('ownersTabSitsBeforeOccupants', async () => {
+  mockShell()
+  mockPlaceBackend([{ id: '301', name: 'P301' }])
+  renderApp({ route: '/w/7/places/301', userId: '42' })
+
+  const tabs = within(await screen.findByRole('tablist'))
+  const names = tabs.getAllByRole('tab').map((tab) => tab.textContent)
+  expect(names.indexOf('Sở hữu')).toBe(names.indexOf('Người ở') - 1)
+})

@@ -4,6 +4,7 @@ import { ActivityPage } from '@/features/activity'
 import { CatalogPage } from '@/features/catalog'
 import { ItemPage, PersonItemsTab, PlaceItemsTab } from '@/features/items'
 import { PeoplePage, PersonPage, PlaceOccupantsTab, type PersonTabSlots } from '@/features/people'
+import { PlaceOwnersTab } from '@/features/ownership'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
 
 import { AppLayout } from './layout/AppLayout'
@@ -14,6 +15,7 @@ import { RequireUser } from './session/RequireUser'
 
 /** Các tab của trang địa điểm thuộc nghiệp vụ khác; trang địa điểm không nhập các feature đó. */
 const placeTabs: PlaceTabSlots = {
+  owners: (ws, place) => <PlaceOwnersTab ws={ws} place={place} />,
   people: (ws, place) => <PlaceOccupantsTab ws={ws} place={place} />,
   items: (ws, place) => <PlaceItemsTab ws={ws} place={place} />,
 }

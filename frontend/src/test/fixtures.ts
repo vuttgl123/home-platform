@@ -1,6 +1,7 @@
 // Dữ liệu mẫu cho test, đúng dạng backend trả về: đủ mọi khoá, trường trống là null.
 import type { FieldDef, ItemCategory, PlaceType } from '@/features/catalog'
 import type { ItemDetail, ItemSummary } from '@/features/items'
+import type { Ownership } from '@/features/ownership'
 import type { Occupancy, PersonDetail, PersonSummary } from '@/features/people'
 import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from '@/features/places'
 import type { User } from '@/features/users'
@@ -207,4 +208,26 @@ export function item(overrides: Partial<ItemSummary> = {}): ItemSummary {
   const { id, placeId, placeName, categoryId, categoryName, ownerPersonId, ownerName, code, name, quantity, unit, status, removedAt, version } =
     itemDetail(overrides as Partial<ItemDetail>)
   return { id, placeId, placeName, categoryId, categoryName, ownerPersonId, ownerName, code, name, quantity, unit, status, removedAt, version }
+}
+
+export function ownership(overrides: Partial<Ownership> = {}): Ownership {
+  return {
+    id: '1',
+    placeId: '301',
+    placeName: 'P301',
+    personId: '55',
+    personFullName: 'Nguyễn An',
+    sharePercent: null,
+    startDate: '2026-01-01',
+    endDate: null,
+    status: 'CURRENT',
+    documentNo: null,
+    note: null,
+    createdAt: AT,
+    createdBy: '42',
+    updatedAt: AT,
+    updatedBy: '42',
+    version: 1,
+    ...overrides,
+  }
 }
