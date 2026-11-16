@@ -59,7 +59,7 @@ export function HistoryTab<Snapshot>({
     <div className="flex max-w-3xl flex-col gap-3">
       <ol className="flex flex-col divide-y rounded-lg border">
         {versions.items.map((version) => {
-          const fields = version.changedFields.map((field) => fieldLabels[field] ?? field)
+          const fields = (version.changedFields ?? []).map((field) => fieldLabels[field] ?? field)
           return (
             <li key={version.versionNo}>
               <button

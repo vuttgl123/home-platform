@@ -15,7 +15,8 @@ function version(versionNo: number, overrides: Record<string, unknown> = {}) {
   return {
     versionNo,
     action: versionNo === 1 ? 'CREATE' : 'UPDATE',
-    changedFields: versionNo === 1 ? [] : ['name'],
+    // Như backend: version tạo không có danh sách trường đã đổi (null).
+    changedFields: versionNo === 1 ? null : ['name'],
     changedBy: '42',
     changedAt: `2026-11-0${versionNo}T03:00:00Z`,
     note: null,

@@ -14,7 +14,8 @@ function entry(overrides: Record<string, unknown>) {
     entityId: '1',
     versionNo: 1,
     action: 'CREATE',
-    changedFields: [],
+    // Như backend: dòng tạo không có danh sách trường đã đổi (null).
+    changedFields: null,
     changedBy: '42',
     changedAt: '2026-11-16T03:00:00Z',
     note: null,

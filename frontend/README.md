@@ -59,10 +59,12 @@ src/
 ├── features/       mỗi nghiệp vụ một thư mục
 │   ├── users/          tạo và kiểm tra người dùng
 │   ├── workspaces/     danh sách, tạo không gian
-│   ├── catalog/        loại địa điểm, mục tuỳ biến (xem và ô nhập)
+│   ├── catalog/        trang Danh mục: loại địa điểm, nhóm đồ, mục tuỳ biến (cả phần xem và ô nhập dùng chung)
 │   ├── places/         cây, trang địa điểm, thêm, sửa, di chuyển, xoá, địa chỉ
 │   ├── people/         danh sách và hồ sơ người, cư trú (tab Người ở của địa điểm, nơi ở của một người)
-│   └── items/          tab Đồ đạc của địa điểm, trang món đồ: thêm, sửa, chuyển chỗ, gỡ, thay, đưa lại, xoá
+│   ├── items/          tab Đồ đạc của địa điểm, trang món đồ: thêm, sửa, chuyển chỗ, gỡ, thay, đưa lại, xoá
+│   ├── history/        tab Lịch sử dùng chung: danh sách version, xem và khôi phục một version
+│   └── activity/       trang Hoạt động: mọi thay đổi của không gian, khôi phục thứ đã xoá
 ├── components/
 │   ├── ui/         component shadcn, không sửa tay; thêm bằng `npx shadcn add <tên>`
 │   └── common/     component dùng chung tự viết: ô nhập có nhãn, lỗi, trạng thái trống, "Tải thêm"
@@ -116,6 +118,11 @@ Với người và cư trú (`features/people/queries.ts`):
 Với đồ đạc (`features/items/queries.ts`), mọi lệnh ghi đặt chi tiết của (các) món nó trả về và làm cũ
 mọi danh sách đồ: một lệnh chuyển chỗ hay thay ở chỗ khác chạm hai địa điểm và các toà chứa chúng.
 Xoá thì rời trang rồi mới bỏ chi tiết khỏi cache.
+
+Danh mục (`features/catalog`): mọi lệnh ghi làm cũ cả danh mục của không gian, vì loại, nhóm và mục
+tuỳ biến được nhiều form đọc. Khôi phục một version (`features/history`) là một lần sửa: feature của bản
+ghi tự làm mới như sau một lần sửa (`onRestored`). Khôi phục thứ đã xoá từ trang Hoạt động gửi `version`
+bằng số version của dòng "Xoá" và làm mới như sau một lần tạo.
 
 Ô chọn mà danh sách lựa chọn tải sau khi form dựng (nhóm đồ) phải có điều khiển (`Controller`): ô không
 điều khiển rơi về lựa chọn đầu tiên và gửi đi giá trị đó.

@@ -38,7 +38,7 @@ function setUp() {
   const summary = (no: number) => ({
     versionNo: no,
     action: no === 1 ? 'CREATE' : 'UPDATE',
-    changedFields: no === 1 ? [] : ['name'],
+    changedFields: no === 1 ? null : ['name'],
     changedBy: '42',
     changedAt: '2026-11-01T03:00:00Z',
     note: null,

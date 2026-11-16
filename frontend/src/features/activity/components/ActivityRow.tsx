@@ -21,7 +21,7 @@ import type { ActivityEntry } from '../types'
  */
 export function ActivityRow({ ws, entry }: { ws: string; entry: ActivityEntry }) {
   const name = entry.entityName ?? `#${entry.entityId}`
-  const fields = entry.changedFields.map((field) => FIELD_LABEL[field] ?? field)
+  const fields = (entry.changedFields ?? []).map((field) => FIELD_LABEL[field] ?? field)
   const deleted = entry.action === 'DELETE'
 
   return (
