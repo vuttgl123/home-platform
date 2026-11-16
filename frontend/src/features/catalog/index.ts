@@ -3,5 +3,5 @@ export { attributeDefaults, attributeErrors, attributePayload } from './attribut
 export type { AttributeFormValues } from './attributes'
 export { AttributeFields } from './components/AttributeFields'
 export { AttributeView } from './components/AttributeView'
-export { catalogKeys, useFieldDefs, usePlaceTypes, useSetupWorkspace } from './queries'
-export type { FieldDef, FieldTarget, PlaceType } from './types'
+export { catalogKeys, useFieldDefs, useItemCategories, usePlaceTypes, useSetupWorkspace } from './queries'
+export type { FieldDef, FieldTarget, ItemCategory, PlaceType } from './types'

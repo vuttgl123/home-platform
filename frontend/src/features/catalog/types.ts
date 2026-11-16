@@ -7,4 +7,6 @@ export type FieldDef = Present<
 
 export type FieldTarget = FieldDef['target']
 
+export type ItemCategory = Present<RegistrySchemas['ItemCategoryResponse'], 'id' | 'name' | 'sortOrder' | 'status'>
+
 export type PlaceType = Present<RegistrySchemas['PlaceTypeResponse'], 'id' | 'code' | 'name' | 'sortOrder' | 'status'>

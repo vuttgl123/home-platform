@@ -1,5 +1,6 @@
 // Dữ liệu mẫu cho test, đúng dạng backend trả về: đủ mọi khoá, trường trống là null.
-import type { FieldDef, PlaceType } from '@/features/catalog'
+import type { FieldDef, ItemCategory, PlaceType } from '@/features/catalog'
+import type { ItemDetail, ItemSummary } from '@/features/items'
 import type { Occupancy, PersonDetail, PersonSummary } from '@/features/people'
 import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from '@/features/places'
 import type { User } from '@/features/users'
@@ -166,4 +167,42 @@ export function occupancy(overrides: Partial<Occupancy> = {}): Occupancy {
     version: 1,
     ...overrides,
   }
+}
+
+export function itemCategory(overrides: Partial<ItemCategory> = {}): ItemCategory {
+  return { id: '600', name: 'Nội thất', sortOrder: 10, status: 'ACTIVE', createdAt: AT, updatedAt: AT, ...overrides }
+}
+
+export function itemDetail(overrides: Partial<ItemDetail> = {}): ItemDetail {
+  return {
+    id: '900',
+    placeId: '301',
+    placeName: 'P301',
+    categoryId: null,
+    categoryName: null,
+    code: null,
+    name: 'Tủ lạnh',
+    quantity: 1,
+    unit: null,
+    status: 'IN_USE',
+    placedAt: null,
+    removedAt: null,
+    replacedByItemId: null,
+    description: null,
+    attributes: null,
+    coverFileId: null,
+    createdAt: AT,
+    createdBy: '42',
+    updatedAt: AT,
+    updatedBy: '42',
+    version: 1,
+    deletedAt: null,
+    ...overrides,
+  }
+}
+
+export function item(overrides: Partial<ItemSummary> = {}): ItemSummary {
+  const { id, placeId, placeName, categoryId, categoryName, code, name, quantity, unit, status, removedAt, version } =
+    itemDetail(overrides as Partial<ItemDetail>)
+  return { id, placeId, placeName, categoryId, categoryName, code, name, quantity, unit, status, removedAt, version }
 }

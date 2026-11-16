@@ -1,6 +1,6 @@
 import { registry, unwrap, workspaceHeaders } from '@/api'
 
-import type { FieldDef, FieldTarget, PlaceType } from './types'
+import type { FieldDef, FieldTarget, ItemCategory, PlaceType } from './types'
 
 /**
  * Tạo danh mục mặc định (loại địa điểm, nhóm đồ, mục tuỳ biến) cho một không gian. Gọi lại
@@ -19,4 +19,10 @@ export async function listPlaceTypes(ws: string): Promise<PlaceType[]> {
 export async function listFieldDefs(ws: string, target: FieldTarget, typeId: string): Promise<FieldDef[]> {
   const call = registry.GET('/field-defs', { params: { header: workspaceHeaders(ws), query: { target, typeId } } })
   return (await unwrap(call)) as FieldDef[]
+}
+
+/** Mọi nhóm đồ của không gian, kể cả nhóm đã lưu trữ. */
+export async function listItemCategories(ws: string): Promise<ItemCategory[]> {
+  const call = registry.GET('/item-categories', { params: { header: workspaceHeaders(ws) } })
+  return (await unwrap(call)) as ItemCategory[]
 }
