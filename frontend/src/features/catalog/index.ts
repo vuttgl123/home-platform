@@ -1,3 +1,4 @@
 export { setupWorkspace } from './api'
-export { catalogKeys, usePlaceTypes, useSetupWorkspace } from './queries'
-export type { PlaceType } from './types'
+export { AttributeView } from './components/AttributeView'
+export { catalogKeys, useFieldDefs, usePlaceTypes, useSetupWorkspace } from './queries'
+export type { FieldDef, FieldTarget, PlaceType } from './types'

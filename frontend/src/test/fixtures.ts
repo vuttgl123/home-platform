@@ -1,5 +1,5 @@
 // Dữ liệu mẫu cho test, đúng dạng backend trả về: đủ mọi khoá, trường trống là null.
-import type { PlaceType } from '@/features/catalog'
+import type { FieldDef, PlaceType } from '@/features/catalog'
 import type { PlaceDetail, PlaceSummary } from '@/features/places'
 import type { User } from '@/features/users'
 import type { Workspace } from '@/features/workspaces'
@@ -91,6 +91,24 @@ export function placeDetail(overrides: Partial<PlaceDetail> = {}): PlaceDetail {
     ancestors: [],
     address: null,
     effectiveAddress: null,
+    ...overrides,
+  }
+}
+
+export function fieldDef(overrides: Partial<FieldDef> = {}): FieldDef {
+  return {
+    id: '500',
+    target: 'PLACE',
+    typeId: '100',
+    fieldKey: 'area_m2',
+    label: 'Diện tích (m²)',
+    dataType: 'NUMBER',
+    options: null,
+    required: false,
+    sortOrder: 10,
+    status: 'ACTIVE',
+    createdAt: AT,
+    updatedAt: AT,
     ...overrides,
   }
 }

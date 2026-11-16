@@ -21,6 +21,7 @@ export function mockShell(
     http.get('/api/identity/workspaces', () => HttpResponse.json(page(options.workspaces ?? [workspace()]))),
     http.get('/api/registry/place-types', () => HttpResponse.json(options.placeTypes ?? [placeType()])),
     http.get('/api/registry/places', () => HttpResponse.json(page(options.places ?? []))),
+    http.get('/api/registry/field-defs', () => HttpResponse.json([])),
   )
 }
 

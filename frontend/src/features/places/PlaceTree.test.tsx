@@ -27,6 +27,11 @@ function tree() {
   return within(screen.getByRole('navigation', { name: 'Cây địa điểm' }))
 }
 
+/** Như `tree()`, nhưng chờ cây xuất hiện trước. */
+async function findTree() {
+  return within(await screen.findByRole('navigation', { name: 'Cây địa điểm' }))
+}
+
 function linkNames() {
   return tree()
     .getAllByRole('link')
@@ -39,7 +44,7 @@ test('showsTopLevelPlacesInServerOrder', async () => {
 
   renderApp({ route: '/w/7', userId: '42' })
 
-  await screen.findByRole('link', { name: 'Toà B' })
+  await (await findTree()).findByRole('link', { name: 'Toà B' })
   expect(linkNames()).toEqual(['Toà B', 'Toà A'])
 })
 
@@ -54,13 +59,13 @@ test('expandingLoadsChildrenOnce', async () => {
   )
   const { user } = renderApp({ route: '/w/7', userId: '42' })
 
-  await user.click(await screen.findByRole('button', { name: 'Mở Toà A' }))
-  await screen.findByRole('link', { name: 'Tầng 3' })
+  await user.click(await (await findTree()).findByRole('button', { name: 'Mở Toà A' }))
+  await (await findTree()).findByRole('link', { name: 'Tầng 3' })
   await user.click(tree().getByRole('button', { name: 'Đóng Toà A' }))
   expect(tree().queryByRole('link', { name: 'Tầng 3' })).not.toBeInTheDocument()
   await user.click(tree().getByRole('button', { name: 'Mở Toà A' }))
 
-  expect(await screen.findByRole('link', { name: 'Tầng 3' })).toBeInTheDocument()
+  expect(await (await findTree()).findByRole('link', { name: 'Tầng 3' })).toBeInTheDocument()
   expect(loads).toBe(1)
 })
 
@@ -69,7 +74,7 @@ test('emptyNodeLosesItsArrow', async () => {
   server.use(http.get('/api/registry/places/1/children', () => HttpResponse.json(page([]))))
   const { user } = renderApp({ route: '/w/7', userId: '42' })
 
-  await user.click(await screen.findByRole('button', { name: 'Mở Toà A' }))
+  await user.click(await (await findTree()).findByRole('button', { name: 'Mở Toà A' }))
 
   await waitFor(() => expect(tree().queryByRole('button', { name: /Toà A/ })).not.toBeInTheDocument())
   expect(tree().getByRole('link', { name: 'Toà A' })).toBeInTheDocument()
@@ -87,11 +92,11 @@ test('loadMoreAppendsWithoutDuplicates', async () => {
     }),
   )
   const { user } = renderApp({ route: '/w/7', userId: '42' })
-  await user.click(await screen.findByRole('button', { name: 'Mở Tầng 3' }))
+  await user.click(await (await findTree()).findByRole('button', { name: 'Mở Tầng 3' }))
 
-  await user.click(await screen.findByRole('button', { name: 'Tải thêm' }))
+  await user.click(await (await findTree()).findByRole('button', { name: 'Tải thêm' }))
 
-  await screen.findByRole('link', { name: 'P103' })
+  await (await findTree()).findByRole('link', { name: 'P103' })
   expect(linkNames()).toEqual(['Tầng 3', 'P101', 'P102', 'P103'])
   expect(tree().queryByRole('button', { name: 'Tải thêm' })).not.toBeInTheDocument()
 })
@@ -103,7 +108,7 @@ test('navigatesWithTheExactId', async () => {
   )
   const { user, router } = renderApp({ route: '/w/7', userId: '42' })
 
-  await user.click(await screen.findByRole('link', { name: 'Toà A' }))
+  await user.click(await (await findTree()).findByRole('link', { name: 'Toà A' }))
 
   // 114540094935228416 không biểu diễn được bằng kiểu số: sai một chữ số là sang địa điểm khác.
   await waitFor(() => expect(router.state.location.pathname).toBe(`/w/7/places/${BIG_ID}`))
@@ -121,7 +126,7 @@ test('opensAncestorsOfTheSelectedPlace', async () => {
 
   renderApp({ route: '/w/7/places/301', userId: '42' })
 
-  const selected = await screen.findByRole('link', { name: 'P301' })
+  const selected = await (await findTree()).findByRole('link', { name: 'P301' })
   expect(selected).toHaveAttribute('aria-current', 'page')
   expect(linkNames()).toEqual(['Toà A', 'Tầng 3', 'P301', 'P302'])
   expect(tree().getByRole('link', { name: 'Tầng 3' })).not.toHaveAttribute('aria-current')
@@ -140,7 +145,7 @@ test('showsTheSelectedPlaceBeyondTheLoadedPage', async () => {
 
   renderApp({ route: '/w/7/places/301', userId: '42' })
 
-  expect(await screen.findByRole('link', { name: 'P301' })).toHaveAttribute('aria-current', 'page')
+  expect(await (await findTree()).findByRole('link', { name: 'P301' })).toHaveAttribute('aria-current', 'page')
   expect(linkNames()).toEqual(['Toà A', 'Tầng 3', 'P101', 'P102', 'P301'])
 })
 
@@ -149,7 +154,7 @@ test('emptyWorkspaceShowsAddButton', async () => {
 
   renderApp({ route: '/w/7', userId: '42' })
 
-  expect(await screen.findByText('Chưa có địa điểm')).toBeInTheDocument()
+  expect(await (await findTree()).findByText('Chưa có địa điểm')).toBeInTheDocument()
   expect(tree().getByRole('button', { name: 'Thêm địa điểm' })).toBeInTheDocument()
 })
 
@@ -163,18 +168,18 @@ test('searchReplacesTheTreeWithResults', async () => {
     }),
   )
   const { user } = renderApp({ route: '/w/7', userId: '42' })
-  await screen.findByRole('link', { name: 'Toà A' })
+  await (await findTree()).findByRole('link', { name: 'Toà A' })
 
   await user.type(tree().getByRole('searchbox', { name: 'Tìm địa điểm' }), 'P10')
 
-  expect(await screen.findByRole('link', { name: /P101/ })).toBeInTheDocument()
+  expect(await (await findTree()).findByRole('link', { name: /P101/ })).toBeInTheDocument()
   expect(tree().getByRole('link', { name: /P102/ })).toHaveTextContent('R-102')
   expect(tree().queryByRole('link', { name: 'Toà A' })).not.toBeInTheDocument()
   expect(searchedFor).toBe('P10')
 
   await user.clear(tree().getByRole('searchbox', { name: 'Tìm địa điểm' }))
 
-  expect(await screen.findByRole('link', { name: 'Toà A' })).toBeInTheDocument()
+  expect(await (await findTree()).findByRole('link', { name: 'Toà A' })).toBeInTheDocument()
   expect(tree().queryByRole('link', { name: /P101/ })).not.toBeInTheDocument()
 })
 
@@ -191,7 +196,7 @@ test('treeLoadFailureCanBeRetried', async () => {
   )
   const { user } = renderApp({ route: '/w/7', userId: '42' })
 
-  await user.click(await screen.findByRole('button', { name: 'Thử lại' }))
+  await user.click(await (await findTree()).findByRole('button', { name: 'Thử lại' }))
 
-  expect(await screen.findByRole('link', { name: 'Toà A' })).toBeInTheDocument()
+  expect(await (await findTree()).findByRole('link', { name: 'Toà A' })).toBeInTheDocument()
 })

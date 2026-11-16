@@ -273,7 +273,9 @@ export function AttributeView(props: { defs: FieldDef[]; values: Record<string, 
   - Trang: đường dẫn tổ tiên (`Breadcrumb` của shadcn, từ `ancestors`, mỗi phần là liên kết), tên, loại (tên từ `usePlaceTypes`), trạng thái ("Đang dùng"/"Tạm ngưng"), `v<version>`; các tab "Tổng quan", "Bên trong", "Người ở", "Đồ đạc", "Lịch sử" (ba tab sau hiện "Sắp có"); tab trên URL `?tab=overview|children|people|items|history`, mặc định và giá trị lạ là `overview`.
   - Tổng quan: địa chỉ của nó, hoặc địa chỉ hiệu lực kèm "lấy từ <tên tổ tiên>", hoặc "Chưa có địa chỉ"; mô tả; mục tuỳ biến qua `AttributeView`; người tạo/sửa không hiện (chỉ có id), thời điểm sửa cuối hiện dd/MM/yyyy HH:mm.
   - Bên trong: danh sách con (`useChildren`, cùng khoá cache với cây) có "Tải thêm"; mỗi dòng là liên kết.
-  - Đang tải: khung xương. 404 hoặc `placeId` sai dạng → `NotFoundPage` trong khung chính, cây vẫn hiện. Lỗi khác → `ErrorState` có "Thử lại".
+  - Đang tải: khung xương. 404 hoặc `placeId` sai dạng → `NotFoundState` (`components/common`, dùng chung với `NotFoundPage` của `app/`, vì feature không nhập `app/`) trong khung chính, cây vẫn hiện. Lỗi khác → `ErrorState` có "Thử lại". Tab "Sắp có" dùng `ComingSoonState` (cũng ở `components/common`).
+  - Ngày giờ và số qua `src/lib/format.ts` (`formatDate`, `formatDateTime`, `formatNumber`); ngày `YYYY-MM-DD` đọc thẳng chuỗi để múi giờ không làm lệch ngày.
+  - Trạng thái đang tải và lỗi của khung trang không dùng thẻ `<main>`: chỉ vùng nội dung thật là `<main>`.
 
 - [ ] Test:
   - `showsBreadcrumbAndHeader`.

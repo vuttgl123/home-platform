@@ -66,16 +66,16 @@ export function AppLayout() {
 
   if (workspaces.isPending) {
     return (
-      <main className="flex min-h-svh items-center justify-center">
+      <div className="flex min-h-svh items-center justify-center">
         <Spinner aria-label="Đang tải" />
-      </main>
+      </div>
     )
   }
   if (workspaces.isError) {
     return (
-      <main className="flex min-h-svh items-center justify-center p-6">
+      <div className="flex min-h-svh items-center justify-center p-6">
         <ErrorState error={workspaces.error} onRetry={() => void workspaces.refetch()} />
-      </main>
+      </div>
     )
   }
   if (!current) {
