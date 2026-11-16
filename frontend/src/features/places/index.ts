@@ -1,3 +1,4 @@
+export { PlaceFormDialog } from './components/PlaceFormDialog'
 export { PlaceTree } from './components/PlaceTree'
 export { PlacePage } from './pages/PlacePage'
 export { placeKeys, useChildren, usePlace, usePlaceSearch } from './queries'

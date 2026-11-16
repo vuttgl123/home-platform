@@ -1,10 +1,12 @@
-import { MapPinIcon, TagsIcon } from 'lucide-react'
+import { MapPinIcon, PlusIcon, TagsIcon } from 'lucide-react'
+import { useState } from 'react'
 
 import { ErrorState } from '@/components/common/ErrorState'
 import { FormError } from '@/components/common/FormError'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { usePlaceTypes, useSetupWorkspace } from '@/features/catalog'
+import { PlaceFormDialog } from '@/features/places'
 
 import { useWorkspaceId } from '../session/useSession'
 
@@ -12,6 +14,7 @@ import { useWorkspaceId } from '../session/useSession'
 export function WorkspaceHomePage() {
   const workspaceId = useWorkspaceId()
   const placeTypes = usePlaceTypes(workspaceId)
+  const [adding, setAdding] = useState(false)
 
   if (placeTypes.isError) {
     return <ErrorState error={placeTypes.error} onRetry={() => void placeTypes.refetch()} />
@@ -31,9 +34,12 @@ export function WorkspaceHomePage() {
         <EmptyDescription>Thông tin, người ở và đồ đạc của địa điểm sẽ hiện ở đây.</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        {/* Task 6 gắn form thêm địa điểm. */}
-        <Button disabled>Thêm địa điểm</Button>
+        <Button onClick={() => setAdding(true)}>
+          <PlusIcon aria-hidden="true" />
+          Thêm địa điểm
+        </Button>
       </EmptyContent>
+      <PlaceFormDialog ws={workspaceId} mode="create" parent={null} open={adding} onOpenChange={setAdding} />
     </Empty>
   )
 }

@@ -1,4 +1,4 @@
-import { registry, unwrap, workspaceHeaders, type CursorPage } from '@/api'
+import { registry, unwrap, workspaceHeaders, type CursorPage, type RegistrySchemas } from '@/api'
 
 import type { PlaceDetail, PlaceSummary } from './types'
 
@@ -33,5 +33,19 @@ export async function searchPlaces(ws: string, name: string, cursor?: string): P
 /** @throws ApiError 404 nếu địa điểm không có hoặc đã xoá */
 export async function getPlace(ws: string, id: string): Promise<PlaceDetail> {
   const call = registry.GET('/places/{id}', { params: { header: workspaceHeaders(ws), path: { id } } })
+  return (await unwrap(call)) as PlaceDetail
+}
+
+export type PlaceCreateBody = RegistrySchemas['PlaceCreateRequest']
+export type PlaceUpdateBody = RegistrySchemas['PlaceUpdateRequest']
+
+export async function createPlace(ws: string, body: PlaceCreateBody): Promise<PlaceDetail> {
+  const call = registry.POST('/places', { params: { header: workspaceHeaders(ws) }, body })
+  return (await unwrap(call)) as PlaceDetail
+}
+
+/** Ghi đè mọi trường sửa được; trường không gửi là bị xoá. `body.version` là version đã đọc. */
+export async function updatePlace(ws: string, id: string, body: PlaceUpdateBody): Promise<PlaceDetail> {
+  const call = registry.PUT('/places/{id}', { params: { header: workspaceHeaders(ws), path: { id } }, body })
   return (await unwrap(call)) as PlaceDetail
 }

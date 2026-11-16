@@ -1,13 +1,17 @@
+import { PencilIcon, PlusIcon } from 'lucide-react'
+import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 
 import { ComingSoonState } from '@/components/common/ComingSoonState'
 import { ErrorState } from '@/components/common/ErrorState'
 import { NotFoundState } from '@/components/common/NotFoundState'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { isId } from '@/lib/ids'
 
 import { PlaceChildrenTab } from '../components/PlaceChildrenTab'
+import { PlaceFormDialog } from '../components/PlaceFormDialog'
 import { PlaceHeader } from '../components/PlaceHeader'
 import { PlaceOverviewTab } from '../components/PlaceOverviewTab'
 import { usePlace } from '../queries'
@@ -33,6 +37,7 @@ export function PlacePage() {
   const requested = searchParams.get('tab')
   const tab: Tab = isTab(requested) ? requested : 'overview'
   const place = usePlace(workspaceId, placeId)
+  const [dialog, setDialog] = useState<'edit' | 'addChild' | null>(null)
 
   if (!isId(placeId) || place.error?.isNotFound) {
     return <NotFoundState description="Địa điểm này không có, hoặc đã bị xoá." homeHref={`/w/${workspaceId}`} />
@@ -58,7 +63,16 @@ export function PlacePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PlaceHeader ws={workspaceId} place={detail} />
+      <PlaceHeader
+        ws={workspaceId}
+        place={detail}
+        actions={
+          <Button variant="outline" onClick={() => setDialog('edit')}>
+            <PencilIcon aria-hidden="true" />
+            Sửa
+          </Button>
+        }
+      />
       <Tabs value={tab} onValueChange={(value) => selectTab(value as Tab)}>
         <TabsList variant="line" className="w-full justify-start overflow-x-auto">
           {TABS.map(({ value, label }) => (
@@ -71,7 +85,16 @@ export function PlacePage() {
           <PlaceOverviewTab ws={workspaceId} place={detail} />
         </TabsContent>
         <TabsContent value="children" className="pt-4">
-          <PlaceChildrenTab ws={workspaceId} place={detail} />
+          <PlaceChildrenTab
+            ws={workspaceId}
+            place={detail}
+            addAction={
+              <Button variant="outline" onClick={() => setDialog('addChild')}>
+                <PlusIcon aria-hidden="true" />
+                Thêm chỗ con
+              </Button>
+            }
+          />
         </TabsContent>
         {(['people', 'items', 'history'] as const).map((value) => (
           <TabsContent key={value} value={value} className="pt-4">
@@ -79,6 +102,20 @@ export function PlacePage() {
           </TabsContent>
         ))}
       </Tabs>
+      <PlaceFormDialog
+        ws={workspaceId}
+        mode="edit"
+        place={detail}
+        open={dialog === 'edit'}
+        onOpenChange={(open) => setDialog(open ? 'edit' : null)}
+      />
+      <PlaceFormDialog
+        ws={workspaceId}
+        mode="create"
+        parent={detail}
+        open={dialog === 'addChild'}
+        onOpenChange={(open) => setDialog(open ? 'addChild' : null)}
+      />
     </div>
   )
 }

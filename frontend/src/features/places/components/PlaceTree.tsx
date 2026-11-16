@@ -1,3 +1,4 @@
+import { PlusIcon } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useMatch } from 'react-router'
 
@@ -7,6 +8,7 @@ import { useDebouncedValue } from '@/hooks/use-debounced-value'
 
 import { useChildren, usePlace } from '../queries'
 import { PLACE_ROUTE } from '../routes'
+import { PlaceFormDialog } from './PlaceFormDialog'
 import { PlaceSearchResults } from './PlaceSearchResults'
 import { PlaceTreeRows } from './PlaceTreeNode'
 import { TreeContext, type TreeState } from './treeContext'
@@ -58,6 +60,7 @@ export function PlaceTree({ workspaceId }: { workspaceId: string }) {
   const searchFor = term.trim() === '' ? '' : settledTerm
 
   const topLevel = useChildren(workspaceId, null)
+  const [adding, setAdding] = useState(false)
   const isEmpty = topLevel.isLoaded && topLevel.items.length === 0 && !topLevel.hasMore && selected == null
 
   return (
@@ -76,18 +79,32 @@ export function PlaceTree({ workspaceId }: { workspaceId: string }) {
           ) : isEmpty ? (
             <div className="flex flex-col items-start gap-2 px-2 py-1.5">
               <p className="text-sm text-muted-foreground">Chưa có địa điểm</p>
-              {/* Task 6 gắn form thêm địa điểm. */}
-              <Button variant="outline" size="sm" disabled>
+              <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
+                <PlusIcon aria-hidden="true" />
                 Thêm địa điểm
               </Button>
             </div>
           ) : (
-            <ul role="tree" aria-label="Địa điểm">
-              <PlaceTreeRows parentId={null} list={topLevel} />
-            </ul>
+            <>
+              <ul role="tree" aria-label="Địa điểm">
+                <PlaceTreeRows parentId={null} list={topLevel} />
+              </ul>
+              {topLevel.isLoaded && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-1 w-full justify-start text-muted-foreground"
+                  onClick={() => setAdding(true)}
+                >
+                  <PlusIcon aria-hidden="true" />
+                  Thêm địa điểm
+                </Button>
+              )}
+            </>
           )}
         </div>
       </nav>
+      <PlaceFormDialog ws={workspaceId} mode="create" parent={null} open={adding} onOpenChange={setAdding} />
     </TreeContext>
   )
 }

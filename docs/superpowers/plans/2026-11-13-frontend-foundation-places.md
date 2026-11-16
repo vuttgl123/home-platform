@@ -302,7 +302,8 @@ export function attributeErrors(defs: FieldDef[], values: AttributeFormValues): 
 export function attributePayload(defs: FieldDef[], values: AttributeFormValues, stored: Record<string, unknown> | null): Record<string, unknown> | null
 	// mục ACTIVE: lấy từ form (chuỗi rỗng → bỏ khoá; NUMBER → number; BOOLEAN → boolean; DATE 'YYYY-MM-DD');
 	// mục ARCHIVED: giữ giá trị đã lưu; khoá không thuộc defs: bỏ; không còn khoá nào → null
-export function AttributeFields(props: { defs: FieldDef[]; control: Control<any>; name: 'attributes' }): JSX.Element
+export function AttributeFields(props: { defs: FieldDef[]; control: Control<T>; stored?: Record<string, unknown> | null }): JSX.Element
+	// stored: giá trị đã lưu, làm giá trị ban đầu của các ô (danh sách mục thường tải xong sau khi form đã dựng)
 	// chỉ mục ACTIVE, theo sortOrder; TEXT Input, NUMBER Input inputMode=decimal, BOOLEAN Switch, DATE Input type=date,
 	// SELECT NativeSelect (có lựa chọn trống); bắt buộc có dấu *; lỗi hiện dưới ô
 
@@ -318,11 +319,15 @@ export function createPlace(ws: string, body: S['PlaceCreateRequest']): Promise<
 export function updatePlace(ws: string, id: string, body: S['PlaceUpdateRequest']): Promise<PlaceDetail>
 export function useCreatePlace(ws: string): UseMutationResult<PlaceDetail, ApiError, S['PlaceCreateRequest']>
 export function useUpdatePlace(ws: string): UseMutationResult<PlaceDetail, ApiError, { id: string; body: S['PlaceUpdateRequest'] }>
-export function PlaceFormDialog(props: { open: boolean; onOpenChange: (open: boolean) => void } & ({ mode: 'create'; parentId: string | null } | { mode: 'edit'; place: PlaceDetail })): JSX.Element
+export function PlaceFormDialog(props: { ws: string; open: boolean; onOpenChange: (open: boolean) => void } & ({ mode: 'create'; parent: PlaceDetail | null } | { mode: 'edit'; place: PlaceDetail })): JSX.Element
+	// create nhận cả địa điểm cha (không chỉ id) để gợi ý loại: loại đang dùng đứng ngay sau loại của cha
+export function useFetchFreshPlace(ws: string): (id: string) => Promise<PlaceDetail>   // bỏ qua cache, cập nhật cache
+export function refreshAfterWrite(queryClient, ws, place: PlaceDetail, scope: 'self' | 'descendants' | 'tree'): void   // bảng cache bên dưới
 ```
 
-  - Form (React Hook Form + `zodResolver(placeFormSchema(defs))`): loại (`NativeSelect`; chỉ loại ACTIVE theo `sortOrder`; khi sửa thì giữ cả loại cũ đã lưu trữ), tên (bắt buộc, tối đa 255), mã (tối đa 50), trạng thái, mô tả (tối đa 10000), mục tuỳ biến theo loại đang chọn (đổi loại thì tải mục của loại mới). `placeFormSchema` đưa kết quả `attributeErrors` vào đường dẫn `attributes.<khoá>`.
+  - Form (React Hook Form + `zodResolver(placeFormSchema(defs))`, dựng lại mỗi lần render vì `defs` đổi theo loại; RHF dùng `resolver` của lần render gần nhất): loại (`NativeSelect`; chỉ loại ACTIVE theo `sortOrder`; khi sửa thì giữ cả loại cũ đã lưu trữ), tên (bắt buộc, tối đa 255), mã (tối đa 50), trạng thái, mô tả (tối đa 10000), mục tuỳ biến theo loại đang chọn (đổi loại thì tải mục của loại mới). `placeFormSchema` đưa kết quả `attributeErrors` vào đường dẫn `attributes.<khoá>`.
   - Thêm từ cây và từ trang trống (cấp cao nhất), và "Thêm chỗ con" ở tab Bên trong (`parentId` là địa điểm đang xem). Thêm xong thì đóng hộp thoại, tới trang của địa điểm mới.
+  - Sửa gửi lại cả `coverFileId` (PUT ghi đè cả bản ghi; form không có ô ảnh bìa). Nút gửi bị khoá khi mục tuỳ biến của loại đang chọn chưa tải xong, để không làm mất giá trị của chúng.
   - Sửa: `version` gửi đi là `version` lúc mở form (hoặc của lần "Tải bản mới" gần nhất), không nằm trong ô nhập. 409 version lệch → `VersionConflictAlert`, form không đóng, không đặt lại. "Tải bản mới" → lấy lại chi tiết, `reset(giá trị mới, { keepDirtyValues: true })`, dùng `version` mới.
   - 409 khác và 400 không gắn được vào ô nào → `FormError` nguyên văn.
   - Cache sau khi ghi:

@@ -1,9 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { useCallback } from 'react'
 
 import { useCursorList, type ApiError, type CursorList } from '@/api'
 import { isId } from '@/lib/ids'
 
-import { getPlace, listChildren, listTopLevel, searchPlaces } from './api'
+import {
+  createPlace,
+  getPlace,
+  listChildren,
+  listTopLevel,
+  searchPlaces,
+  updatePlace,
+  type PlaceCreateBody,
+  type PlaceUpdateBody,
+} from './api'
 import type { PlaceDetail, PlaceSummary } from './types'
 
 /**
@@ -53,5 +63,61 @@ export function usePlaceSearch(ws: string, name: string): CursorList<PlaceSummar
     queryKey: placeKeys.search(ws, name),
     fetchPage: (cursor) => searchPlaces(ws, name, cursor),
     enabled: name !== '',
+  })
+}
+
+/**
+ * Lấy bản mới nhất của một địa điểm từ server (bỏ qua cache) và cập nhật cache. Dùng khi một lệnh
+ * ghi gặp 409 "đã có người sửa".
+ */
+export function useFetchFreshPlace(ws: string): (id: string) => Promise<PlaceDetail> {
+  const queryClient = useQueryClient()
+  return useCallback(
+    (id: string) =>
+      queryClient.fetchQuery({ queryKey: placeKeys.detail(ws, id), queryFn: () => getPlace(ws, id), staleTime: 0 }),
+    [queryClient, ws],
+  )
+}
+
+/**
+ * Sau khi một địa điểm đổi: đặt chi tiết của nó bằng response và làm cũ những gì có thể đã hiện
+ * nội dung cũ của nó.
+ *
+ * @param scope `'self'`: danh sách con của cha và kết quả tìm kiếm (thêm). `'descendants'`: thêm mọi
+ *   trang chi tiết khác, vì đường dẫn tổ tiên hay địa chỉ thừa hưởng của con cháu mang tên hoặc địa
+ *   chỉ cũ (sửa, đặt địa chỉ). `'tree'`: cả cây (di chuyển).
+ */
+export function refreshAfterWrite(
+  queryClient: QueryClient,
+  ws: string,
+  place: PlaceDetail,
+  scope: 'self' | 'descendants' | 'tree',
+): void {
+  queryClient.setQueryData(placeKeys.detail(ws, place.id), place)
+  const isOwnDetail = (key: readonly unknown[]) => key[2] === 'detail' && key[3] === place.id
+  if (scope === 'tree') {
+    void queryClient.invalidateQueries({ queryKey: placeKeys.all(ws), predicate: (query) => !isOwnDetail(query.queryKey) })
+    return
+  }
+  void queryClient.invalidateQueries({ queryKey: placeKeys.children(ws, place.parentId) })
+  void queryClient.invalidateQueries({ queryKey: placeKeys.searches(ws) })
+  if (scope === 'descendants') {
+    void queryClient.invalidateQueries({ queryKey: placeKeys.details(ws), predicate: (query) => !isOwnDetail(query.queryKey) })
+  }
+}
+
+export function useCreatePlace(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<PlaceDetail, ApiError, PlaceCreateBody>({
+    mutationFn: (body) => createPlace(ws, body),
+    onSuccess: (created) => refreshAfterWrite(queryClient, ws, created, 'self'),
+  })
+}
+
+export function useUpdatePlace(ws: string) {
+  const queryClient = useQueryClient()
+  return useMutation<PlaceDetail, ApiError, { id: string; body: PlaceUpdateBody }>({
+    mutationFn: ({ id, body }) => updatePlace(ws, id, body),
+    onSuccess: (updated) => refreshAfterWrite(queryClient, ws, updated, 'descendants'),
   })
 }
