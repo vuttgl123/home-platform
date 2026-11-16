@@ -74,7 +74,7 @@ function PlaceTreeNode({ place }: { place: Pick<PlaceSummary, 'id' | 'name'> }) 
   const isLeaf = children.isLoaded && children.items.length === 0 && !children.hasMore && !hasSelectedChild
 
   return (
-    <li role="treeitem" aria-expanded={isLeaf ? undefined : isOpen} aria-selected={isSelected}>
+    <li>
       <div
         className={cn(
           'flex h-7 items-center rounded-md pr-1 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
@@ -90,6 +90,7 @@ function PlaceTreeNode({ place }: { place: Pick<PlaceSummary, 'id' | 'name'> }) 
             type="button"
             className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             aria-label={`${isOpen ? 'Đóng' : 'Mở'} ${place.name}`}
+            aria-expanded={isOpen}
             onClick={() => toggle(place.id)}
           >
             <ChevronRightIcon
@@ -107,7 +108,7 @@ function PlaceTreeNode({ place }: { place: Pick<PlaceSummary, 'id' | 'name'> }) 
         </Link>
       </div>
       {isOpen && !isLeaf && (
-        <ul role="group" className="ml-3 border-l border-sidebar-border pl-1">
+        <ul className="ml-3 border-l border-sidebar-border pl-1">
           <PlaceTreeRows parentId={place.id} list={children} />
         </ul>
       )}

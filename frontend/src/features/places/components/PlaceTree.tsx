@@ -86,7 +86,8 @@ export function PlaceTree({ workspaceId }: { workspaceId: string }) {
             </div>
           ) : (
             <>
-              <ul role="tree" aria-label="Địa điểm">
+              {/* Danh sách lồng nhau thường, không phải role="tree": cây không cài phím mũi tên của mẫu đó. */}
+              <ul>
                 <PlaceTreeRows parentId={null} list={topLevel} />
               </ul>
               {topLevel.isLoaded && (

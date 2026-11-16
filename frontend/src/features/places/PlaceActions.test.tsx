@@ -67,7 +67,7 @@ test('movesToAnotherParent', async () => {
   // Cây hiện Tầng 3 dưới Toà B, không còn dưới Toà A.
   const tree = within(screen.getByRole('navigation', { name: 'Cây địa điểm' }))
   const underB = await waitFor(() => {
-    const group = tree.getByRole('link', { name: 'Toà B' }).closest('li')!.querySelector('[role="group"]')
+    const group = tree.getByRole('link', { name: 'Toà B' }).closest('li')!.querySelector('ul')
     expect(group).not.toBeNull()
     return within(group as HTMLElement)
   })

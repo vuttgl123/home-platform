@@ -200,3 +200,18 @@ test('treeLoadFailureCanBeRetried', async () => {
 
   expect(await (await findTree()).findByRole('link', { name: 'Toà A' })).toBeInTheDocument()
 })
+
+test('toggleReportsWhetherItIsOpen', async () => {
+  mockShell({ places: [buildingA] })
+  server.use(http.get('/api/registry/places/1/children', () => HttpResponse.json(page([floor3]))))
+  const { user } = renderApp({ route: '/w/7', userId: '42' })
+
+  const toggle = await (await findTree()).findByRole('button', { name: 'Mở Toà A' })
+  expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  await user.click(toggle)
+
+  expect(await (await findTree()).findByRole('button', { name: 'Đóng Toà A' })).toHaveAttribute('aria-expanded', 'true')
+  // Cây không cài phím mũi tên của mẫu ARIA "tree", nên không tự nhận là một "tree".
+  expect(screen.queryByRole('tree')).not.toBeInTheDocument()
+})
