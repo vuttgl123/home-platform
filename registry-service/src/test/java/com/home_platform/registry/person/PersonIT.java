@@ -140,8 +140,30 @@ class PersonIT extends PersonTestData {
 
 		this.mvc.perform(asA(delete("/people/" + busy)).param("version", "1"))
 			.andExpect(status().isConflict())
-			.andExpect(jsonPath("$.detail").value("Person " + busy + " still has 1 current or upcoming occupancies"));
+			.andExpect(jsonPath("$.detail")
+				.value("Person " + busy + " still has 1 current or upcoming occupancies and 0 items"));
 		this.mvc.perform(asA(delete("/people/" + moved)).param("version", "1")).andExpect(status().isNoContent());
+	}
+
+	@Test
+	void personOwningCurrentItemsCannotBeDeleted() throws Exception {
+		long owner = named("Owner");
+		ownedItem(owner, false, false);
+		ownedItem(owner, false, false);
+
+		this.mvc.perform(asA(delete("/people/" + owner)).param("version", "1"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.detail")
+				.value("Person " + owner + " still has 0 current or upcoming occupancies and 2 items"));
+	}
+
+	@Test
+	void personOwningOnlyRemovedOrDeletedItemsCanBeDeleted() throws Exception {
+		long owner = named("Owner");
+		ownedItem(owner, true, false);
+		ownedItem(owner, false, true);
+
+		this.mvc.perform(asA(delete("/people/" + owner)).param("version", "1")).andExpect(status().isNoContent());
 	}
 
 	@Test

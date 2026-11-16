@@ -9,14 +9,15 @@ import tools.jackson.databind.annotation.JsonSerialize;
 
 /** Nội dung một món đồ ghi vào version; không có cột kiểm toán và {@code version}. */
 public record ItemSnapshot(long id, long placeId, Long categoryId, String code, String name, int quantity, String unit,
-		ItemStatus status, LocalDate placedAt, LocalDate removedAt, Long replacedByItemId, String description,
+		ItemStatus status, LocalDate placedAt, LocalDate removedAt, Long replacedByItemId, Long ownerPersonId,
+		String description,
 		@JsonSerialize(contentUsing = PlainNumbers.class) Map<String, Object> attributes, Long coverFileId,
 		Instant deletedAt) {
 
 	public static ItemSnapshot of(Item item) {
 		return new ItemSnapshot(item.id(), item.placeId(), item.categoryId(), item.code(), item.name(), item.quantity(),
 				item.unit(), item.status(), item.placedAt(), item.removedAt(), item.replacedByItemId(),
-				item.description(), item.attributes(), item.coverFileId(), item.deletedAt());
+				item.ownerPersonId(), item.description(), item.attributes(), item.coverFileId(), item.deletedAt());
 	}
 
 }

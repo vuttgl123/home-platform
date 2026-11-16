@@ -110,16 +110,18 @@ public class PersonService {
 
 	/**
 	 * Xoá mềm; dành cho hồ sơ nhập nhầm hoặc không còn dùng.
-	 * @throws ConflictException nếu người đó còn cư trú hiện tại hoặc sắp tới
+	 * @throws ConflictException nếu người đó còn cư trú hiện tại hoặc sắp tới, hoặc còn là chủ của món
+	 * đồ chưa gỡ
 	 */
 	@Transactional
 	public void delete(WorkspaceContext ctx, long id, int version, String note) {
 		// Giữ riêng trước khi đếm: câu đếm bên dưới mới thấy mọi dòng cư trú đã commit của người này.
 		getForUpdate(ctx.workspaceId(), id);
 		int occupancies = this.repository.countCurrentOccupancies(ctx.workspaceId(), id, this.businessDate.today());
-		if (occupancies > 0) {
-			throw new ConflictException(
-					"Person " + id + " still has " + occupancies + " current or upcoming occupancies");
+		int items = this.repository.countOwnedItems(ctx.workspaceId(), id);
+		if (occupancies + items > 0) {
+			throw new ConflictException("Person " + id + " still has " + occupancies
+					+ " current or upcoming occupancies and " + items + " items");
 		}
 		Person stored = this.repository.softDelete(ctx, id, version);
 		record(ctx, stored, ChangeAction.DELETE, note);

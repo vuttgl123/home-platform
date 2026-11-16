@@ -10,6 +10,8 @@ import com.home_platform.common.history.EntityVersion;
 import com.home_platform.registry.RegistryIT;
 import com.home_platform.registry.itemcategory.ItemCategoryRequest;
 import com.home_platform.registry.itemcategory.ItemCategoryService;
+import com.home_platform.registry.person.PersonRequest;
+import com.home_platform.registry.person.PersonService;
 import com.home_platform.registry.place.PlaceCreateRequest;
 import com.home_platform.registry.place.PlaceService;
 import com.home_platform.registry.placetype.PlaceTypeCreateRequest;
@@ -35,6 +37,9 @@ abstract class ItemTestData extends RegistryIT {
 	@Autowired
 	protected EntityHistory history;
 
+	@Autowired
+	protected PersonService people;
+
 	protected long type;
 
 	protected long room;
@@ -48,6 +53,12 @@ abstract class ItemTestData extends RegistryIT {
 	protected long place(Long parentId, String name) {
 		return this.places
 			.create(CTX_A, new PlaceCreateRequest(parentId, this.type, name, null, null, null, null, null, null))
+			.id();
+	}
+
+	protected long person(String fullName) {
+		return this.people
+			.create(CTX_A, new PersonRequest(fullName, null, null, null, null, null, null, null, null, null, null))
 			.id();
 	}
 

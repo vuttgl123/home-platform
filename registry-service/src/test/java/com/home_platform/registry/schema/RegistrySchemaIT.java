@@ -57,6 +57,7 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 				entry("reg_item.idx_reg_item_name", List.of("workspace_id", "name")),
 				entry("reg_item.uk_reg_item_code", List.of("workspace_id", "code")),
 				entry("reg_item.idx_reg_item_replaced_by", List.of("workspace_id", "replaced_by_item_id")),
+				entry("reg_item.idx_reg_item_owner", List.of("workspace_id", "owner_person_id", "removed_at", "name")),
 				entry("reg_entity_version.idx_reg_version_changed_at", List.of("workspace_id", "changed_at")));
 		expected.forEach((key, columns) -> {
 			String[] parts = key.split("\\.");
@@ -149,6 +150,16 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 		type(WS_A, 10, "HOTEL");
 		type(WS_B, 10, "HOTEL");
 		assertThatThrownBy(() -> type(WS_A, 11, "HOTEL")).isInstanceOf(DuplicateKeyException.class);
+	}
+
+	@Test
+	void itemOwnerFromAnotherWorkspaceIsRejected() {
+		type(WS_A, 10, "HOTEL");
+		place(WS_A, 100, null, 10, "/100/", "A");
+		person(WS_B, 500, "B");
+		assertThatThrownBy(() -> jdbc.update("INSERT INTO reg_item (workspace_id, id, place_id, owner_person_id, name, "
+				+ "created_by, updated_by) VALUES (?, 700, 100, 500, 'x', -1, -1)", WS_A))
+			.isInstanceOf(DataIntegrityViolationException.class);
 	}
 
 	@Test

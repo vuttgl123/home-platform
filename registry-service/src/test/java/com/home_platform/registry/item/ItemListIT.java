@@ -81,10 +81,64 @@ class ItemListIT extends ItemTestData {
 	}
 
 	@Test
+	void listsCurrentItemsOfAnOwnerByName() throws Exception {
+		long an = person("An");
+		long binh = person("Bình");
+		item("{\"placeId\": \"%d\", \"ownerPersonId\": \"%d\", \"name\": \"Tủ\"}".formatted(this.room, an));
+		item("{\"placeId\": \"%d\", \"ownerPersonId\": \"%d\", \"name\": \"Bàn\"}".formatted(this.room, an));
+		long removed = item("{\"placeId\": \"%d\", \"ownerPersonId\": \"%d\", \"name\": \"Ghế\"}".formatted(this.room, an));
+		action(removed, "remove", "{\"version\": 1}").andExpect(status().isOk());
+		long deleted = item("{\"placeId\": \"%d\", \"ownerPersonId\": \"%d\", \"name\": \"Kệ\"}".formatted(this.room, an));
+		this.mvc.perform(asA(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/items/" + deleted))
+			.param("version", "1")).andExpect(status().isNoContent());
+		item("{\"placeId\": \"%d\", \"ownerPersonId\": \"%d\", \"name\": \"Đèn\"}".formatted(this.room, binh));
+
+		this.mvc.perform(asA(get("/items").param("ownerId", String.valueOf(an))))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[*].name", contains("Bàn", "Tủ")))
+			.andExpect(jsonPath("$.items[0].ownerName").value("An"))
+			.andExpect(jsonPath("$.items[0].placeName").value("P101"));
+	}
+
+	@Test
+	void ownerListOfAnUnknownPersonIs404() throws Exception {
+		this.mvc.perform(asA(get("/items").param("ownerId", "999999"))).andExpect(status().isNotFound());
+	}
+
+	@Test
+	void everyListCarriesOwnerNames() throws Exception {
+		long an = person("An");
+		item("{\"placeId\": \"%d\", \"ownerPersonId\": \"%d\", \"name\": \"Tủ\"}".formatted(this.room, an));
+
+		this.mvc.perform(asA(get("/items").param("placeId", String.valueOf(this.room))))
+			.andExpect(jsonPath("$.items[0].ownerName").value("An"));
+	}
+
+	@Test
+	void ownedByUsesAnIndex() throws Exception {
+		long an = person("An");
+		item("{\"placeId\": \"%d\", \"ownerPersonId\": \"%d\", \"name\": \"Tủ\"}".formatted(this.room, an));
+		item(this.room, "Ghế");
+
+		var plan = this.jdbc.sql("EXPLAIN SELECT id FROM reg_item WHERE workspace_id = :ws AND deleted_at IS NULL "
+				+ "AND owner_person_id = :owner AND removed_at IS NULL ORDER BY name, id")
+			.param("ws", WS_A)
+			.param("owner", an)
+			.query()
+			.listOfRows();
+		org.assertj.core.api.Assertions.assertThat(plan).singleElement().satisfies(row -> {
+			org.assertj.core.api.Assertions.assertThat(row.get("type")).isNotEqualTo("ALL");
+			org.assertj.core.api.Assertions.assertThat(row.get("key")).isEqualTo("idx_reg_item_owner");
+		});
+	}
+
+	@Test
 	void exactlyOneFilter() throws Exception {
 		this.mvc.perform(asA(get("/items")))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.detail").value("Give exactly one of placeId, subtreeOf or categoryId"));
+			.andExpect(jsonPath("$.detail").value("Give exactly one of placeId, subtreeOf, categoryId or ownerId"));
+		this.mvc.perform(asA(get("/items").param("placeId", String.valueOf(this.room)).param("ownerId", "1")))
+			.andExpect(status().isBadRequest());
 		this.mvc.perform(asA(get("/items/search")))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.detail").value("Give exactly one of name or code"));

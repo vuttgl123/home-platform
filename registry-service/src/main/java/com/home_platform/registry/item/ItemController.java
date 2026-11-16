@@ -37,17 +37,22 @@ class ItemController {
 		this.mapper = mapper;
 	}
 
-	/** Đúng một trong ba: ở một địa điểm (chưa gỡ, hoặc đã gỡ với {@code removed=true}), trong cả cây con, theo nhóm. */
+	/**
+	 * Đúng một trong bốn: ở một địa điểm (chưa gỡ, hoặc đã gỡ với {@code removed=true}), trong cả cây
+	 * con, theo nhóm, của một người.
+	 */
 	@GetMapping
 	CursorPage<ItemResponse> list(WorkspaceContext ctx, @RequestParam(required = false) Long placeId,
 			@RequestParam(defaultValue = "false") boolean removed, @RequestParam(required = false) Long subtreeOf,
-			@RequestParam(required = false) Long categoryId, CursorRequest page) {
-		if (Stream.of(placeId, subtreeOf, categoryId).filter(Objects::nonNull).count() != 1) {
-			throw new BadRequestException("Give exactly one of placeId, subtreeOf or categoryId");
+			@RequestParam(required = false) Long categoryId, @RequestParam(required = false) Long ownerId,
+			CursorRequest page) {
+		if (Stream.of(placeId, subtreeOf, categoryId, ownerId).filter(Objects::nonNull).count() != 1) {
+			throw new BadRequestException("Give exactly one of placeId, subtreeOf, categoryId or ownerId");
 		}
 		CursorPage<ItemView> found = (placeId != null) ? this.service.atPlace(ctx.workspaceId(), placeId, removed, page)
 				: (subtreeOf != null) ? this.service.inSubtree(ctx.workspaceId(), subtreeOf, page)
-						: this.service.byCategory(ctx.workspaceId(), categoryId, page);
+						: (ownerId != null) ? this.service.ownedBy(ctx.workspaceId(), ownerId, page)
+								: this.service.byCategory(ctx.workspaceId(), categoryId, page);
 		return found.map(this.mapper::toResponse);
 	}
 
@@ -103,6 +108,13 @@ class ItemController {
 	ItemDetailResponse reissueCode(WorkspaceContext ctx, @PathVariable long id,
 			@Valid @RequestBody CodeReissueRequest request) {
 		return detail(ctx, this.service.reissueCode(ctx, id, request).id());
+	}
+
+	/** Đổi chủ; {@code ownerPersonId} trống là trả món về cho địa điểm. */
+	@PostMapping("/{id}/owner")
+	ItemDetailResponse changeOwner(WorkspaceContext ctx, @PathVariable long id,
+			@Valid @RequestBody ItemOwnerRequest request) {
+		return detail(ctx, this.service.changeOwner(ctx, id, request).id());
 	}
 
 	/** Đưa lại một món đã gỡ. */

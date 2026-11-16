@@ -24,6 +24,7 @@ import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.itemcategory.ItemCategory;
 import com.home_platform.registry.itemcategory.ItemCategoryService;
+import com.home_platform.registry.person.PersonService;
 import com.home_platform.registry.place.PlaceService;
 import com.home_platform.registry.support.BusinessDate;
 import org.springframework.dao.DuplicateKeyException;
@@ -53,11 +54,14 @@ public class ItemService {
 
 	private final CodeIssuer codes;
 
+	private final PersonService people;
+
 	ItemService(ItemRepository repository, PlaceService places, ItemCategoryService categories,
 			AttributeValidation attributeValidation, EntityHistory history, BusinessDate businessDate,
-			CodeIssuer codes) {
+			CodeIssuer codes, PersonService people) {
 		this.businessDate = businessDate;
 		this.codes = codes;
+		this.people = people;
 		this.repository = repository;
 		this.places = places;
 		this.categories = categories;
@@ -80,6 +84,9 @@ public class ItemService {
 			throw new BadRequestException("placeId is required");
 		}
 		this.places.getForShare(ctx.workspaceId(), request.placeId());
+		if (request.ownerPersonId() != null) {
+			this.people.getForUpdate(ctx.workspaceId(), request.ownerPersonId());
+		}
 		requireSettableStatus(request.status());
 		if (request.categoryId() != null) {
 			this.categories.requireActive(ctx.workspaceId(), request.categoryId());
@@ -87,8 +94,8 @@ public class ItemService {
 		Map<String, Object> attributes = validAttributes(ctx, request.categoryId(), request.attributes());
 		String code = issueCode(ctx, request.categoryId());
 		Item item = new Item(0, 0, request.placeId(), request.categoryId(), code, request.name(), request.quantity(),
-				request.unit(), request.status(), request.placedAt(), null, null, request.description(), attributes,
-				request.coverFileId(), null, 0, null, 0, 0, null);
+				request.unit(), request.status(), request.placedAt(), null, null, request.ownerPersonId(),
+				request.description(), attributes, request.coverFileId(), null, 0, null, 0, 0, null);
 		Item stored = insertWithCode(ctx, item);
 		record(ctx, stored, ChangeAction.CREATE, request.note());
 		return stored;
@@ -179,6 +186,35 @@ public class ItemService {
 			.withCoverFileId(request.coverFileId()));
 	}
 
+	/**
+	 * Đổi chủ; {@code ownerPersonId} trống là trả món về cho địa điểm. Chủ mới bằng chủ cũ thì không ghi gì.
+	 * @throws ConflictException nếu món đã gỡ hoặc {@code version} lệch
+	 * @throws NotFoundException nếu chủ mới không có hoặc đã xoá
+	 */
+	@Transactional
+	public Item changeOwner(WorkspaceContext ctx, long id, ItemOwnerRequest request) {
+		Item current = requireNotRemoved(get(ctx.workspaceId(), id));
+		if (current.version() != request.version()) {
+			throw ConflictException.versionConflict("Item", id);
+		}
+		if (Objects.equals(current.ownerPersonId(), request.ownerPersonId())) {
+			return current;
+		}
+		if (request.ownerPersonId() != null) {
+			this.people.getForUpdate(ctx.workspaceId(), request.ownerPersonId());
+		}
+		Item stored = this.repository.update(ctx, current.withOwnerPersonId(request.ownerPersonId()));
+		record(ctx, stored, ChangeAction.UPDATE, request.note());
+		return stored;
+	}
+
+	/** Món có chủ mà chủ đã bị xoá thì phải khôi phục người đó trước, như với địa điểm của món. */
+	private void requireLiveOwner(WorkspaceContext ctx, Item item) {
+		if (item.ownerPersonId() != null && this.people.findForUpdate(ctx.workspaceId(), item.ownerPersonId()).isEmpty()) {
+			throw new ConflictException("Restore person " + item.ownerPersonId() + " first");
+		}
+	}
+
 	/** Chuyển sang địa điểm khác chưa xoá; vị trí cũ xem được trong version trước. */
 	@Transactional
 	public Item move(WorkspaceContext ctx, long id, ItemMoveRequest request) {
@@ -208,9 +244,7 @@ public class ItemService {
 			throw ConflictException.versionConflict("Item", id);
 		}
 		LocalDate removedAt = removalDate(old, request.removedAt());
-		ItemRequest replacement = request.replacement();
-		Item fresh = create(ctx,
-				(replacement.placeId() != null) ? replacement : replacement.atPlace(old.placeId()));
+		Item fresh = create(ctx, request.replacement().inheriting(old));
 		Item removed = removeItem(ctx, old, request.version(), removedAt, fresh.id(),
 				"Replaced by item " + fresh.id());
 		return new ItemReplacement(removed, fresh);
@@ -235,6 +269,7 @@ public class ItemService {
 		if (this.places.findForShare(ctx.workspaceId(), current.placeId()).isEmpty()) {
 			throw new ConflictException("Restore place " + current.placeId() + " first");
 		}
+		requireLiveOwner(ctx, current);
 		Item stored = this.repository.update(ctx,
 				current.withVersion(request.version())
 					.withRemovedAt(null)
@@ -262,6 +297,9 @@ public class ItemService {
 			.orElseThrow(() -> NotFoundException.of("Item", id));
 		if (deleted.deletedAt() != null && this.places.findForShare(ctx.workspaceId(), deleted.placeId()).isEmpty()) {
 			throw new ConflictException("Restore place " + deleted.placeId() + " first");
+		}
+		if (deleted.deletedAt() != null) {
+			requireLiveOwner(ctx, deleted);
 		}
 		Item stored = this.repository.restore(ctx, id, request.version());
 		record(ctx, stored, ChangeAction.RESTORE, request.note());
@@ -337,6 +375,12 @@ public class ItemService {
 		return withViews(workspaceId, this.repository.inSubtree(workspaceId, rootPath, page));
 	}
 
+	/** Đồ chưa gỡ của một người. @throws NotFoundException nếu người đó không có hoặc đã xoá */
+	public CursorPage<ItemView> ownedBy(long workspaceId, long ownerPersonId, CursorRequest page) {
+		this.people.get(workspaceId, ownerPersonId);
+		return withViews(workspaceId, this.repository.ownedBy(workspaceId, ownerPersonId, page));
+	}
+
 	public CursorPage<ItemView> byCategory(long workspaceId, long categoryId, CursorRequest page) {
 		this.categories.get(workspaceId, categoryId);
 		return withViews(workspaceId, this.repository.byCategory(workspaceId, categoryId, page));
@@ -362,7 +406,7 @@ public class ItemService {
 		return new CursorPage<>(views(workspaceId, page.items()), page.nextCursor());
 	}
 
-	/** Gắn tên địa điểm và tên nhóm (lấy theo lô) vào từng món. */
+	/** Gắn tên địa điểm, tên nhóm và tên chủ (lấy theo lô) vào từng món. */
 	List<ItemView> views(long workspaceId, List<Item> items) {
 		Map<Long, String> placeNames = this.places.names(workspaceId,
 				items.stream().map(Item::placeId).distinct().toList());
@@ -372,9 +416,12 @@ public class ItemService {
 				categoryNames.put(category.id(), category.name());
 			}
 		}
+		List<Long> ownerIds = items.stream().map(Item::ownerPersonId).filter(Objects::nonNull).distinct().toList();
+		Map<Long, String> ownerNames = ownerIds.isEmpty() ? Map.of() : this.people.names(workspaceId, ownerIds);
 		return items.stream()
 			.map(item -> new ItemView(item, placeNames.get(item.placeId()),
-					(item.categoryId() != null) ? categoryNames.get(item.categoryId()) : null))
+					(item.categoryId() != null) ? categoryNames.get(item.categoryId()) : null,
+					(item.ownerPersonId() != null) ? ownerNames.get(item.ownerPersonId()) : null))
 			.toList();
 	}
 

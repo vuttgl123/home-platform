@@ -48,6 +48,24 @@ abstract class PersonTestData extends RegistryIT {
 		return this.history.get(WS_A, "PERSON", personId, versionNo);
 	}
 
+	/** Chèn bằng SQL một địa điểm và một món đồ của người này, có thể đã gỡ hoặc đã xoá. */
+	protected void ownedItem(long personId, boolean removed, boolean deleted) {
+		long type = this.ids.incrementAndGet();
+		long place = this.ids.incrementAndGet();
+		this.jdbc.sql("INSERT INTO reg_place_type (workspace_id, id, code, name) VALUES (:ws, :id, :code, 'T')")
+			.param("ws", WS_A).param("id", type).param("code", "T" + type).update();
+		this.jdbc.sql("""
+				INSERT INTO reg_place (workspace_id, id, place_type_id, path, name, created_by, updated_by)
+				VALUES (:ws, :id, :type, :path, 'P', :user, :user)""")
+			.param("ws", WS_A).param("id", place).param("type", type).param("path", "/" + place + "/")
+			.param("user", USER).update();
+		this.jdbc.sql("INSERT INTO reg_item (workspace_id, id, place_id, owner_person_id, name, status, removed_at, "
+				+ "deleted_at, created_by, updated_by) VALUES (:ws, :id, :place, :person, 'Đồ', :status, "
+				+ (removed ? "'2026-01-01'" : "NULL") + ", " + (deleted ? "UTC_TIMESTAMP(3)" : "NULL") + ", :user, :user)")
+			.param("ws", WS_A).param("id", this.ids.incrementAndGet()).param("place", place).param("person", personId)
+			.param("status", removed ? "REMOVED" : "IN_USE").param("user", USER).update();
+	}
+
 	/** Chèn bằng SQL một địa điểm và một dòng cư trú của người, ngày kết thúc {@code endDate} (có thể null). */
 	protected void occupancy(long personId, java.time.LocalDate start, java.time.LocalDate end) {
 		long type = this.ids.incrementAndGet();

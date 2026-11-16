@@ -223,6 +223,40 @@ class ConcurrentWritesIT extends CommittedDataIT {
 	}
 
 	@Test
+	void personDeleteSeesAnItemAssignedConcurrently() throws Exception {
+		long room = place(null, "P101");
+		long an = person("An");
+		OpenTransaction<Item> adding = holdOpen(() -> this.items.create(CTX, owned(room, an, "Tủ")));
+		Future<Void> deleting = inBackground(() -> {
+			this.people.delete(CTX, an, 1, null);
+			return null;
+		});
+		letItBlock();
+		adding.commit();
+
+		assertThatThrownBy(deleting::get).cause()
+			.isInstanceOfSatisfying(ConflictException.class, ex -> assertThat(ex.getBody().getDetail())
+				.contains("and 1 items"));
+		assertThat(this.people.get(WS, an).version()).isEqualTo(1);
+	}
+
+	@Test
+	void itemAssignedDuringAPersonDeleteIsRefused() throws Exception {
+		long room = place(null, "P101");
+		long an = person("An");
+		OpenTransaction<Void> deleting = holdOpen(() -> {
+			this.people.delete(CTX, an, 1, null);
+			return null;
+		});
+		Future<Item> adding = inBackground(() -> this.items.create(CTX, owned(room, an, "Tủ")));
+		letItBlock();
+		deleting.commit();
+
+		assertThatThrownBy(adding::get).cause().isInstanceOf(NotFoundException.class);
+		assertThat(rows("reg_item")).isZero();
+	}
+
+	@Test
 	void sameDocumentCreatedTogetherLeavesOnePerson() throws Exception {
 		OpenTransaction<Person> first = holdOpen(() -> this.people.create(CTX, withDocument("An")));
 		Future<Person> second = inBackground(() -> this.people.create(CTX, withDocument("Bình")));
@@ -278,8 +312,12 @@ class ConcurrentWritesIT extends CommittedDataIT {
 		return new OccupancyCreateRequest(placeId, personId, Relation.RESIDENT, this.businessDate.today(), null, null);
 	}
 
+	private static ItemRequest owned(long placeId, long ownerId, String name) {
+		return new ItemRequest(placeId, ownerId, null, name, null, null, null, null, null, null, null, null);
+	}
+
 	private static ItemRequest item(long placeId, String name) {
-		return new ItemRequest(placeId, null, name, null, null, null, null, null, null, null, null);
+		return new ItemRequest(placeId, null, null, name, null, null, null, null, null, null, null, null);
 	}
 
 }

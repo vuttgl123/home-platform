@@ -56,6 +56,13 @@ public class ItemRepository extends WorkspaceRepository<Item> {
 			.fetch(workspaceId, page);
 	}
 
+	/** Đồ chưa gỡ của một người, theo tên. Index (workspace_id, owner_person_id, removed_at, name). */
+	public CursorPage<Item> ownedBy(long workspaceId, long ownerPersonId, CursorRequest page) {
+		return keyset().where("owner_person_id = :ownerId AND removed_at IS NULL", Map.of("ownerId", ownerPersonId))
+			.orderBy("name")
+			.fetch(workspaceId, page);
+	}
+
 	/** Đồ chưa gỡ của một nhóm, theo tên. Index (workspace_id, category_id, name). */
 	public CursorPage<Item> byCategory(long workspaceId, long categoryId, CursorRequest page) {
 		return keyset().where("category_id = :categoryId AND removed_at IS NULL", Map.of("categoryId", categoryId))
