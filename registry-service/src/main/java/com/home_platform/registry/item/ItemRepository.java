@@ -63,11 +63,19 @@ public class ItemRepository extends WorkspaceRepository<Item> {
 			.fetch(workspaceId, page);
 	}
 
-	/** Đồ chưa gỡ của một nhóm, theo tên. Index (workspace_id, category_id, name). */
-	public CursorPage<Item> byCategory(long workspaceId, long categoryId, CursorRequest page) {
-		return keyset().where("category_id = :categoryId AND removed_at IS NULL", Map.of("categoryId", categoryId))
-			.orderBy("name")
-			.fetch(workspaceId, page);
+	/**
+	 * Đồ của cả không gian, theo tên. {@code status} trống: mọi món chưa gỡ (index (workspace_id, name));
+	 * có giá trị: đúng trạng thái đó (index (workspace_id, status, name)). {@code categoryId} khác null
+	 * thì chỉ món của nhóm đó (index (workspace_id, category_id, name)).
+	 */
+	public CursorPage<Item> all(long workspaceId, ItemStatus status, Long categoryId, CursorRequest page) {
+		var query = keyset();
+		query = (status == null) ? query.where("removed_at IS NULL", Map.of())
+				: query.where("status = :status", Map.of("status", status.name()));
+		if (categoryId != null) {
+			query = query.where("category_id = :categoryId", Map.of("categoryId", categoryId));
+		}
+		return query.orderBy("name").fetch(workspaceId, page);
 	}
 
 	/** Tên bắt đầu bằng, kể cả đồ đã gỡ; theo tên. Index (workspace_id, name). */

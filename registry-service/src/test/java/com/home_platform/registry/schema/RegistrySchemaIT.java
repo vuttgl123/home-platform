@@ -60,6 +60,10 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 				entry("reg_item.idx_reg_item_name", List.of("workspace_id", "name")),
 				entry("reg_item.uk_reg_item_code", List.of("workspace_id", "code")),
 				entry("reg_item.idx_reg_item_replaced_by", List.of("workspace_id", "replaced_by_item_id")),
+				entry("reg_item.idx_reg_item_status", List.of("workspace_id", "status", "name")),
+				entry("reg_item.idx_reg_item_deleted", List.of("workspace_id", "deleted_at")),
+				entry("reg_place.idx_reg_place_deleted", List.of("workspace_id", "deleted_at")),
+				entry("reg_person.idx_reg_person_deleted", List.of("workspace_id", "deleted_at")),
 				entry("reg_item.idx_reg_item_owner", List.of("workspace_id", "owner_person_id", "removed_at", "name")),
 				entry("reg_entity_version.idx_reg_version_changed_at", List.of("workspace_id", "changed_at")));
 		expected.forEach((key, columns) -> {

@@ -38,21 +38,25 @@ class ItemController {
 	}
 
 	/**
-	 * Đúng một trong bốn: ở một địa điểm (chưa gỡ, hoặc đã gỡ với {@code removed=true}), trong cả cây
-	 * con, theo nhóm, của một người.
+	 * Nhiều nhất một phạm vi: ở một địa điểm (chưa gỡ, hoặc đã gỡ với {@code removed=true}), trong cả
+	 * cây con, theo nhóm, của một người. Không có phạm vi là cả không gian. {@code status} chỉ đi được
+	 * với cả không gian hoặc với nhóm; trống là mọi món chưa gỡ.
 	 */
 	@GetMapping
 	CursorPage<ItemResponse> list(WorkspaceContext ctx, @RequestParam(required = false) Long placeId,
 			@RequestParam(defaultValue = "false") boolean removed, @RequestParam(required = false) Long subtreeOf,
 			@RequestParam(required = false) Long categoryId, @RequestParam(required = false) Long ownerId,
-			CursorRequest page) {
-		if (Stream.of(placeId, subtreeOf, categoryId, ownerId).filter(Objects::nonNull).count() != 1) {
-			throw new BadRequestException("Give exactly one of placeId, subtreeOf, categoryId or ownerId");
+			@RequestParam(required = false) ItemStatus status, CursorRequest page) {
+		if (Stream.of(placeId, subtreeOf, categoryId, ownerId).filter(Objects::nonNull).count() > 1) {
+			throw new BadRequestException("Give at most one of placeId, subtreeOf, categoryId or ownerId");
+		}
+		if (status != null && (placeId != null || subtreeOf != null || ownerId != null)) {
+			throw new BadRequestException("status can only be combined with categoryId or no scope");
 		}
 		CursorPage<ItemView> found = (placeId != null) ? this.service.atPlace(ctx.workspaceId(), placeId, removed, page)
 				: (subtreeOf != null) ? this.service.inSubtree(ctx.workspaceId(), subtreeOf, page)
 						: (ownerId != null) ? this.service.ownedBy(ctx.workspaceId(), ownerId, page)
-								: this.service.byCategory(ctx.workspaceId(), categoryId, page);
+								: this.service.all(ctx.workspaceId(), status, categoryId, page);
 		return found.map(this.mapper::toResponse);
 	}
 

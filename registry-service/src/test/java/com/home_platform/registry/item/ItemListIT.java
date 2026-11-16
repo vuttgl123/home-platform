@@ -133,15 +133,108 @@ class ItemListIT extends ItemTestData {
 	}
 
 	@Test
-	void exactlyOneFilter() throws Exception {
+	void wholeWorkspaceListsCurrentItemsByName() throws Exception {
+		long other = place(null, "P102");
+		item(this.room, "Tủ");
+		item(other, "Bàn");
+		long removed = item(this.room, "Ghế");
+		action(removed, "remove", "{\"version\": 1}").andExpect(status().isOk());
+		long deleted = item(other, "Kệ");
+		this.mvc.perform(asA(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/items/" + deleted))
+			.param("version", "1")).andExpect(status().isNoContent());
+
 		this.mvc.perform(asA(get("/items")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[*].name", contains("Bàn", "Tủ")))
+			.andExpect(jsonPath("$.items[0].placeName").value("P102"));
+	}
+
+	@Test
+	void statusFilterNarrowsTheWholeWorkspace() throws Exception {
+		item("{\"placeId\": \"%d\", \"name\": \"Quạt\", \"status\": \"BROKEN\"}".formatted(this.room));
+		item(this.room, "Tủ");
+
+		this.mvc.perform(asA(get("/items").param("status", "BROKEN"))).andExpect(jsonPath("$.items[*].name", contains("Quạt")));
+	}
+
+	@Test
+	void removedStatusListsRemovedItems() throws Exception {
+		long removed = item(this.room, "Ghế");
+		action(removed, "remove", "{\"version\": 1}").andExpect(status().isOk());
+		item(this.room, "Tủ");
+
+		this.mvc.perform(asA(get("/items").param("status", "REMOVED"))).andExpect(jsonPath("$.items[*].name", contains("Ghế")));
+	}
+
+	@Test
+	void statusCombinesWithCategory() throws Exception {
+		long tv = category("Tivi");
+		item("{\"placeId\": \"%d\", \"categoryId\": \"%d\", \"name\": \"Tivi hỏng\", \"status\": \"BROKEN\"}".formatted(this.room, tv));
+		item("{\"placeId\": \"%d\", \"categoryId\": \"%d\", \"name\": \"Tivi tốt\"}".formatted(this.room, tv));
+		item("{\"placeId\": \"%d\", \"name\": \"Quạt hỏng\", \"status\": \"BROKEN\"}".formatted(this.room));
+
+		this.mvc.perform(asA(get("/items").param("status", "BROKEN").param("categoryId", String.valueOf(tv))))
+			.andExpect(jsonPath("$.items[*].name", contains("Tivi hỏng")));
+	}
+
+	@Test
+	void statusWithAPlaceIs400() throws Exception {
+		this.mvc.perform(asA(get("/items").param("placeId", String.valueOf(this.room)).param("status", "BROKEN")))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.detail").value("Give exactly one of placeId, subtreeOf, categoryId or ownerId"));
+			.andExpect(jsonPath("$.detail").value("status can only be combined with categoryId or no scope"));
+	}
+
+	@Test
+	void twoScopesAre400() throws Exception {
 		this.mvc.perform(asA(get("/items").param("placeId", String.valueOf(this.room)).param("ownerId", "1")))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("Give at most one of placeId, subtreeOf, categoryId or ownerId"));
 		this.mvc.perform(asA(get("/items/search")))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.detail").value("Give exactly one of name or code"));
+	}
+
+	@Test
+	void unknownStatusIs400() throws Exception {
+		this.mvc.perform(asA(get("/items").param("status", "LOST"))).andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void wholeWorkspacePagesWithoutSkippingOrRepeating() throws Exception {
+		for (String name : new String[] { "a", "b", "c", "d", "e" }) {
+			item(this.room, name);
+		}
+		String first = this.mvc.perform(asA(get("/items").param("limit", "2"))).andReturn().getResponse().getContentAsString();
+		String cursor = com.jayway.jsonpath.JsonPath.read(first, "$.nextCursor");
+		String second = this.mvc.perform(asA(get("/items").param("limit", "2").param("cursor", cursor)))
+			.andReturn().getResponse().getContentAsString();
+		String cursor2 = com.jayway.jsonpath.JsonPath.read(second, "$.nextCursor");
+		this.mvc.perform(asA(get("/items").param("limit", "2").param("cursor", cursor2)))
+			.andExpect(jsonPath("$.items[*].name", contains("e")))
+			.andExpect(jsonPath("$.nextCursor").doesNotExist());
+		org.assertj.core.api.Assertions.assertThat((java.util.List<String>) com.jayway.jsonpath.JsonPath.read(second, "$.items[*].name"))
+			.containsExactly("c", "d");
+	}
+
+	@Test
+	void otherWorkspaceSeesNothing() throws Exception {
+		item(this.room, "Tủ");
+		this.mvc.perform(asB(get("/items"))).andExpect(jsonPath("$.items.length()").value(0));
+	}
+
+	@Test
+	void wholeWorkspaceListsUseAnIndex() throws Exception {
+		long tv = category("Tivi");
+		item("{\"placeId\": \"%d\", \"categoryId\": \"%d\", \"name\": \"Tivi\", \"status\": \"BROKEN\"}".formatted(this.room, tv));
+		item(this.room, "Tủ");
+		for (String where : new String[] { "removed_at IS NULL", "status = 'BROKEN'", "category_id = " + tv + " AND removed_at IS NULL" }) {
+			var plan = this.jdbc.sql("EXPLAIN SELECT id FROM reg_item WHERE workspace_id = :ws AND deleted_at IS NULL AND "
+					+ where + " ORDER BY name, id LIMIT 21")
+				.param("ws", WS_A)
+				.query()
+				.listOfRows();
+			org.assertj.core.api.Assertions.assertThat(plan.get(0).get("type")).as(where).isNotEqualTo("ALL");
+		}
 	}
 
 }

@@ -381,9 +381,15 @@ public class ItemService {
 		return withViews(workspaceId, this.repository.ownedBy(workspaceId, ownerPersonId, page));
 	}
 
-	public CursorPage<ItemView> byCategory(long workspaceId, long categoryId, CursorRequest page) {
-		this.categories.get(workspaceId, categoryId);
-		return withViews(workspaceId, this.repository.byCategory(workspaceId, categoryId, page));
+	/**
+	 * Đồ của cả không gian (hoặc của một nhóm), theo tên; xem {@link ItemRepository#all}.
+	 * @throws NotFoundException nếu nhóm không có
+	 */
+	public CursorPage<ItemView> all(long workspaceId, ItemStatus status, Long categoryId, CursorRequest page) {
+		if (categoryId != null) {
+			this.categories.get(workspaceId, categoryId);
+		}
+		return withViews(workspaceId, this.repository.all(workspaceId, status, categoryId, page));
 	}
 
 	public CursorPage<ItemView> searchByName(long workspaceId, String prefix, CursorRequest page) {
