@@ -96,6 +96,15 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
       const name = new URL(request.url).searchParams.get('name') ?? ''
       return HttpResponse.json(page([...places.values()].filter((p) => p.name.startsWith(name)).map(searchResult)))
     }),
+    http.get('/api/registry/places/:id/subtree', ({ params }) => {
+      const id = params.id as string
+      const descendants = [...places.values()]
+        .filter((p) => chain(p.id).some((ancestor) => ancestor.id === id))
+        .map((p) => ({ p, path: [...chain(p.id), p].map((node) => node.id).join('/') }))
+        .sort((a, b) => a.path.localeCompare(b.path))
+        .map(({ p }) => summary(p))
+      return HttpResponse.json(page(descendants))
+    }),
     http.get('/api/registry/places/:id/children', ({ params }) =>
       HttpResponse.json(page(childrenOf(params.id as string))),
     ),

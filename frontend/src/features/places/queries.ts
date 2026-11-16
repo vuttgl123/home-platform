@@ -9,6 +9,7 @@ import {
   deletePlace,
   getPlace,
   listChildren,
+  listSubtree,
   listTopLevel,
   movePlace,
   reissuePlaceCode,
@@ -34,6 +35,8 @@ export const placeKeys = {
   children: (ws: string, parentId: string | null) => ['places', ws, 'children', parentId ?? 'root'] as const,
   details: (ws: string) => ['places', ws, 'detail'] as const,
   detail: (ws: string, id: string) => ['places', ws, 'detail', id] as const,
+  subtrees: (ws: string) => ['places', ws, 'subtree'] as const,
+  subtree: (ws: string, placeId: string) => ['places', ws, 'subtree', placeId] as const,
   searches: (ws: string) => ['places', ws, 'search'] as const,
   search: (ws: string, name: string) => ['places', ws, 'search', name] as const,
 }
@@ -53,6 +56,11 @@ export function useChildren(
     fetchPage: (cursor) => (parentId == null ? listTopLevel(ws, cursor) : listChildren(ws, parentId, cursor)),
     enabled: options.enabled,
   })
+}
+
+/** Mọi hậu duệ của một địa điểm, tải dần; chỉ tải khi `enabled`. */
+export function useSubtree(ws: string, placeId: string, enabled: boolean): CursorList<PlaceSummary> {
+  return useCursorList({ queryKey: placeKeys.subtree(ws, placeId), fetchPage: (cursor) => listSubtree(ws, placeId, cursor), enabled })
 }
 
 /** Một địa điểm đầy đủ. `id` trống hoặc sai dạng thì không gọi. */
@@ -110,6 +118,7 @@ export function refreshAfterWrite(
   // mang `hasChildren`, có thể vừa đổi. Chỉ danh sách đang hiện mới tải lại.
   void queryClient.invalidateQueries({ queryKey: placeKeys.lists(ws) })
   void queryClient.invalidateQueries({ queryKey: placeKeys.searches(ws) })
+  void queryClient.invalidateQueries({ queryKey: placeKeys.subtrees(ws) })
   if (scope === 'descendants') {
     void queryClient.invalidateQueries({ queryKey: placeKeys.details(ws), predicate: (query) => !isOwnDetail(query.queryKey) })
   }
@@ -152,6 +161,7 @@ export function useDeletePlace(ws: string) {
       // Như `refreshAfterWrite`: cha có thể vừa thành lá.
       void queryClient.invalidateQueries({ queryKey: placeKeys.lists(ws) })
       void queryClient.invalidateQueries({ queryKey: placeKeys.searches(ws) })
+      void queryClient.invalidateQueries({ queryKey: placeKeys.subtrees(ws) })
     },
   })
 }

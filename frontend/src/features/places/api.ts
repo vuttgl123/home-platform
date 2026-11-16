@@ -22,6 +22,14 @@ export async function listChildren(ws: string, parentId: string, cursor?: string
   return (await unwrap(call)) as CursorPage<PlaceSummary>
 }
 
+/** Mọi hậu duệ chưa xoá của một địa điểm (không gồm nó), cha luôn đứng trước con. */
+export async function listSubtree(ws: string, placeId: string, cursor?: string): Promise<CursorPage<PlaceSummary>> {
+  const call = registry.GET('/places/{id}/subtree', {
+    params: { header: workspaceHeaders(ws), path: { id: placeId }, query: { cursor, limit: TREE_PAGE_SIZE } },
+  })
+  return (await unwrap(call)) as CursorPage<PlaceSummary>
+}
+
 /** Các địa điểm có tên bắt đầu bằng `name`, ở mọi cấp, kèm tổ tiên của từng cái. */
 export async function searchPlaces(ws: string, name: string, cursor?: string): Promise<CursorPage<PlaceSearchResult>> {
   const call = registry.GET('/places/search', {
