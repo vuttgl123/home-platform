@@ -10,6 +10,8 @@ export type TreeState = {
   selected: PlaceDetail | undefined
   expanded: ReadonlySet<string>
   toggle: (placeId: string) => void
+  /** Dòng duy nhất nằm trong thứ tự Tab (xem `useTreeKeyboard`). */
+  tabStopId: string | null
 }
 
 export const TreeContext = createContext<TreeState | null>(null)

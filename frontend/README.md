@@ -81,6 +81,14 @@ Luật phụ thuộc:
 - `features/` không nhập gì từ `app/`; `api/`, `components/`, `lib/` không nhập gì từ `features/` hay `app/`.
 - `components/ui` không biết gì về nghiệp vụ.
 
+## Cây địa điểm
+
+Cây theo mẫu ARIA "tree": Tab vào cây rồi dùng ↑ ↓ để đi giữa các dòng đang hiện, → mở nhánh (lần
+nữa thì xuống con đầu), ← đóng nhánh (lần nữa thì lên cha), Home và End tới dòng đầu, dòng cuối, Enter
+mở trang của dòng, gõ một chữ để nhảy tới dòng kế có tên bắt đầu bằng chữ đó (không phân biệt dấu).
+Chỉ một dòng nằm trong thứ tự Tab (`useTreeKeyboard`). Một nhánh chỉ được tải khi mở, và nút mà
+backend báo `hasChildren: false` không có mũi tên.
+
 ## Sau một lệnh ghi
 
 Hook ghi tự làm mới cache. Với địa điểm, `refreshAfterWrite` (`features/places/queries.ts`) đặt chi
@@ -88,10 +96,10 @@ tiết bằng response rồi làm cũ:
 
 | Lệnh | Làm cũ |
 |---|---|
-| Thêm | danh sách con của cha, kết quả tìm kiếm |
+| Thêm | mọi danh sách con (cha có thể vừa có con đầu tiên), kết quả tìm kiếm |
 | Sửa, đặt hoặc gỡ địa chỉ | như trên, cộng mọi trang chi tiết khác (đường dẫn tổ tiên và địa chỉ thừa hưởng của con cháu) |
 | Di chuyển | cả cây của không gian |
-| Xoá | danh sách con của cha, kết quả tìm kiếm; rời trang rồi mới bỏ chi tiết khỏi cache |
+| Xoá | mọi danh sách con (cha có thể vừa thành lá), kết quả tìm kiếm; rời trang rồi mới bỏ chi tiết khỏi cache |
 
 Lỗi 409 "đã có người sửa" (`ApiError.isVersionConflict`) hiện `VersionConflictAlert`: form giữ chữ đã
 nhập, "Tải bản mới" lấy bản mới nhất và dùng `version` của nó.

@@ -12,6 +12,7 @@ import { PlaceFormDialog } from './PlaceFormDialog'
 import { PlaceSearchResults } from './PlaceSearchResults'
 import { PlaceTreeRows } from './PlaceTreeNode'
 import { TreeContext, type TreeState } from './treeContext'
+import { useTreeKeyboard } from './useTreeKeyboard'
 
 /**
  * Cây địa điểm của một không gian, nằm ở thanh bên.
@@ -49,9 +50,11 @@ export function PlaceTree({ workspaceId }: { workspaceId: string }) {
     })
   }, [])
 
+  const { tabStopId, setRoot, onKeyDown, onFocus } = useTreeKeyboard(selectedId, toggle)
+
   const tree = useMemo<TreeState>(
-    () => ({ ws: workspaceId, selectedId, selected, expanded, toggle }),
-    [workspaceId, selectedId, selected, expanded, toggle],
+    () => ({ ws: workspaceId, selectedId, selected, expanded, toggle, tabStopId }),
+    [workspaceId, selectedId, selected, expanded, toggle, tabStopId],
   )
 
   const [term, setTerm] = useState('')
@@ -86,9 +89,14 @@ export function PlaceTree({ workspaceId }: { workspaceId: string }) {
             </div>
           ) : (
             <>
-              {/* Danh sách lồng nhau thường, không phải role="tree": cây không cài phím mũi tên của mẫu đó. */}
-              <ul>
-                <PlaceTreeRows parentId={null} list={topLevel} />
+              <ul
+                ref={setRoot}
+                role="tree"
+                aria-label="Địa điểm"
+                onKeyDown={onKeyDown}
+                onFocus={onFocus}
+              >
+                <PlaceTreeRows parentId={null} list={topLevel} level={1} />
               </ul>
               {topLevel.isLoaded && (
                 <Button

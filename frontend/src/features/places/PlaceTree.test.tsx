@@ -212,8 +212,7 @@ test('toggleReportsWhetherItIsOpen', async () => {
   await user.click(toggle)
 
   expect(await (await findTree()).findByRole('button', { name: 'Đóng Toà A' })).toHaveAttribute('aria-expanded', 'true')
-  // Cây không cài phím mũi tên của mẫu ARIA "tree", nên không tự nhận là một "tree".
-  expect(screen.queryByRole('tree')).not.toBeInTheDocument()
+  expect(screen.getByRole('treeitem', { name: 'Toà A' })).toHaveAttribute('aria-expanded', 'true')
 })
 
 test('leavesHaveNoArrowBeforeLoading', async () => {
