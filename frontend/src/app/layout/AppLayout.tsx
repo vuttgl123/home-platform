@@ -1,6 +1,6 @@
 import { ActivityIcon, TagsIcon, UsersIcon, type LucideIcon } from 'lucide-react'
 import { useEffect } from 'react'
-import { Link, Outlet, useLocation } from 'react-router'
+import { Link, NavLink, Outlet } from 'react-router'
 
 import { ErrorState } from '@/components/common/ErrorState'
 import { Button } from '@/components/ui/button'
@@ -46,7 +46,6 @@ export function AppLayout() {
   const workspaces = useMyWorkspaces()
   const me = useCurrentUser()
   const { signOut } = useSession()
-  const { pathname } = useLocation()
 
   // Id đã lưu không còn ứng với người dùng nào (database đã đổi): quay về chọn người dùng.
   const userIsGone = me.error?.isNotFound === true
@@ -114,10 +113,8 @@ export function AppLayout() {
           <SidebarMenu>
             {SECTIONS.map(({ path, label, icon: Icon }) => (
               <SidebarMenuItem key={path}>
-                <SidebarMenuButton
-                  isActive={pathname.startsWith(`${base}/${path}`)}
-                  render={<Link to={`${base}/${path}`} />}
-                >
+                {/* NavLink đặt aria-current="page" khi đang ở trang đó (hoặc trang con của nó). */}
+                <SidebarMenuButton render={<NavLink to={`${base}/${path}`} />}>
                   <Icon aria-hidden="true" />
                   <span>{label}</span>
                 </SidebarMenuButton>

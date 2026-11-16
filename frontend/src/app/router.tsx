@@ -1,5 +1,6 @@
 import type { RouteObject } from 'react-router'
 
+import { PeoplePage } from '@/features/people'
 import { PlacePage } from '@/features/places'
 
 import { AppLayout } from './layout/AppLayout'
@@ -24,7 +25,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <WorkspaceHomePage /> },
           { path: 'places/:placeId', element: <PlacePage /> },
-          { path: 'people', element: <ComingSoonPage /> },
+          { path: 'people', element: <PeoplePage /> },
           { path: 'catalog', element: <ComingSoonPage /> },
           { path: 'activity', element: <ComingSoonPage /> },
           { path: '*', element: <NotFoundPage /> },
