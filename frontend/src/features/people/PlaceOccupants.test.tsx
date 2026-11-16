@@ -109,13 +109,13 @@ test('addsANewPersonInOneGo', async () => {
 
   await user.type(form.getByRole('searchbox', { name: 'Tìm người' }), 'Phạm Mới')
   await user.click(await form.findByRole('button', { name: 'Thêm người mới “Phạm Mới”' }))
-  await user.selectOptions(form.getByRole('combobox', { name: 'Quan hệ' }), 'Chủ')
+  await user.selectOptions(form.getByRole('combobox', { name: 'Quan hệ' }), 'Khách')
   await user.click(form.getByRole('button', { name: 'Thêm' }))
 
   expect(await (await group('Đang ở')).findByRole('link', { name: 'Phạm Mới' })).toBeInTheDocument()
   expect(backend.writes.map((write) => [write.path, write.body])).toEqual([
     ['/people', { fullName: 'Phạm Mới' }],
-    ['/occupancies', { placeId: '301', personId: '8000', relation: 'OWNER', startDate: TODAY }],
+    ['/occupancies', { placeId: '301', personId: '8000', relation: 'GUEST', startDate: TODAY }],
   ])
 })
 
@@ -256,4 +256,27 @@ test('personPageAddsAStayWithThePlacePicker', async () => {
   await waitFor(() => expect(backend.writes).toHaveLength(1))
   expect(backend.writes[0].body).toEqual({ placeId: '301', personId: '55', relation: 'RESIDENT', startDate: TODAY })
   expect(requests).toContain('GET /api/registry/places/search')
+})
+
+test('newOccupancyCannotBeOwner', async () => {
+  setUp()
+  const { form } = await openAdd()
+
+  const options = within(form.getByRole('combobox', { name: 'Quan hệ' })).getAllByRole('option')
+  expect(options.map((option) => option.textContent)).not.toContain('Chủ')
+})
+
+test('editingAnOwnerRowKeepsTheOwnerOption', async () => {
+  const backend = setUp([{ id: '1', personId: '55', placeId: '301', startDate: '2026-01-01', relation: 'OWNER' }])
+  const { user } = renderApp({ route: '/w/7/places/301?tab=people', userId: '42' })
+  await user.click(await (await group('Đang ở')).findByRole('button', { name: 'Thao tác với Nguyễn An' }))
+  await user.click(await screen.findByRole('menuitem', { name: 'Sửa' }))
+  const form = within(await screen.findByRole('dialog', { name: 'Sửa cư trú' }))
+
+  expect(form.getByRole('combobox', { name: 'Quan hệ' })).toHaveValue('OWNER')
+  await user.type(form.getByRole('textbox', { name: 'Ghi chú' }), 'vẫn ở')
+  await user.click(form.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).toMatchObject({ relation: 'OWNER', note: 'vẫn ở' })
 })

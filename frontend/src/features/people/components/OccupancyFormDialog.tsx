@@ -16,10 +16,11 @@ import { PlacePicker, type PlaceChoice } from '@/features/places'
 import { todayInBusinessZone } from '@/lib/dates'
 
 import { RELATION_LABEL } from '../labels'
-import { refreshOccupancies, useCreateOccupancy, useCreatePerson, useUpdateOccupancy } from '../queries'
-import type { Occupancy, PersonDetail, PersonSummary } from '../types'
+import { refreshOccupancies, useCreateOccupancy, useUpdateOccupancy } from '../queries'
+import type { Occupancy, Relation } from '../types'
 import { occupancyFormSchema, STALE_ROW, type OccupancyFormValues } from './occupancyForm'
-import { PersonPicker } from './PersonPicker'
+import { PersonChoiceField } from './PersonChoiceField'
+import { usePersonChoice } from './personChoice'
 
 type Mode =
   | { mode: 'create'; place?: { id: string; name: string }; person?: { id: string; fullName: string } }
@@ -57,10 +58,7 @@ function OccupancyForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void
   const editing = mode.mode === 'edit' ? mode.occupancy : null
   const fixedPlace = mode.mode === 'create' ? mode.place : null
   const fixedPerson = mode.mode === 'create' ? mode.person : null
-  const [person, setPerson] = useState<PersonSummary | null>(null)
-  const [newPersonName, setNewPersonName] = useState<string | null>(null)
-  // Hồ sơ đã tạo cho người mới: bấm lại sau một lỗi thì dùng lại, không tạo lần hai.
-  const [createdPerson, setCreatedPerson] = useState<PersonDetail | null>(null)
+  const person = usePersonChoice(ws)
   const [place, setPlace] = useState<PlaceChoice | null>(null)
   const [formErrors, setFormErrors] = useState<string[]>([])
   const form = useForm<OccupancyFormValues>({
@@ -69,12 +67,15 @@ function OccupancyForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void
       ? { relation: editing.relation, startDate: editing.startDate, endDate: editing.endDate ?? '', note: editing.note ?? '' }
       : { relation: 'RESIDENT', startDate: todayInBusinessZone(), endDate: '', note: '' },
   })
-  const createPerson = useCreatePerson(ws)
   const create = useCreateOccupancy(ws)
   const update = useUpdateOccupancy(ws)
   const relationId = useId()
   const noteId = useId()
-  const pending = createPerson.isPending || create.isPending || update.isPending
+  const pending = person.isCreating || create.isPending || update.isPending
+  // "Chủ" ghi ở phần Sở hữu; chỉ dòng cư trú cũ đang là "Chủ" còn giữ lựa chọn này khi sửa.
+  const relations = (Object.keys(RELATION_LABEL) as Relation[]).filter(
+    (relation) => relation !== 'OWNER' || editing?.relation === 'OWNER',
+  )
 
   function fail(error: unknown) {
     const apiError = error as ApiError
@@ -88,12 +89,7 @@ function OccupancyForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void
 
   async function personIdForCreate(): Promise<string | null> {
     if (fixedPerson) return fixedPerson.id
-    if (person) return person.id
-    if (newPersonName == null) return null
-    if (createdPerson) return createdPerson.id
-    const made = await createPerson.mutateAsync({ fullName: newPersonName })
-    setCreatedPerson(made)
-    return made.id
+    return (await person.resolve())?.id ?? null
   }
 
   const submit = form.handleSubmit(async (values) => {
@@ -114,7 +110,7 @@ function OccupancyForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void
       const placeId = fixedPlace?.id ?? (place?.kind === 'place' ? place.place.id : null)
       const missing = [
         placeId == null && 'Chọn một địa điểm',
-        !fixedPerson && !person && newPersonName == null && 'Chọn một người, hoặc thêm người mới',
+        !fixedPerson && person.choice == null && 'Chọn một người, hoặc thêm người mới',
       ].filter((message): message is string => Boolean(message))
       if (missing.length > 0) {
         setFormErrors(missing)
@@ -138,26 +134,7 @@ function OccupancyForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void
         </p>
       )}
       {fixedPlace && <p className="text-sm text-muted-foreground">Tại {fixedPlace.name}</p>}
-      {mode.mode === 'create' && !fixedPerson && (
-        <Field>
-          <FieldLabel>Người</FieldLabel>
-          {newPersonName != null ? (
-            <div className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
-              <span>
-                Người mới: <span className="font-medium">{newPersonName}</span>
-                <span className="block text-xs text-muted-foreground">Hồ sơ được tạo khi bấm Thêm; bổ sung thông tin sau.</span>
-              </span>
-              {!createdPerson && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => setNewPersonName(null)}>
-                  Đổi
-                </Button>
-              )}
-            </div>
-          ) : (
-            <PersonPicker ws={ws} value={person} onChange={setPerson} onCreateNew={setNewPersonName} />
-          )}
-        </Field>
-      )}
+      {mode.mode === 'create' && !fixedPerson && <PersonChoiceField ws={ws} state={person} />}
       {mode.mode === 'create' && !fixedPlace && (
         <Field>
           <FieldLabel>Địa điểm</FieldLabel>
@@ -167,9 +144,9 @@ function OccupancyForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void
       <Field>
         <FieldLabel htmlFor={relationId}>Quan hệ</FieldLabel>
         <NativeSelect id={relationId} className="w-full" {...form.register('relation')}>
-          {Object.entries(RELATION_LABEL).map(([value, label]) => (
-            <NativeSelectOption key={value} value={value}>
-              {label}
+          {relations.map((relation) => (
+            <NativeSelectOption key={relation} value={relation}>
+              {RELATION_LABEL[relation]}
             </NativeSelectOption>
           ))}
         </NativeSelect>

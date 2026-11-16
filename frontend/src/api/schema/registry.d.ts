@@ -8,7 +8,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -24,7 +24,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -43,7 +43,7 @@ export interface paths {
         get?: never;
         put: operations["put"];
         post?: never;
-        delete: operations["delete_6"];
+        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -88,9 +88,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
-        post: operations["create_6"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -104,8 +104,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
-        put: operations["update_6"];
+        get: operations["get_7"];
+        put: operations["update_7"];
         post?: never;
         delete?: never;
         options?: never;
@@ -152,9 +152,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
-        post: operations["create_5"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -168,10 +168,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_5"];
-        put: operations["update_5"];
+        get: operations["get_6"];
+        put: operations["update_6"];
         post?: never;
-        delete: operations["delete_5"];
+        delete: operations["delete_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -216,9 +216,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -232,10 +232,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
-        put: operations["update_4"];
+        get: operations["get_5"];
+        put: operations["update_5"];
         post?: never;
-        delete: operations["delete_4"];
+        delete: operations["delete_5"];
         options?: never;
         head?: never;
         patch?: never;
@@ -424,6 +424,54 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get: operations["list_3"];
+        put?: never;
+        post: operations["create_4"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/occupancies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_4"];
+        put: operations["update_4"];
+        post?: never;
+        delete: operations["delete_4"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/occupancies/{id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["end_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ownerships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get: operations["list_2"];
         put?: never;
         post: operations["create_3"];
@@ -433,7 +481,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/occupancies/{id}": {
+    "/ownerships/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -449,7 +497,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/occupancies/{id}/end": {
+    "/ownerships/{id}/end": {
         parameters: {
             query?: never;
             header?: never;
@@ -459,6 +507,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["end"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ownerships/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transfer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -993,6 +1057,10 @@ export interface components {
             items?: components["schemas"]["OccupancyResponse"][];
             nextCursor?: string;
         };
+        CursorPageOwnershipResponse: {
+            items?: components["schemas"]["OwnershipResponse"][];
+            nextCursor?: string;
+        };
         CursorPagePersonResponse: {
             items?: components["schemas"]["PersonResponse"][];
             nextCursor?: string;
@@ -1301,6 +1369,71 @@ export interface components {
             startDate: string;
             /** Format: date */
             endDate?: string;
+            note?: string;
+        };
+        OwnershipCreateRequest: {
+            placeId: string;
+            personId: string;
+            sharePercent?: number;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate?: string;
+            documentNo?: string;
+            note?: string;
+        };
+        OwnershipEndRequest: {
+            /** Format: int32 */
+            version: number;
+            /** Format: date */
+            endDate?: string;
+        };
+        OwnershipResponse: {
+            id?: string;
+            placeId?: string;
+            placeName?: string;
+            personId?: string;
+            personFullName?: string;
+            sharePercent?: number;
+            /** Format: date */
+            startDate?: string;
+            /** Format: date */
+            endDate?: string;
+            /** @enum {string} */
+            status?: "CURRENT" | "UPCOMING" | "PAST";
+            documentNo?: string;
+            note?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            createdBy?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            updatedBy?: string;
+            /** Format: int32 */
+            version?: number;
+        };
+        OwnershipTransferRequest: {
+            /** Format: int32 */
+            version: number;
+            toPersonId: string;
+            /** Format: date */
+            transferDate?: string;
+            documentNo?: string;
+            note?: string;
+        };
+        OwnershipTransferResponse: {
+            ended?: components["schemas"]["OwnershipResponse"];
+            started?: components["schemas"]["OwnershipResponse"];
+        };
+        OwnershipUpdateRequest: {
+            /** Format: int32 */
+            version: number;
+            sharePercent?: number;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate?: string;
+            documentNo?: string;
             note?: string;
         };
         PersonDetailResponse: {
@@ -1642,7 +1775,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_7: {
+    list_8: {
         parameters: {
             query?: {
                 entityType?: string;
@@ -1682,7 +1815,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: never;
             header: {
@@ -1757,7 +1890,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
+    delete_7: {
         parameters: {
             query?: never;
             header: {
@@ -1860,7 +1993,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query: {
                 target: "PLACE" | "PERSON" | "ITEM";
@@ -1897,7 +2030,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_7: {
         parameters: {
             query?: never;
             header: {
@@ -1935,7 +2068,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header: {
@@ -1971,7 +2104,7 @@ export interface operations {
             };
         };
     };
-    update_6: {
+    update_7: {
         parameters: {
             query?: never;
             header: {
@@ -2083,7 +2216,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: never;
             header: {
@@ -2117,7 +2250,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_6: {
         parameters: {
             query?: never;
             header: {
@@ -2155,7 +2288,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header: {
@@ -2191,7 +2324,7 @@ export interface operations {
             };
         };
     };
-    update_5: {
+    update_6: {
         parameters: {
             query?: never;
             header: {
@@ -2231,7 +2364,7 @@ export interface operations {
             };
         };
     };
-    delete_5: {
+    delete_6: {
         parameters: {
             query?: never;
             header: {
@@ -2337,7 +2470,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 placeId?: string;
@@ -2381,7 +2514,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header: {
@@ -2419,7 +2552,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header: {
@@ -2455,7 +2588,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header: {
@@ -2495,7 +2628,7 @@ export interface operations {
             };
         };
     };
-    delete_4: {
+    delete_5: {
         parameters: {
             query: {
                 version: number;
@@ -2972,7 +3105,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: {
                 placeId?: string;
@@ -3015,7 +3148,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header: {
@@ -3053,7 +3186,7 @@ export interface operations {
             };
         };
     };
-    get_3: {
+    get_4: {
         parameters: {
             query?: never;
             header: {
@@ -3089,7 +3222,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header: {
@@ -3116,6 +3249,239 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["OccupancyResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    delete_4: {
+        parameters: {
+            query: {
+                version: number;
+            };
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    end_1: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OccupancyEndRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OccupancyResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_2: {
+        parameters: {
+            query?: {
+                placeId?: string;
+                status?: "CURRENT" | "UPCOMING" | "PAST";
+                subtreeOf?: string;
+                personId?: string;
+                /** @description nextCursor of the previous page; omit for the first page */
+                cursor?: string;
+                /** @description Maximum number of items in the page */
+                limit?: number;
+            };
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CursorPageOwnershipResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    create_3: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnershipCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OwnershipResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_3: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OwnershipResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    update_3: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnershipUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OwnershipResponse"];
                 };
             };
             /** @description Error, described as Problem Details */
@@ -3181,7 +3547,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["OccupancyEndRequest"];
+                "application/json": components["schemas"]["OwnershipEndRequest"];
             };
         };
         responses: {
@@ -3191,7 +3557,47 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["OccupancyResponse"];
+                    "*/*": components["schemas"]["OwnershipResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    transfer: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnershipTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OwnershipTransferResponse"];
                 };
             };
             /** @description Error, described as Problem Details */

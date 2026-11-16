@@ -1,5 +1,8 @@
 export { PersonFormDialog } from './components/PersonFormDialog'
+export { PersonChoiceField } from './components/PersonChoiceField'
 export { PersonPicker } from './components/PersonPicker'
+export { usePersonChoice } from './components/personChoice'
+export type { PersonChoice, PersonChoiceState } from './components/personChoice'
 export { PlaceOccupantsTab } from './components/PlaceOccupantsTab'
 export { GENDER_LABEL, RELATION_LABEL, STATUS_LABEL } from './labels'
 export { PeoplePage } from './pages/PeoplePage'
