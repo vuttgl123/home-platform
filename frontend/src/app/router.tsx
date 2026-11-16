@@ -2,8 +2,8 @@ import type { RouteObject } from 'react-router'
 
 import { ActivityPage } from '@/features/activity'
 import { CatalogPage } from '@/features/catalog'
-import { ItemPage, PlaceItemsTab } from '@/features/items'
-import { PeoplePage, PersonPage, PlaceOccupantsTab } from '@/features/people'
+import { ItemPage, PersonItemsTab, PlaceItemsTab } from '@/features/items'
+import { PeoplePage, PersonPage, PlaceOccupantsTab, type PersonTabSlots } from '@/features/people'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
 
 import { AppLayout } from './layout/AppLayout'
@@ -16,6 +16,11 @@ import { RequireUser } from './session/RequireUser'
 const placeTabs: PlaceTabSlots = {
   people: (ws, place) => <PlaceOccupantsTab ws={ws} place={place} />,
   items: (ws, place) => <PlaceItemsTab ws={ws} place={place} />,
+}
+
+/** Các tab của trang một người thuộc nghiệp vụ khác; trang người không nhập các feature đó. */
+const personTabs: PersonTabSlots = {
+  items: (ws, person) => <PersonItemsTab ws={ws} person={person} />,
 }
 
 /**
@@ -34,7 +39,7 @@ export const routes: RouteObject[] = [
           { index: true, element: <WorkspaceHomePage /> },
           { path: 'places/:placeId', element: <PlacePage tabs={placeTabs} /> },
           { path: 'people', element: <PeoplePage /> },
-          { path: 'people/:personId', element: <PersonPage /> },
+          { path: 'people/:personId', element: <PersonPage tabs={personTabs} /> },
           { path: 'items/:itemId', element: <ItemPage /> },
           { path: 'catalog', element: <CatalogPage /> },
           { path: 'activity', element: <ActivityPage /> },

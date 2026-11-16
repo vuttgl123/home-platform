@@ -1,9 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, test } from 'vitest'
+
+import { setCurrentUser } from '@/api'
 
 import { mockShell, recordRequests } from '@/test/handlers'
 import { mockPeopleBackend } from '@/test/peopleBackend'
-import { renderApp } from '@/test/render'
+import { renderApp, renderWithProviders } from '@/test/render'
+
+import { PersonPage } from './pages/PersonPage'
 
 async function main() {
   return within(await screen.findByRole('main'))
@@ -119,4 +124,29 @@ test('unknownPersonShowsNotFound', async () => {
   renderApp({ route: '/w/7/people/999', userId: '42' })
 
   expect(await (await main()).findByText('Không tìm thấy')).toBeInTheDocument()
+})
+
+test('pageWithoutSlotsHasNoItemsTab', async () => {
+  setCurrentUser('42')
+  mockPeopleBackend({ people: [an] })
+  renderWithProviders(
+    <MemoryRouter initialEntries={['/w/7/people/55']}>
+      <Routes>
+        <Route path="/w/:workspaceId/people/:personId" element={<PersonPage />} />
+      </Routes>
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByRole('heading', { name: 'Nguyễn An' })).toBeInTheDocument()
+  expect(screen.queryByRole('tab', { name: 'Đồ đạc' })).not.toBeInTheDocument()
+})
+
+test('itemsTabIsOnTheUrl', async () => {
+  mockShell()
+  mockPeopleBackend({ people: [an] })
+  const { user, router } = renderApp({ route: '/w/7/people/55', userId: '42' })
+
+  await user.click(await (await main()).findByRole('tab', { name: 'Đồ đạc' }))
+
+  await waitFor(() => expect(router.state.location.search).toBe('?tab=items'))
 })

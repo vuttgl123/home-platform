@@ -1,5 +1,5 @@
 import { MapPinPlusIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { ErrorState } from '@/components/common/ErrorState'
@@ -26,17 +26,22 @@ import type { PersonDetail } from '../types'
 const TABS = [
   { value: 'info', label: 'Thông tin' },
   { value: 'places', label: 'Nơi ở' },
+  { value: 'items', label: 'Đồ đạc' },
   { value: 'history', label: 'Lịch sử' },
 ] as const
 
 type Tab = (typeof TABS)[number]['value']
 
-function isTab(value: string | null): value is Tab {
-  return TABS.some((tab) => tab.value === value)
-}
+/**
+ * Nội dung của những tab thuộc nghiệp vụ khác (đồ đạc của người này). Trang người không nhập các
+ * feature đó; `app/` ghép chúng vào. Tab không có nội dung thì không hiện.
+ */
+export type PersonTabSlots = Partial<Record<'items', (ws: string, person: PersonDetail) => ReactNode>>
 
-/** Trang `/w/:workspaceId/people/:personId`: hồ sơ một người và những nơi họ đã, đang ở. */
-export function PersonPage() {
+/** Trang `/w/:workspaceId/people/:personId`: hồ sơ một người, những nơi họ đã, đang ở, và đồ của họ. */
+export function PersonPage({ tabs = {} }: { tabs?: PersonTabSlots }) {
+  const shown = TABS.filter((entry) => entry.value !== 'items' || tabs.items != null)
+  const isTab = (value: string | null): value is Tab => shown.some((entry) => entry.value === value)
   const { workspaceId = '', personId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const requested = searchParams.get('tab')
@@ -73,7 +78,7 @@ export function PersonPage() {
         onValueChange={(value) => setSearchParams(value === 'info' ? {} : { tab: value as Tab }, { replace: true })}
       >
         <TabsList variant="line" className="w-full justify-start overflow-x-auto">
-          {TABS.map(({ value, label }) => (
+          {shown.map(({ value, label }) => (
             <TabsTrigger key={value} value={value} className="flex-none">
               {label}
             </TabsTrigger>
@@ -85,6 +90,11 @@ export function PersonPage() {
         <TabsContent value="places" className="pt-4">
           <PersonPlacesTab ws={workspaceId} person={detail} />
         </TabsContent>
+        {tabs.items && (
+          <TabsContent value="items" className="pt-4">
+            {tabs.items(workspaceId, detail)}
+          </TabsContent>
+        )}
         <TabsContent value="history" className="pt-4">
           <PersonHistoryTab ws={workspaceId} person={detail} />
         </TabsContent>

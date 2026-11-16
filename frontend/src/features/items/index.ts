@@ -1,3 +1,4 @@
+export { PersonItemsTab } from './components/PersonItemsTab'
 export { PlaceItemsTab } from './components/PlaceItemsTab'
 export { ITEM_STATUS_LABEL } from './labels'
 export { ItemPage } from './pages/ItemPage'
