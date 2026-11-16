@@ -32,7 +32,10 @@ test('listsPeopleWithLoadMore', async () => {
   await user.click(view.getByRole('button', { name: 'Tải thêm' }))
 
   expect(await view.findByRole('link', { name: /Cao Châu/ })).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Người' })).toHaveAttribute('aria-current', 'page')
+  const section = screen.getByRole('link', { name: 'Người' })
+  expect(section).toHaveAttribute('aria-current', 'page')
+  // Kiểu "đang chọn" của thanh bên dựa vào data-active, không vào aria-current.
+  expect(section).toHaveAttribute('data-active')
 })
 
 test('searchesByPhone', async () => {

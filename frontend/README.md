@@ -60,7 +60,8 @@ src/
 │   ├── users/          tạo và kiểm tra người dùng
 │   ├── workspaces/     danh sách, tạo không gian
 │   ├── catalog/        loại địa điểm, mục tuỳ biến (xem và ô nhập)
-│   └── places/         cây, trang địa điểm, thêm, sửa, di chuyển, xoá, địa chỉ
+│   ├── places/         cây, trang địa điểm, thêm, sửa, di chuyển, xoá, địa chỉ
+│   └── people/         danh sách và hồ sơ người, cư trú (tab Người ở của địa điểm, nơi ở của một người)
 ├── components/
 │   ├── ui/         component shadcn, không sửa tay; thêm bằng `npx shadcn add <tên>`
 │   └── common/     component dùng chung tự viết: ô nhập có nhãn, lỗi, trạng thái trống, "Tải thêm"
@@ -79,6 +80,8 @@ Luật phụ thuộc:
 
 - Một feature chỉ nhập feature khác qua `index.ts` của nó.
 - `features/` không nhập gì từ `app/`; `api/`, `components/`, `lib/` không nhập gì từ `features/` hay `app/`.
+- `places` không nhập feature nào dựa trên nó. Tab của trang địa điểm thuộc nghiệp vụ khác (Người ở,
+  sau này Đồ đạc, Lịch sử) được `app/router.tsx` ghép vào qua prop `tabs` (`PlaceTabSlots`).
 - `components/ui` không biết gì về nghiệp vụ.
 
 ## Cây địa điểm
@@ -100,6 +103,17 @@ tiết bằng response rồi làm cũ:
 | Sửa, đặt hoặc gỡ địa chỉ | như trên, cộng mọi trang chi tiết khác (đường dẫn tổ tiên và địa chỉ thừa hưởng của con cháu) |
 | Di chuyển | cả cây của không gian |
 | Xoá | mọi danh sách con (cha có thể vừa thành lá), kết quả tìm kiếm; rời trang rồi mới bỏ chi tiết khỏi cache |
+
+Với người và cư trú (`features/people/queries.ts`):
+
+| Lệnh | Làm cũ |
+|---|---|
+| Thêm, sửa, chuyển đi, xoá một dòng cư trú | mọi danh sách cư trú (của địa điểm, của cả toà, của người) và chi tiết của người đó |
+| Sửa một người | danh sách người, mọi danh sách cư trú (dòng mang tên người) |
+| Xoá một người | như trên; rời trang rồi mới bỏ chi tiết khỏi cache |
+
+"Hôm nay" (ngày mặc định khi chuyển đến, chuyển đi) tính theo giờ Việt Nam như backend
+(`todayInBusinessZone`, `src/lib/dates.ts`), không theo múi giờ của máy.
 
 Lỗi 409 "đã có người sửa" (`ApiError.isVersionConflict`) hiện `VersionConflictAlert`: form giữ chữ đã
 nhập, "Tải bản mới" lấy bản mới nhất và dùng `version` của nó.
