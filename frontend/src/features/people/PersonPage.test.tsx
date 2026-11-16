@@ -139,6 +139,7 @@ test('pageWithoutSlotsHasNoItemsTab', async () => {
 
   expect(await screen.findByRole('heading', { name: 'Nguyễn An' })).toBeInTheDocument()
   expect(screen.queryByRole('tab', { name: 'Đồ đạc' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('tab', { name: 'Sở hữu' })).not.toBeInTheDocument()
 })
 
 test('itemsTabIsOnTheUrl', async () => {

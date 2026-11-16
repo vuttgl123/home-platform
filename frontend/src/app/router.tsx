@@ -4,7 +4,7 @@ import { ActivityPage } from '@/features/activity'
 import { CatalogPage } from '@/features/catalog'
 import { ItemPage, PersonItemsTab, PlaceItemsTab } from '@/features/items'
 import { PeoplePage, PersonPage, PlaceOccupantsTab, type PersonTabSlots } from '@/features/people'
-import { PlaceOwnersTab } from '@/features/ownership'
+import { PersonOwnershipsTab, PlaceOwnersTab } from '@/features/ownership'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
 
 import { AppLayout } from './layout/AppLayout'
@@ -22,6 +22,7 @@ const placeTabs: PlaceTabSlots = {
 
 /** Các tab của trang một người thuộc nghiệp vụ khác; trang người không nhập các feature đó. */
 const personTabs: PersonTabSlots = {
+  ownerships: (ws, person) => <PersonOwnershipsTab ws={ws} person={person} />,
   items: (ws, person) => <PersonItemsTab ws={ws} person={person} />,
 }
 

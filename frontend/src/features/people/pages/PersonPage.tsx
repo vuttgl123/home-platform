@@ -26,6 +26,7 @@ import type { PersonDetail } from '../types'
 const TABS = [
   { value: 'info', label: 'Thông tin' },
   { value: 'places', label: 'Nơi ở' },
+  { value: 'ownerships', label: 'Sở hữu' },
   { value: 'items', label: 'Đồ đạc' },
   { value: 'history', label: 'Lịch sử' },
 ] as const
@@ -33,14 +34,14 @@ const TABS = [
 type Tab = (typeof TABS)[number]['value']
 
 /**
- * Nội dung của những tab thuộc nghiệp vụ khác (đồ đạc của người này). Trang người không nhập các
+ * Nội dung của những tab thuộc nghiệp vụ khác (chỗ người này sở hữu, đồ của người này). Trang người không nhập các
  * feature đó; `app/` ghép chúng vào. Tab không có nội dung thì không hiện.
  */
-export type PersonTabSlots = Partial<Record<'items', (ws: string, person: PersonDetail) => ReactNode>>
+export type PersonTabSlots = Partial<Record<'ownerships' | 'items', (ws: string, person: PersonDetail) => ReactNode>>
 
 /** Trang `/w/:workspaceId/people/:personId`: hồ sơ một người, những nơi họ đã, đang ở, và đồ của họ. */
 export function PersonPage({ tabs = {} }: { tabs?: PersonTabSlots }) {
-  const shown = TABS.filter((entry) => entry.value !== 'items' || tabs.items != null)
+  const shown = TABS.filter((entry) => (entry.value !== 'items' && entry.value !== 'ownerships') || tabs[entry.value] != null)
   const isTab = (value: string | null): value is Tab => shown.some((entry) => entry.value === value)
   const { workspaceId = '', personId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -90,10 +91,13 @@ export function PersonPage({ tabs = {} }: { tabs?: PersonTabSlots }) {
         <TabsContent value="places" className="pt-4">
           <PersonPlacesTab ws={workspaceId} person={detail} />
         </TabsContent>
-        {tabs.items && (
-          <TabsContent value="items" className="pt-4">
-            {tabs.items(workspaceId, detail)}
-          </TabsContent>
+        {(['ownerships', 'items'] as const).map(
+          (value) =>
+            tabs[value] && (
+              <TabsContent key={value} value={value} className="pt-4">
+                {tabs[value](workspaceId, detail)}
+              </TabsContent>
+            ),
         )}
         <TabsContent value="history" className="pt-4">
           <PersonHistoryTab ws={workspaceId} person={detail} />

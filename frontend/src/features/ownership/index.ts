@@ -1,3 +1,4 @@
+export { PersonOwnershipsTab } from './components/PersonOwnershipsTab'
 export { PlaceOwnersTab } from './components/PlaceOwnersTab'
 export { OWNERSHIP_STATUS_LABEL } from './labels'
 export { ownershipKeys } from './queries'
