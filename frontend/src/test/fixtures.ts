@@ -1,5 +1,6 @@
 // Dữ liệu mẫu cho test, đúng dạng backend trả về: đủ mọi khoá, trường trống là null.
 import type { FieldDef, PlaceType } from '@/features/catalog'
+import type { Occupancy, PersonDetail, PersonSummary } from '@/features/people'
 import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from '@/features/places'
 import type { User } from '@/features/users'
 import type { Workspace } from '@/features/workspaces'
@@ -114,6 +115,55 @@ export function fieldDef(overrides: Partial<FieldDef> = {}): FieldDef {
     status: 'ACTIVE',
     createdAt: AT,
     updatedAt: AT,
+    ...overrides,
+  }
+}
+
+export function person(overrides: Partial<PersonSummary> = {}): PersonSummary {
+  return { id: '55', fullName: 'Nguyễn An', phone: null, idType: null, idNumber: null, gender: null, version: 1, ...overrides }
+}
+
+export function personDetail(overrides: Partial<PersonDetail> = {}): PersonDetail {
+  return {
+    id: '55',
+    fullName: 'Nguyễn An',
+    phone: null,
+    email: null,
+    idType: null,
+    idNumber: null,
+    dateOfBirth: null,
+    gender: null,
+    note: null,
+    attributes: null,
+    avatarFileId: null,
+    createdAt: AT,
+    createdBy: '42',
+    updatedAt: AT,
+    updatedBy: '42',
+    version: 1,
+    deletedAt: null,
+    currentOccupancies: [],
+    ...overrides,
+  }
+}
+
+export function occupancy(overrides: Partial<Occupancy> = {}): Occupancy {
+  return {
+    id: '700',
+    placeId: '301',
+    placeName: 'P301',
+    personId: '55',
+    personFullName: 'Nguyễn An',
+    relation: 'RESIDENT',
+    startDate: '2026-01-01',
+    endDate: null,
+    status: 'CURRENT',
+    note: null,
+    createdAt: AT,
+    createdBy: '42',
+    updatedAt: AT,
+    updatedBy: '42',
+    version: 1,
     ...overrides,
   }
 }

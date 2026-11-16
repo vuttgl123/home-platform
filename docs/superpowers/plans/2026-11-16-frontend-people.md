@@ -4,7 +4,7 @@
 
 **Goal:** Trả lời câu hỏi thứ hai của hệ thống trên giao diện: ai đang ở đây, ai từng ở đây, người này đã ở những đâu. Gồm tab "Người ở" của một địa điểm, trang danh sách người và trang một người.
 
-**Architecture:** Hai feature mới, `features/people` (hồ sơ người) và `features/occupancies` (cư trú: một người ở một địa điểm từ ngày A tới ngày B). Cư trú biết về người và địa điểm qua `index.ts` của hai feature kia. Mọi thứ dựng trên nền đã có: `useCursorList`, `Present`, `AttributeFields`, `applyServerErrors`, `VersionConflictAlert`, `PlacePicker`.
+**Architecture:** Một feature mới `features/people` chứa cả hồ sơ người và cư trú (một người ở một địa điểm từ ngày A tới ngày B), đúng như spec mục 7 ("people/ danh sách, hồ sơ, cư trú"); tách hai feature thì chúng nhập lẫn nhau. `people` dùng `places` qua `index.ts`; `places` không nhập `people`: trang địa điểm nhận nội dung tab "Người ở" từ `app/` (prop `tabs` của `PlacePage`). Các đường dẫn `features/occupancies/...` bên dưới hiểu là `features/people/...`. Mọi thứ dựng trên nền đã có: `useCursorList`, `Present`, `AttributeFields`, `applyServerErrors`, `VersionConflictAlert`, `PlacePicker`.
 
 **Tech Stack:** như `2026-11-13-frontend-foundation-places.md`; không thêm thư viện.
 
