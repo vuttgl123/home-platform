@@ -202,20 +202,24 @@ Mọi lỗi liệt kê theo từng khoá trong danh sách `errors` (field là `a
 - Hai người chưa xoá trong cùng không gian không được trùng cặp (`id_type`, `id_number`); trùng thì trả 409 kèm `id` người đã có. **(tôi chọn)** Kiểm tra ở ứng dụng để có thông báo kèm `id`; khoá duy nhất `uk_reg_person_live_document` (migration `V2`) chặn trường hợp hai lệnh chạy cùng lúc, khi đó trả 409 "Another person already has this document". **(bổ sung 2026-11-14 sau đợt review)**
 - `attributes` kiểm tra theo mục 5.3 (`target` PERSON).
 - Sửa mọi trường trên. Version `CREATE`, `UPDATE`, `DELETE`, `RESTORE` như địa điểm.
-- Xoá: chỉ khi người đó không còn cư trú hiện tại hay sắp tới, và không còn là chủ của món đồ chưa gỡ; ngược lại 409. **(tôi chọn; vế sau bổ sung 2026-11-16)**
+- Xoá: chỉ khi người đó không còn cư trú hay sở hữu hiện tại hoặc sắp tới, và không còn là chủ của món đồ chưa gỡ; ngược lại 409. **(tôi chọn; vế sau bổ sung 2026-11-16)**
 - Đọc: xem một người kèm các nơi đang ở; tìm theo tên bắt đầu bằng, theo số điện thoại, theo số giấy tờ; danh sách theo tên.
 
 ### 5.7 Cư trú (`reg_occupancy`)
 
 Một dòng nghĩa là: người X có quan hệ R với địa điểm Y từ ngày A tới ngày B.
 
-- Tạo: địa điểm và người phải tồn tại, chưa xoá. `relation` là OWNER, RESIDENT, GUEST, STAFF hoặc OTHER. `start_date` bắt buộc. `end_date` trống (đang ở) hoặc không trước `start_date`.
+- Tạo: địa điểm và người phải tồn tại, chưa xoá. `relation` là RESIDENT, GUEST, STAFF hoặc OTHER; OWNER không còn nhận cho dòng mới (chủ ghi ở mục 5.7b), dòng OWNER cũ vẫn sửa được. **(sửa 2026-11-16)** `start_date` bắt buộc. `end_date` trống (đang ở) hoặc không trước `start_date`.
 - Một người không có hai dòng chưa xoá **ở cùng một địa điểm** có khoảng thời gian giao nhau (ngày cuối trống coi như vô hạn); trùng thì trả 409. Ở nhiều nơi cùng lúc thì được. **(tôi chọn)**
 - **Chuyển đi**: đặt `end_date`. Đây là cách kết thúc cư trú bình thường; dòng không bị xoá. **(bạn)**
 - **Sửa** quan hệ, ngày, ghi chú khi nhập nhầm; vẫn kiểm tra luật giao nhau. Địa điểm và người của dòng phải chưa bị xoá, nếu không trả 409 và phải khôi phục trước: nhờ vậy một dòng đã rời không thể bị sửa thành "đang ở" tại một địa điểm, hoặc cho một người, đã xoá. **(bổ sung 2026-11-14 sau đợt review)**
 - **Xoá** (mềm) chỉ dành cho dòng nhập nhầm.
 - Trạng thái suy ra từ ngày, không lưu: **đang ở** khi `start_date` ≤ hôm nay và (`end_date` trống hoặc ≥ hôm nay); **sắp đến** khi `start_date` > hôm nay; **đã rời** khi `end_date` < hôm nay. **(tôi chọn)** `end_date` là ngày cuối cùng còn ở.
 - Đọc: ai đang ở một địa điểm; ai từng ở (đã rời, mới nhất trước); ai đang ở trong cả cây con (ví dụ cả toà nhà, join với `reg_place` theo tiền tố `path`, cùng nhóm bảng nên được join); một người đã và đang ở những đâu.
+
+### 5.7b Sở hữu (`reg_ownership`)
+
+Ai sở hữu một địa điểm, bao nhiêu phần trăm, từ ngày nào tới ngày nào, theo giấy tờ nào; chuyển nhượng là một thao tác. Luật đầy đủ ở `2026-11-16-ownership-design.md` mục 5.1 đến 5.4. **(2026-11-16)**
 
 ### 5.8 Nhóm đồ (`reg_item_category`)
 

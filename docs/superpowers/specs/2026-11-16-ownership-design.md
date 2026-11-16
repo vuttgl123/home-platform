@@ -1,6 +1,6 @@
 # Sở hữu: chủ của địa điểm và chủ của đồ đạc
 
-Ngày: 2026-11-16 · Trạng thái: **chờ duyệt**
+Ngày: 2026-11-16 · Trạng thái: **đã duyệt, đã xây** (2026-11-16)
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 

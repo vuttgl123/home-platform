@@ -62,6 +62,7 @@ src/
 │   ├── catalog/        trang Danh mục: loại địa điểm, nhóm đồ, mục tuỳ biến (cả phần xem và ô nhập dùng chung)
 │   ├── places/         cây, trang địa điểm, thêm, sửa, di chuyển, xoá, địa chỉ
 │   ├── people/         danh sách và hồ sơ người, cư trú (tab Người ở của địa điểm, nơi ở của một người)
+│   ├── ownership/      tab Sở hữu của địa điểm và của một người: thêm chủ, sửa, thôi sở hữu, chuyển nhượng
 │   ├── items/          tab Đồ đạc của địa điểm, trang món đồ: thêm, sửa, chuyển chỗ, gỡ, thay, đưa lại, xoá
 │   ├── history/        tab Lịch sử dùng chung: danh sách version, xem và khôi phục một version
 │   └── activity/       trang Hoạt động: mọi thay đổi của không gian, khôi phục thứ đã xoá
@@ -85,7 +86,8 @@ Luật phụ thuộc:
 - `features/` không nhập gì từ `app/`; `api/`, `components/`, `lib/` không nhập gì từ `features/` hay `app/`.
 - `places` không nhập feature nào dựa trên nó. Tab của trang địa điểm thuộc nghiệp vụ khác (Người ở,
   Đồ đạc) được `app/router.tsx` ghép vào qua prop `tabs` (`PlaceTabSlots`).
-- `people` không nhập `items`; tab "Đồ đạc" của trang một người cũng được ghép vào như vậy (`PersonTabSlots`).
+- `people` không nhập `items` hay `ownership`; tab "Sở hữu" và "Đồ đạc" của trang một người cũng được ghép vào
+  như vậy (`PersonTabSlots`). `places` không nhập `ownership`; tab "Sở hữu" của địa điểm là một slot.
 - `components/ui` không biết gì về nghiệp vụ.
 
 ## Cây địa điểm
@@ -120,6 +122,9 @@ Với đồ đạc (`features/items/queries.ts`), mọi lệnh ghi đặt chi ti
 mọi danh sách đồ: một lệnh chuyển chỗ hay thay ở chỗ khác chạm hai địa điểm và các toà chứa chúng.
 Xoá thì rời trang rồi mới bỏ chi tiết khỏi cache. "Đổi chủ" cũng vậy: danh sách đồ của người cũ và người mới
 đều nằm dưới `itemKeys.lists`.
+
+Với sở hữu (`features/ownership/queries.ts`), mọi lệnh ghi làm cũ mọi danh sách sở hữu của không gian: một lần
+chuyển nhượng chạm hai người.
 
 Danh mục (`features/catalog`): mọi lệnh ghi làm cũ cả danh mục của không gian, vì loại, nhóm và mục
 tuỳ biến được nhiều form đọc. Khôi phục một version (`features/history`) là một lần sửa: feature của bản
