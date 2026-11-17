@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { page, placeType, problem, user, workspace } from '@/test/fixtures'
+import { overview, page, placeType, problem, user, workspace } from '@/test/fixtures'
 import { mockShell, recordRequests } from '@/test/handlers'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
@@ -178,4 +178,40 @@ test('sidebarShowsWhoIsSignedIn', async () => {
 
   const footer = within(await screen.findByTestId('user-menu'))
   expect(await footer.findByText('Trần An')).toBeInTheDocument()
+})
+
+test('workspaceWithoutPlacesKeepsTheEmptyState', async () => {
+  mockShell()
+  renderApp({ route: '/w/7', userId: '42' })
+
+  expect(await screen.findByText('Chọn một địa điểm trên cây')).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Tổng quan' })).not.toBeInTheDocument()
+})
+
+test('workspaceWithPlacesShowsTheOverview', async () => {
+  mockShell({ overview: overview() })
+  server.use(http.get('/api/registry/activity', () => HttpResponse.json(page([]))))
+  renderApp({ route: '/w/7', userId: '42' })
+
+  expect(await screen.findByRole('heading', { name: 'Tổng quan' })).toBeInTheDocument()
+  expect(screen.queryByText('Chọn một địa điểm trên cây')).not.toBeInTheDocument()
+})
+
+test('overviewLinkIsActiveOnlyOnTheHomePage', async () => {
+  mockShell()
+  const { router } = renderApp({ route: '/w/7', userId: '42' })
+
+  const link = await screen.findByRole('link', { name: 'Tổng quan' })
+  expect(link).toHaveAttribute('href', '/w/7')
+  expect(link).toHaveAttribute('aria-current', 'page')
+  expect(link).toHaveAttribute('data-active')
+  // Đứng đầu các mục của thanh bên.
+  const people = screen.getByRole('link', { name: 'Người' })
+  expect(link.compareDocumentPosition(people) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+  await router.navigate('/w/7/nope')
+
+  await screen.findByText('Không tìm thấy')
+  expect(screen.getByRole('link', { name: 'Tổng quan' })).not.toHaveAttribute('aria-current')
+  expect(screen.getByRole('link', { name: 'Tổng quan' })).not.toHaveAttribute('data-active')
 })

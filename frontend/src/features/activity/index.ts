@@ -1,3 +1,4 @@
+export { RecentActivity } from './components/RecentActivity'
 export { activityKeys, trashKeys } from './queries'
 export { ActivityPage } from './pages/ActivityPage'
 export { TrashPage } from './pages/TrashPage'

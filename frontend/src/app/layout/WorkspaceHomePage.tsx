@@ -5,15 +5,22 @@ import { ErrorState } from '@/components/common/ErrorState'
 import { FormError } from '@/components/common/FormError'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Skeleton } from '@/components/ui/skeleton'
 import { usePlaceTypes, useSetupWorkspace } from '@/features/catalog'
+import { OverviewPage, useOverview } from '@/features/overview'
 import { PlaceFormDialog } from '@/features/places'
 
 import { useWorkspaceId } from '../session/useSession'
 
-/** Trang `/w/:workspaceId`: chưa chọn địa điểm nào. */
+/**
+ * Trang `/w/:workspaceId`: chưa chọn địa điểm nào. Không gian đã có địa điểm thì hiện trang tổng quan;
+ * chưa có danh mục thì mời tạo danh mục; chưa có địa điểm thì mời thêm địa điểm đầu tiên.
+ */
 export function WorkspaceHomePage() {
   const workspaceId = useWorkspaceId()
   const placeTypes = usePlaceTypes(workspaceId)
+  const hasCatalog = (placeTypes.data?.length ?? 0) > 0
+  const overview = useOverview(workspaceId, { enabled: hasCatalog })
   const [adding, setAdding] = useState(false)
 
   if (placeTypes.isError) {
@@ -23,6 +30,25 @@ export function WorkspaceHomePage() {
   // nên chưa thêm được địa điểm.
   if (placeTypes.data?.length === 0) {
     return <SetupNotice workspaceId={workspaceId} />
+  }
+  if (overview.isError) {
+    return <ErrorState error={overview.error} onRetry={() => void overview.refetch()} />
+  }
+  if (overview.data == null) {
+    return (
+      <div className="flex max-w-5xl flex-col gap-6" aria-label="Đang tải">
+        <Skeleton className="h-8 w-40" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+      </div>
+    )
+  }
+  if (overview.data.places > 0) {
+    return <OverviewPage ws={workspaceId} overview={overview.data} />
   }
   return (
     <Empty>

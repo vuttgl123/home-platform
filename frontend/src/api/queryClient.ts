@@ -1,4 +1,4 @@
-import { QueryCache, QueryClient } from '@tanstack/react-query'
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 
 import { ApiError } from './errors'
 
@@ -15,9 +15,16 @@ function isTransient(error: unknown): boolean {
  * - Không tải lại khi quay lại cửa sổ: cây địa điểm có nhiều danh sách đang mở, tải lại cả loạt
  *   mỗi lần đổi cửa sổ là thừa.
  * - Lệnh đọc thử lại một lần với lỗi tạm thời; lỗi 4xx và mọi lệnh ghi không thử lại.
+ * - Câu đọc gộp số liệu từ mọi loại bản ghi (trang tổng quan) không biết lệnh ghi nào đụng tới nó.
+ *   Nó tự đánh dấu `meta: { refreshAfterWrites: true }`, và mọi lệnh ghi thành công làm nó cũ.
  */
 export function createQueryClient(): QueryClient {
-  return new QueryClient({
+  const queryClient: QueryClient = new QueryClient({
+    mutationCache: new MutationCache({
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ predicate: (query) => query.meta?.refreshAfterWrites === true })
+      },
+    }),
     queryCache: new QueryCache({
       onError: (error) => {
         // Lỗi 4xx là kết quả bình thường (không tìm thấy, sai dữ liệu); phần còn lại cần được biết.
@@ -35,4 +42,5 @@ export function createQueryClient(): QueryClient {
       mutations: { retry: false },
     },
   })
+  return queryClient
 }

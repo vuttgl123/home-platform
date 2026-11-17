@@ -1,4 +1,13 @@
-import { ActivityIcon, PackageIcon, SearchIcon, TagsIcon, Trash2Icon, UsersIcon, type LucideIcon } from 'lucide-react'
+import {
+  ActivityIcon,
+  LayoutDashboardIcon,
+  PackageIcon,
+  SearchIcon,
+  TagsIcon,
+  Trash2Icon,
+  UsersIcon,
+  type LucideIcon,
+} from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
@@ -30,7 +39,9 @@ import { useSession, useWorkspaceId } from '../session/useSession'
 import { UserMenu } from './UserMenu'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 
+/** `path` rỗng là trang chủ của không gian: chỉ sáng khi đang ở đúng trang đó. */
 const SECTIONS: { path: string; label: string; icon: LucideIcon }[] = [
+  { path: '', label: 'Tổng quan', icon: LayoutDashboardIcon },
   { path: 'people', label: 'Người', icon: UsersIcon },
   { path: 'items', label: 'Đồ đạc', icon: PackageIcon },
   { path: 'catalog', label: 'Danh mục', icon: TagsIcon },
@@ -123,8 +134,8 @@ export function AppLayout() {
               <SidebarMenuItem key={path}>
                 {/* NavLink đặt aria-current="page" cho công cụ đọc màn hình; isActive tô dòng (data-active). */}
                 <SidebarMenuButton
-                  isActive={pathname.startsWith(`${base}/${path}`)}
-                  render={<NavLink to={`${base}/${path}`} />}
+                  isActive={path === '' ? pathname === base || pathname === `${base}/` : pathname.startsWith(`${base}/${path}`)}
+                  render={<NavLink to={path === '' ? base : `${base}/${path}`} end={path === ''} />}
                 >
                   <Icon aria-hidden="true" />
                   <span>{label}</span>

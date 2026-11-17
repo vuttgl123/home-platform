@@ -1,6 +1,7 @@
 // Dữ liệu mẫu cho test, đúng dạng backend trả về: đủ mọi khoá, trường trống là null.
 import type { FieldDef, ItemCategory, PlaceType } from '@/features/catalog'
 import type { ItemDetail, ItemSummary } from '@/features/items'
+import type { Overview } from '@/features/overview'
 import type { Ownership } from '@/features/ownership'
 import type { Occupancy, PersonDetail, PersonSummary } from '@/features/people'
 import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from '@/features/places'
@@ -16,6 +17,34 @@ export function page<T>(items: T[], nextCursor: string | null = null) {
 /** Thân của một response lỗi dạng Problem Details. */
 export function problem(status: number, detail: string, errors?: { field: string | null; message: string }[]) {
   return { status, title: 'Error', detail, instance: '/', ...(errors ? { errors } : {}) }
+}
+
+/** Số liệu trang tổng quan của một không gian đang có dữ liệu. */
+export function overview(overrides: Partial<Overview> = {}): Overview {
+  return {
+    places: 42,
+    placeTypes: [
+      { typeId: '500', name: 'Phòng', total: 20, occupied: 12 },
+      { typeId: '501', name: 'Căn hộ', total: 6, occupied: 5 },
+    ],
+    people: 25,
+    peopleLiving: 18,
+    itemsByStatus: { IN_USE: 230, BROKEN: 3, STORED: 12, REMOVED: 40 },
+    missingCodes: { places: 4, items: 2 },
+    ...overrides,
+  }
+}
+
+/** Số liệu của một không gian chưa có gì: trang chủ giữ lời mời "chọn một địa điểm". */
+export function emptyOverview(): Overview {
+  return overview({
+    places: 0,
+    placeTypes: [],
+    people: 0,
+    peopleLiving: 0,
+    itemsByStatus: { IN_USE: 0, BROKEN: 0, STORED: 0, REMOVED: 0 },
+    missingCodes: { places: 0, items: 0 },
+  })
 }
 
 export function user(overrides: Partial<User> = {}): User {

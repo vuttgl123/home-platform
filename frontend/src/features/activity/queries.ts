@@ -1,4 +1,6 @@
-import { useCursorList, type CursorList } from '@/api'
+import { useQuery } from '@tanstack/react-query'
+
+import { type ApiError, useCursorList, type CursorList } from '@/api'
 
 import { listActivity, listTrash } from './api'
 import type { ActivityEntry, EntityType, TrashEntry } from './types'
@@ -6,6 +8,19 @@ import type { ActivityEntry, EntityType, TrashEntry } from './types'
 export const activityKeys = {
   all: (ws: string) => ['activity', ws] as const,
   list: (ws: string, entityType: EntityType | null) => ['activity', ws, entityType ?? 'all'] as const,
+  recent: (ws: string) => ['activity', ws, 'recent'] as const,
+}
+
+/** Số dòng của phần "Hoạt động gần đây" trên trang tổng quan. */
+const RECENT_LIMIT = 5
+
+/** Mấy thay đổi mới nhất của không gian, một trang ngắn không có "tải thêm". */
+export function useRecentActivity(ws: string) {
+  return useQuery<ActivityEntry[], ApiError>({
+    queryKey: activityKeys.recent(ws),
+    queryFn: async () => (await listActivity(ws, null, undefined, RECENT_LIMIT)).items,
+    staleTime: 0,
+  })
 }
 
 export function useActivity(ws: string, entityType: EntityType | null): CursorList<ActivityEntry & { id: string }> {
