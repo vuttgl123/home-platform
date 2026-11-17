@@ -1,6 +1,6 @@
 # Nhìn tổng thể và lấy dữ liệu ra: tổng quan, xuất Excel, in hồ sơ, lọc hoạt động, so sánh version
 
-Ngày: 2026-11-17 · Trạng thái: **chờ duyệt**
+Ngày: 2026-11-17 · Trạng thái: **đã duyệt** (2026-11-17)
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 
