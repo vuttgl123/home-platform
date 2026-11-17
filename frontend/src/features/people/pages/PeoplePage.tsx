@@ -10,6 +10,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ExportButton } from '@/features/exports'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 
 import { PersonFormDialog } from '../components/PersonFormDialog'
@@ -45,6 +46,7 @@ export function PeoplePage() {
     <div className="flex max-w-3xl flex-col gap-6">
       <header className="flex flex-wrap items-center gap-3">
         <h1 className="flex-1 text-2xl font-semibold tracking-tight">Người</h1>
+        <ExportButton ws={workspaceId} kind="people" label="Xuất Excel" />
         {addButton}
       </header>
       <div className="flex gap-2">

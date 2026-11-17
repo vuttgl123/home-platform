@@ -1,5 +1,6 @@
 export { identity, registry, unwrap } from './client'
 export type { IdentitySchemas, RegistrySchemas } from './client'
+export { downloadFile } from './download'
 export { ApiError } from './errors'
 export { currentUserId, setCurrentUser, userHeaders, workspaceHeaders } from './headers'
 export { fetchAllPages, useCursorList } from './paging'

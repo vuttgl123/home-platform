@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
+import { todayInBusinessZone } from '@/lib/dates'
 import { placeType, problem } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { mockOwnershipBackend } from '@/test/ownershipBackend'
@@ -10,7 +11,8 @@ import { mockPlaceBackend } from '@/test/placeBackend'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
 
-const TODAY = '2026-11-16'
+// Ngày thật của hôm nay: giao diện tự điền "hôm nay", nên một ngày ghi cứng sẽ sai từ hôm sau.
+const TODAY = todayInBusinessZone()
 
 function setUp(ownerships: Parameters<typeof mockOwnershipBackend>[0]['ownerships'] = []) {
   mockShell({ placeTypes: [placeType()] })

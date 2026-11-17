@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
+import { mockDownloads } from '@/test/downloads'
 import { itemCategory, placeType } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { mockItemBackend } from '@/test/itemBackend'
@@ -133,3 +134,43 @@ test('itemPageStillOpensUnderTheSamePrefix', async () => {
   expect(await (await main()).findByRole('heading', { name: 'Tủ lạnh' })).toBeInTheDocument()
 })
 
+test('itemsExportSendsTheCurrentFilter', async () => {
+  setUp()
+  const saved = mockDownloads()
+  let sent = ''
+  server.use(
+    http.get('/api/registry/exports/items.xlsx', ({ request }) => {
+      sent = new URL(request.url).search
+      return new HttpResponse('file')
+    }),
+  )
+  const { user } = renderApp({ route: '/w/7/items?status=BROKEN&category=600', userId: '42' })
+  const view = await main()
+  await view.findByRole('link', { name: 'Quạt' })
+
+  await user.click(view.getByRole('button', { name: 'Xuất Excel' }))
+
+  await waitFor(() => expect(saved).toHaveLength(1))
+  expect(sent).toBe('?status=BROKEN&categoryId=600')
+  expect(saved[0].name).toMatch(/^nha-an-do-dac-\d{4}-\d{2}-\d{2}\.xlsx$/)
+})
+
+test('itemsExportWithoutAFilterSendsNoParameters', async () => {
+  setUp()
+  const saved = mockDownloads()
+  let sent: string | null = null
+  server.use(
+    http.get('/api/registry/exports/items.xlsx', ({ request }) => {
+      sent = new URL(request.url).search
+      return new HttpResponse('file')
+    }),
+  )
+  const { user } = renderApp({ route: '/w/7/items', userId: '42' })
+  const view = await main()
+  await view.findByRole('link', { name: 'Bàn' })
+
+  await user.click(view.getByRole('button', { name: 'Xuất Excel' }))
+
+  await waitFor(() => expect(saved).toHaveLength(1))
+  expect(sent).toBe('')
+})

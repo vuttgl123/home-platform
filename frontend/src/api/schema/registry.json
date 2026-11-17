@@ -20,6 +20,46 @@
             }
           },
           {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CREATE",
+                "UPDATE",
+                "DELETE",
+                "RESTORE"
+              ]
+            }
+          },
+          {
+            "name": "changedBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
             "name": "X-Workspace-Id",
             "in": "header",
             "description": "Id of the workspace the call works in",
@@ -364,6 +404,157 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/exports/items.xlsx": {
+      "get": {
+        "tags": [
+          "export-controller"
+        ],
+        "operationId": "items",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IN_USE",
+                "BROKEN",
+                "STORED",
+                "REMOVED"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/exports/people.xlsx": {
+      "get": {
+        "tags": [
+          "export-controller"
+        ],
+        "operationId": "people",
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/exports/workspace.xlsx": {
+      "get": {
+        "tags": [
+          "export-controller"
+        ],
+        "operationId": "workspace",
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           },
           "default": {
             "description": "Error, described as Problem Details",
@@ -2715,6 +2906,56 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/OccupancyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/overview": {
+      "get": {
+        "tags": [
+          "overview-controller"
+        ],
+        "operationId": "get_8",
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponse"
                 }
               }
             }
@@ -6936,6 +7177,19 @@
           }
         }
       },
+      "MissingCodes": {
+        "type": "object",
+        "properties": {
+          "places": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "OccupancyCreateRequest": {
         "type": "object",
         "properties": {
@@ -7095,6 +7349,39 @@
           "startDate",
           "version"
         ]
+      },
+      "OverviewResponse": {
+        "type": "object",
+        "properties": {
+          "places": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "placeTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceTypeCount"
+            }
+          },
+          "people": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "peopleLiving": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "itemsByStatus": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "missingCodes": {
+            "$ref": "#/components/schemas/MissingCodes"
+          }
+        }
       },
       "OwnershipCreateRequest": {
         "type": "object",
@@ -8011,6 +8298,25 @@
           },
           "address": {
             "$ref": "#/components/schemas/AddressSnapshot"
+          }
+        }
+      },
+      "PlaceTypeCount": {
+        "type": "object",
+        "properties": {
+          "typeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "occupied": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

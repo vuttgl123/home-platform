@@ -81,6 +81,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/exports/items.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["items"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/exports/people.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["people"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/exports/workspace.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["workspace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/field-defs": {
         parameters: {
             query?: never;
@@ -459,6 +507,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["end_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_8"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1339,6 +1403,12 @@ export interface components {
             changedAt?: string;
             note?: string;
         };
+        MissingCodes: {
+            /** Format: int32 */
+            places?: number;
+            /** Format: int32 */
+            items?: number;
+        };
         OccupancyCreateRequest: {
             placeId: string;
             personId: string;
@@ -1390,6 +1460,19 @@ export interface components {
             /** Format: date */
             endDate?: string;
             note?: string;
+        };
+        OverviewResponse: {
+            /** Format: int32 */
+            places?: number;
+            placeTypes?: components["schemas"]["PlaceTypeCount"][];
+            /** Format: int32 */
+            people?: number;
+            /** Format: int32 */
+            peopleLiving?: number;
+            itemsByStatus?: {
+                [key: string]: number;
+            };
+            missingCodes?: components["schemas"]["MissingCodes"];
         };
         OwnershipCreateRequest: {
             placeId: string;
@@ -1701,6 +1784,14 @@ export interface components {
             deletedAt?: string;
             address?: components["schemas"]["AddressSnapshot"];
         };
+        PlaceTypeCount: {
+            typeId?: string;
+            name?: string;
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            occupied?: number;
+        };
         PlaceTypeCreateRequest: {
             code: string;
             name: string;
@@ -1812,6 +1903,10 @@ export interface operations {
         parameters: {
             query?: {
                 entityType?: string;
+                action?: "CREATE" | "UPDATE" | "DELETE" | "RESTORE";
+                changedBy?: string;
+                from?: string;
+                to?: string;
                 /** @description nextCursor of the previous page; omit for the first page */
                 cursor?: string;
                 /** @description Maximum number of items in the page */
@@ -2014,6 +2109,105 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["CodeStatusResponse"];
                 };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    items: {
+        parameters: {
+            query?: {
+                status?: "IN_USE" | "BROKEN" | "STORED" | "REMOVED";
+                categoryId?: string;
+            };
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    people: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    workspace: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Error, described as Problem Details */
             default: {
@@ -3359,6 +3553,40 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["OccupancyResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    get_8: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OverviewResponse"];
                 };
             };
             /** @description Error, described as Problem Details */

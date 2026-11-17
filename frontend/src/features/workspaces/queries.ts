@@ -14,6 +14,11 @@ export function useMyWorkspaces() {
   return useQuery<Workspace[], ApiError>({ queryKey: workspaceKeys.mine, queryFn: listMyWorkspaces })
 }
 
+/** Tên của không gian `ws`, hoặc `undefined` khi danh sách chưa tải xong hay không có không gian đó. */
+export function useWorkspaceName(ws: string): string | undefined {
+  return useMyWorkspaces().data?.find((workspace) => workspace.id === ws)?.name
+}
+
 /**
  * Tạo không gian bên identity, rồi tạo danh mục mặc định của nó bên registry.
  *

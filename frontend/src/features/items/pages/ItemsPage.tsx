@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'react-router'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { useItemCategories } from '@/features/catalog'
+import { ExportButton } from '@/features/exports'
 import { isId } from '@/lib/ids'
 
 import { ItemList } from '../components/ItemList'
@@ -44,9 +45,17 @@ export function ItemsPage() {
   const filtered = status != null || categoryId != null
   return (
     <div className="flex max-w-5xl flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Đồ đạc</h1>
-        <p className="text-muted-foreground">Mọi món đồ của không gian này. Thêm đồ từ tab Đồ đạc của một địa điểm.</p>
+      <header className="flex flex-wrap items-start gap-3">
+        <div className="flex flex-1 flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Đồ đạc</h1>
+          <p className="text-muted-foreground">Mọi món đồ của không gian này. Thêm đồ từ tab Đồ đạc của một địa điểm.</p>
+        </div>
+        <ExportButton
+          ws={workspaceId}
+          kind="items"
+          query={{ status: status ?? undefined, categoryId: categoryId ?? undefined }}
+          label="Xuất Excel"
+        />
       </header>
       <div className="grid gap-4 sm:max-w-xl sm:grid-cols-2">
         <Field>

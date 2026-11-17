@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
+import { mockDownloads } from '@/test/downloads'
 import { page, person } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { mockPeopleBackend } from '@/test/peopleBackend'
@@ -64,4 +65,26 @@ test('emptyListInvitesToAdd', async () => {
   const view = await main()
   expect(await view.findByText('Chưa có ai')).toBeInTheDocument()
   expect(view.getAllByRole('button', { name: 'Thêm người' }).length).toBeGreaterThan(0)
+})
+
+test('peoplePageHasAnExportButton', async () => {
+  mockShell()
+  const saved = mockDownloads()
+  let asked = false
+  server.use(
+    http.get('/api/registry/people', () => HttpResponse.json(page([person({ id: '1', fullName: 'An' })]))),
+    http.get('/api/registry/exports/people.xlsx', () => {
+      asked = true
+      return new HttpResponse('file')
+    }),
+  )
+  const { user } = renderApp({ route: '/w/7/people', userId: '42' })
+  const view = await main()
+  await view.findByRole('link', { name: /An/ })
+
+  await user.click(view.getByRole('button', { name: 'Xuất Excel' }))
+
+  await waitFor(() => expect(saved).toHaveLength(1))
+  expect(asked).toBe(true)
+  expect(saved[0].name).toMatch(/^nha-an-nguoi-\d{4}-\d{2}-\d{2}\.xlsx$/)
 })
