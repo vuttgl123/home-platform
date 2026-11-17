@@ -36,6 +36,20 @@ class ExportController {
 		this.service.writeItems(ctx.workspaceId(), status, categoryId, response.getOutputStream());
 	}
 
+	/** Mọi người chưa xoá của không gian. */
+	@GetMapping("/people.xlsx")
+	void people(WorkspaceContext ctx, HttpServletResponse response) throws IOException {
+		attach(response, this.service.fileName("people"));
+		this.service.writePeople(ctx.workspaceId(), response.getOutputStream());
+	}
+
+	/** Cả không gian trong một file: địa điểm, người, cư trú, sở hữu, đồ đạc. */
+	@GetMapping("/workspace.xlsx")
+	void workspace(WorkspaceContext ctx, HttpServletResponse response) throws IOException {
+		attach(response, this.service.fileName("workspace"));
+		this.service.writeWorkspace(ctx.workspaceId(), response.getOutputStream());
+	}
+
 	private static void attach(HttpServletResponse response, String fileName) {
 		response.setContentType(XLSX);
 		response.setHeader(HttpHeaders.CONTENT_DISPOSITION,

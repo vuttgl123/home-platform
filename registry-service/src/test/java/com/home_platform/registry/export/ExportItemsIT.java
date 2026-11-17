@@ -175,8 +175,8 @@ class ExportItemsIT extends RegistryIT {
 	@Test
 	void moreThanOneBatchKeepsEveryRowOnce() throws Exception {
 		long room = place(null, "Kho");
-		StringBuilder sql = new StringBuilder(
-				"INSERT INTO reg_item (workspace_id, id, place_id, code, name, status, created_by, updated_by) VALUES ");
+		StringBuilder sql = new StringBuilder("INSERT INTO reg_item "
+				+ "(workspace_id, id, place_id, code, name, status, created_by, updated_by) VALUES ");
 		for (int i = 1; i <= 501; i++) {
 			sql.append((i > 1) ? ", " : "")
 				.append("(:ws, ")

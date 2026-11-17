@@ -37,9 +37,11 @@ class AttributeColumnsTests {
 	/** Hai loại cùng có mục "Diện tích", cùng khoá {@code area}: hai cột, giá trị về đúng cột của loại mình. */
 	@Test
 	void sameLabelOnTwoTypesGetsTwoColumns() {
-		AttributeColumns columns = AttributeColumns.of(List.of(def(1, ROOM, "area", "Diện tích", FieldDataType.NUMBER, 1),
-				def(2, FLAT, "area", "Diện tích", FieldDataType.NUMBER, 2),
-				def(3, 0, "note", "Ghi chú", FieldDataType.TEXT, 3)), FieldTarget.PLACE, TYPES);
+		AttributeColumns columns = AttributeColumns.of(
+				List.of(def(1, ROOM, "area", "Diện tích", FieldDataType.NUMBER, 1),
+						def(2, FLAT, "area", "Diện tích", FieldDataType.NUMBER, 2),
+						def(3, 0, "note", "Ghi chú", FieldDataType.TEXT, 3)),
+				FieldTarget.PLACE, TYPES);
 
 		assertThat(columns.headers()).containsExactly("Diện tích (Phòng)", "Diện tích (Căn hộ)", "Ghi chú");
 		XlsxSheet sheet = SheetWriterTests.sheet(columns.headers(), row -> {
@@ -69,8 +71,8 @@ class AttributeColumnsTests {
 	/** Bản ghi còn giữ giá trị của một mục thuộc loại khác (ví dụ sau khi đổi loại): cột đó vẫn trống. */
 	@Test
 	void fieldForAnotherTypeIsBlank() {
-		AttributeColumns columns = AttributeColumns.of(List.of(def(1, ROOM, "beds", "Số giường", FieldDataType.NUMBER, 1)),
-				FieldTarget.PLACE, TYPES);
+		AttributeColumns columns = AttributeColumns
+			.of(List.of(def(1, ROOM, "beds", "Số giường", FieldDataType.NUMBER, 1)), FieldTarget.PLACE, TYPES);
 
 		XlsxSheet sheet = SheetWriterTests.sheet(List.of("Số giường", "Sau"), row -> {
 			columns.write(row, FLAT, Map.of("beds", 2));
