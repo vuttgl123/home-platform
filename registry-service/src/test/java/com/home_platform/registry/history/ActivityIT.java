@@ -25,6 +25,8 @@ import org.springframework.test.web.servlet.ResultActions;
 
 class ActivityIT extends RegistryIT {
 
+	private static final long OTHER_USER = 4242L;
+
 	@Autowired
 	PlaceTypeService placeTypes;
 
@@ -145,6 +147,121 @@ class ActivityIT extends RegistryIT {
 		}
 
 		assertThat(seen).containsExactly("4/1", "3/3", "3/2", "3/1", "2/1", "1/2", "1/1");
+	}
+
+	@Test
+	void filtersByAction() throws Exception {
+		insert(1, 1, "CREATE", USER, "2026-01-01 08:00:00.000");
+		insert(1, 2, "DELETE", USER, "2026-01-02 08:00:00.000");
+
+		this.mvc.perform(asA(get("/activity").param("action", "DELETE")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[*].versionNo", contains(2)));
+	}
+
+	@Test
+	void filtersByChangedBy() throws Exception {
+		insert(1, 1, "CREATE", USER, "2026-01-01 08:00:00.000");
+		insert(2, 1, "CREATE", OTHER_USER, "2026-01-01 09:00:00.000");
+
+		this.mvc.perform(asA(get("/activity").param("changedBy", String.valueOf(OTHER_USER))))
+			.andExpect(jsonPath("$.items[*].entityId", contains("2")));
+		this.mvc.perform(asA(get("/activity").param("changedBy", String.valueOf(USER))))
+			.andExpect(jsonPath("$.items[*].entityId", contains("1")));
+	}
+
+	@Test
+	void filtersByTimeRange() throws Exception {
+		insert(1, 1, "CREATE", USER, "2026-01-01 08:00:00.000");
+		insert(1, 2, "UPDATE", USER, "2026-01-02 08:00:00.000");
+		insert(1, 3, "UPDATE", USER, "2026-01-03 08:00:00.000");
+
+		this.mvc
+			.perform(asA(get("/activity").param("from", "2026-01-02T00:00:00Z").param("to", "2026-01-03T00:00:00Z")))
+			.andExpect(jsonPath("$.items[*].versionNo", contains(2)));
+		this.mvc.perform(asA(get("/activity").param("from", "2026-01-02T08:00:00Z")))
+			.andExpect(jsonPath("$.items[*].versionNo", contains(3, 2)));
+		this.mvc.perform(asA(get("/activity").param("to", "2026-01-02T08:00:00Z")))
+			.andExpect(jsonPath("$.items[*].versionNo", contains(1)));
+	}
+
+	@Test
+	void filtersCombine() throws Exception {
+		insert(1, 1, "CREATE", USER, "2026-01-01 08:00:00.000");
+		insert(1, 2, "UPDATE", OTHER_USER, "2026-01-02 08:00:00.000");
+		insert(1, 3, "UPDATE", USER, "2026-01-03 08:00:00.000");
+		insert(1, 4, "UPDATE", USER, "2026-01-05 08:00:00.000");
+
+		this.mvc
+			.perform(asA(get("/activity").param("entityType", "PLACE")
+				.param("action", "UPDATE")
+				.param("changedBy", String.valueOf(USER))
+				.param("from", "2026-01-02T00:00:00Z")
+				.param("to", "2026-01-04T00:00:00Z")))
+			.andExpect(jsonPath("$.items[*].versionNo", contains(3)));
+	}
+
+	/** Năm dòng khớp xen giữa các dòng không khớp, trang 2 dòng: đi hết ba trang không mất, không lặp. */
+	@Test
+	void filteredListPagesWithoutGaps() throws Exception {
+		for (int v = 1; v <= 10; v++) {
+			insert(1, v, (v % 2 == 0) ? "UPDATE" : "CREATE", USER, "2026-01-01 08:00:00.000");
+		}
+
+		List<Integer> seen = new ArrayList<>();
+		String cursor = null;
+		int pages = 0;
+		for (int guard = 0; guard < 10; guard++) {
+			var request = get("/activity").param("action", "UPDATE").param("limit", "2");
+			if (cursor != null) {
+				request = request.param("cursor", cursor);
+			}
+			String body = this.mvc.perform(asA(request)).andReturn().getResponse().getContentAsString();
+			seen.addAll(JsonPath.<List<Integer>>read(body, "$.items[*].versionNo"));
+			pages++;
+			cursor = JsonPath.read(body, "$.nextCursor");
+			if (cursor == null) {
+				break;
+			}
+		}
+
+		assertThat(seen).containsExactly(10, 8, 6, 4, 2);
+		assertThat(pages).isEqualTo(3);
+	}
+
+	@Test
+	void fromAfterToIs400() throws Exception {
+		this.mvc
+			.perform(asA(get("/activity").param("from", "2026-01-03T00:00:00Z").param("to", "2026-01-02T00:00:00Z")))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("from must be before to"));
+		this.mvc
+			.perform(asA(get("/activity").param("from", "2026-01-02T00:00:00Z").param("to", "2026-01-02T00:00:00Z")))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void unknownActionIs400() throws Exception {
+		this.mvc.perform(asA(get("/activity").param("action", "XYZ"))).andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void badInstantIs400() throws Exception {
+		this.mvc.perform(asA(get("/activity").param("from", "17-11-2026"))).andExpect(status().isBadRequest());
+	}
+
+	private void insert(long entity, int version, String action, long user, String at) {
+		this.jdbc.sql("""
+				INSERT INTO reg_entity_version (workspace_id, entity_type, entity_id, version_no, action, snapshot,
+				  changed_by, changed_at)
+				VALUES (:ws, 'PLACE', :entity, :version, :action, '{}', :user, :at)""")
+			.param("ws", WS_A)
+			.param("entity", entity)
+			.param("version", version)
+			.param("action", action)
+			.param("user", user)
+			.param("at", at)
+			.update();
 	}
 
 	@Test

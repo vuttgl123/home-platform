@@ -3,7 +3,9 @@ package com.home_platform.common.history;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.home_platform.common.CommonIT;
@@ -150,7 +152,7 @@ class EntityHistoryIT extends CommonIT {
 		this.history.record(CTX_A, "PLACE", 10, 2, ChangeAction.UPDATE, Map.of("a", 2), "đổi");
 		this.history.record(CTX_B, "PLACE", 10, 1, ChangeAction.CREATE, Map.of("a", 1), null);
 
-		CursorPage<EntityChange> first = this.history.listRecent(WS_A, null, new CursorRequest(null, 2));
+		CursorPage<EntityChange> first = this.history.listRecent(WS_A, ChangeFilter.none(), new CursorRequest(null, 2));
 		assertThat(first.items()).extracting(EntityChange::entityType, EntityChange::entityId, EntityChange::versionNo)
 			.containsExactly(org.assertj.core.groups.Tuple.tuple("PLACE", 10L, 2),
 					org.assertj.core.groups.Tuple.tuple("PLACE", 10L, 1));
@@ -161,14 +163,56 @@ class EntityHistoryIT extends CommonIT {
 		assertThat(first.items().get(0).note()).isEqualTo("đổi");
 		assertThat(first.nextCursor()).isNotNull();
 
-		CursorPage<EntityChange> second = this.history.listRecent(WS_A, null, new CursorRequest(first.nextCursor(), 2));
+		CursorPage<EntityChange> second = this.history.listRecent(WS_A, ChangeFilter.none(), new CursorRequest(first.nextCursor(), 2));
 		assertThat(second.items()).extracting(EntityChange::entityType).containsExactly("ITEM");
 		assertThat(second.nextCursor()).isNull();
 
-		assertThat(this.history.listRecent(WS_A, "ITEM", new CursorRequest(null, 20)).items()).hasSize(1);
-		assertThat(this.history.listRecent(WS_B, null, new CursorRequest(null, 20)).items()).hasSize(1);
-		assertThatThrownBy(() -> this.history.listRecent(WS_A, null, new CursorRequest("!!!", 20)))
+		assertThat(this.history.listRecent(WS_A, new ChangeFilter("ITEM", null, null, null, null), new CursorRequest(null, 20)).items()).hasSize(1);
+		assertThat(this.history.listRecent(WS_B, ChangeFilter.none(), new CursorRequest(null, 20)).items()).hasSize(1);
+		assertThatThrownBy(() -> this.history.listRecent(WS_A, ChangeFilter.none(), new CursorRequest("!!!", 20)))
 			.isInstanceOf(BadRequestException.class);
+	}
+
+	/**
+	 * Ba version ở ba giờ khác nhau, hai người. {@code from} giữ dòng đúng mốc, {@code to} loại dòng
+	 * đúng mốc.
+	 */
+	@Test
+	void listRecentFiltersByActionUserAndTime() {
+		insertVersion(1, ChangeAction.CREATE, 7L, "2026-11-10 08:00:00.000");
+		insertVersion(2, ChangeAction.UPDATE, 8L, "2026-11-11 08:00:00.000");
+		insertVersion(3, ChangeAction.DELETE, 7L, "2026-11-12 08:00:00.000");
+		Instant day11 = Instant.parse("2026-11-11T08:00:00Z");
+		Instant day12 = Instant.parse("2026-11-12T08:00:00Z");
+
+		assertThat(versionsOf(new ChangeFilter(null, ChangeAction.UPDATE, null, null, null))).containsExactly(2);
+		assertThat(versionsOf(new ChangeFilter(null, null, 7L, null, null))).containsExactly(3, 1);
+		assertThat(versionsOf(new ChangeFilter(null, null, null, day11, null))).containsExactly(3, 2);
+		assertThat(versionsOf(new ChangeFilter(null, null, null, null, day12))).containsExactly(2, 1);
+		assertThat(versionsOf(new ChangeFilter(null, null, null, day11, day12))).containsExactly(2);
+		assertThat(versionsOf(new ChangeFilter("PLACE", ChangeAction.DELETE, 7L, day11, null))).containsExactly(3);
+		assertThat(versionsOf(new ChangeFilter("ITEM", null, null, null, null))).isEmpty();
+	}
+
+	private List<Integer> versionsOf(ChangeFilter filter) {
+		return this.history.listRecent(WS_A, filter, new CursorRequest(null, 20))
+			.items()
+			.stream()
+			.map(EntityChange::versionNo)
+			.toList();
+	}
+
+	private void insertVersion(int versionNo, ChangeAction action, long changedBy, String changedAt) {
+		this.jdbc.sql("""
+				INSERT INTO tmp_entity_version (workspace_id, entity_type, entity_id, version_no, action, snapshot,
+				  changed_by, changed_at)
+				VALUES (:ws, 'PLACE', 10, :v, :action, '{}', :by, :at)""")
+			.param("ws", WS_A)
+			.param("v", versionNo)
+			.param("action", action.name())
+			.param("by", changedBy)
+			.param("at", changedAt)
+			.update();
 	}
 
 	@Test

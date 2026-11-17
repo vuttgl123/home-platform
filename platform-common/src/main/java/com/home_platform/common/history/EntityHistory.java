@@ -160,19 +160,35 @@ public class EntityHistory {
 	 * <p>Sắp theo {@code changed_at} rồi khoá chính, giảm dần, nên nhiều version cùng mili giây vẫn
 	 * có thứ tự chắc chắn. Bảng version cần index {@code (workspace_id, changed_at)}: index của
 	 * InnoDB mang sẵn các cột khoá chính ở cuối, nên cả bốn cột sắp xếp đều đi theo index.
-	 * @param entityType {@code null} là mọi loại bản ghi
+	 * @param filter các điều kiện lọc; {@link ChangeFilter#none()} là mọi version
 	 * @throws BadRequestException nếu {@code cursor} hỏng
 	 */
-	public CursorPage<EntityChange> listRecent(long workspaceId, String entityType, CursorRequest page) {
+	public CursorPage<EntityChange> listRecent(long workspaceId, ChangeFilter filter, CursorRequest page) {
 		if (page.limit() < 1) {
 			throw new IllegalArgumentException("limit must be positive: " + page.limit());
 		}
 		StringBuilder sql = new StringBuilder(this.listRecent);
 		Map<String, Object> params = new HashMap<>();
 		params.put("workspaceId", workspaceId);
-		if (entityType != null) {
+		if (filter.entityType() != null) {
 			sql.append(" AND entity_type = :entityType");
-			params.put("entityType", entityType);
+			params.put("entityType", filter.entityType());
+		}
+		if (filter.action() != null) {
+			sql.append(" AND action = :action");
+			params.put("action", filter.action().name());
+		}
+		if (filter.changedBy() != null) {
+			sql.append(" AND changed_by = :changedBy");
+			params.put("changedBy", filter.changedBy());
+		}
+		if (filter.from() != null) {
+			sql.append(" AND changed_at >= :from");
+			params.put("from", LocalDateTime.ofInstant(filter.from(), ZoneOffset.UTC));
+		}
+		if (filter.to() != null) {
+			sql.append(" AND changed_at < :to");
+			params.put("to", LocalDateTime.ofInstant(filter.to(), ZoneOffset.UTC));
 		}
 		if (page.cursor() != null) {
 			params.putAll(decodeRecent(page.cursor()));

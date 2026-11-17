@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.home_platform.common.history.ChangeFilter;
 import com.home_platform.common.history.EntityChange;
 import com.home_platform.common.history.EntityHistory;
+import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.registry.item.ItemService;
@@ -37,10 +39,17 @@ public class ActivityService {
 	/**
 	 * Các version mới nhất trước, mỗi dòng kèm tên hiện tại của bản ghi. Mỗi loại bản ghi có mặt
 	 * trong trang được tra tên bằng một truy vấn.
-	 * @param entityType PLACE, PERSON, ITEM; {@code null} là mọi loại
+	 * @param filter loại bản ghi (PLACE, PERSON, ITEM), hành động, người làm, khoảng thời gian;
+	 * trường {@code null} là không lọc
+	 * @throws BadRequestException nếu {@code from} không trước {@code to}
 	 */
-	public CursorPage<ActivityEntry> list(long workspaceId, String entityType, CursorRequest page) {
-		CursorPage<EntityChange> changes = this.history.listRecent(workspaceId, Text.trimToNull(entityType), page);
+	public CursorPage<ActivityEntry> list(long workspaceId, ChangeFilter filter, CursorRequest page) {
+		if (filter.from() != null && filter.to() != null && !filter.from().isBefore(filter.to())) {
+			throw new BadRequestException("from must be before to");
+		}
+		ChangeFilter trimmed = new ChangeFilter(Text.trimToNull(filter.entityType()), filter.action(),
+				filter.changedBy(), filter.from(), filter.to());
+		CursorPage<EntityChange> changes = this.history.listRecent(workspaceId, trimmed, page);
 		Map<String, List<Long>> idsByType = changes.items()
 			.stream()
 			.collect(Collectors.groupingBy(EntityChange::entityType,
