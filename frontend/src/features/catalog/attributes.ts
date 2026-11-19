@@ -1,3 +1,5 @@
+import { formatDate, formatNumber } from '@/lib/format'
+
 import type { FieldDef } from './types'
 
 /** Giá trị mục tuỳ biến trong một form: chữ trong ô nhập, hoặc `boolean` với mục BOOLEAN. */
@@ -81,4 +83,55 @@ export function attributePayload(
 /** Nhãn của các trường một bản ghi, thêm nhãn của từng mục tuỳ biến dưới khoá `attributes.<khoá>`. */
 export function fieldLabelsWith(base: Record<string, string>, defs: FieldDef[]): Record<string, string> {
   return { ...base, ...Object.fromEntries(defs.map((def) => [`attributes.${def.fieldKey}`, def.label])) }
+}
+
+/**
+ * Mục áp cho một loại (hay nhóm) trong danh sách mọi mục của một đích: mục chung (`typeId` "0")
+ * và mục riêng của loại đó, như `GET /field-defs?typeId=` lọc.
+ */
+export function defsOfType(defs: FieldDef[], typeId: string | null | undefined): FieldDef[] {
+  return defs.filter((def) => def.typeId === '0' || def.typeId === (typeId ?? '0'))
+}
+
+/** Một dòng mục tuỳ biến: chữ để hiện và giá trị gốc (để so hai version). */
+export type AttributeRow = { key: string; label: string; display: string; raw: unknown; archived: boolean }
+
+/**
+ * Các dòng mục tuỳ biến của một bản ghi, theo thứ tự hiển thị. Khoá của dòng là `attr:<fieldKey>`.
+ *
+ * Mục đang dùng luôn có một dòng ("—" khi trống), để người xem biết còn thiếu gì. Mục đã lưu
+ * trữ chỉ có dòng khi bản ghi còn giữ giá trị cũ. Khoá không ứng với mục nào thì bỏ qua.
+ */
+export function attributeRows(defs: FieldDef[], values: Record<string, unknown> | null): AttributeRow[] {
+  return [...defs]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .filter((def) => def.status === 'ACTIVE' || !isBlankValue(values?.[def.fieldKey]))
+    .map((def) => ({
+      key: `attr:${def.fieldKey}`,
+      label: def.label,
+      display: displayValue(def, values?.[def.fieldKey]),
+      raw: values?.[def.fieldKey] ?? null,
+      archived: def.status === 'ARCHIVED',
+    }))
+}
+
+/** Trống khi hiện ra; khác `isBlank` của form: chuỗi toàn khoảng trắng vẫn hiện như đã lưu. */
+function isBlankValue(value: unknown): boolean {
+  return value == null || value === ''
+}
+
+function displayValue(def: FieldDef, value: unknown): string {
+  if (isBlankValue(value)) {
+    return '—'
+  }
+  switch (def.dataType) {
+    case 'BOOLEAN':
+      return value === true ? 'Có' : 'Không'
+    case 'NUMBER':
+      return typeof value === 'number' ? formatNumber(value) : String(value)
+    case 'DATE':
+      return typeof value === 'string' ? formatDate(value) : String(value)
+    default:
+      return String(value)
+  }
 }

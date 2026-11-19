@@ -1,5 +1,6 @@
 export { AncestorTrail } from './components/AncestorTrail'
 export { PlaceFormDialog } from './components/PlaceFormDialog'
+export { PlaceName } from './components/PlaceName'
 export { PlacePicker } from './components/PlacePicker'
 export type { PlaceChoice } from './components/PlacePicker'
 export { PlaceTree } from './components/PlaceTree'

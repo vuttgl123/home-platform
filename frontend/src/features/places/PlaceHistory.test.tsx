@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { placeType, problem } from '@/test/fixtures'
+import { fieldDef, placeDetail, placeType, problem } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { mockPlaceBackend } from '@/test/placeBackend'
 import { renderApp } from '@/test/render'
@@ -132,4 +132,95 @@ test('invalidOldContentExplainsWhy', async () => {
 
   expect(await dialog.findByText('Place type 100 is archived')).toBeInTheDocument()
   expect(dialog.getByText(/Sửa tay bản hiện tại thay vì khôi phục/)).toBeInTheDocument()
+})
+
+test('versionShowsAttributesOfItsOwnType', async () => {
+  setUp()
+  const defs = [
+    fieldDef({ id: '1', typeId: '100', fieldKey: 'area_m2', label: 'Diện tích', sortOrder: 1 }),
+    fieldDef({ id: '2', typeId: '200', fieldKey: 'bedrooms', label: 'Số phòng ngủ', sortOrder: 2 }),
+    fieldDef({ id: '3', typeId: '0', fieldKey: 'remark', label: 'Ghi chú riêng', dataType: 'TEXT', sortOrder: 3 }),
+  ]
+  server.use(
+    // Như backend: có typeId thì chỉ giữ mục chung và mục của loại đó.
+    http.get('/api/registry/field-defs', ({ request }) => {
+      const typeId = new URL(request.url).searchParams.get('typeId')
+      return HttpResponse.json(typeId == null ? defs : defs.filter((def) => def.typeId === '0' || def.typeId === typeId))
+    }),
+    http.get('/api/registry/places/301/versions/1', () =>
+      HttpResponse.json({
+        versionNo: 1,
+        action: 'CREATE',
+        changedFields: null,
+        changedBy: '42',
+        changedAt: '2026-11-01T03:00:00Z',
+        note: null,
+        snapshot: { id: '301', name: 'Phòng 301', code: 'R1', placeTypeId: '100', status: 'ACTIVE', description: null, attributes: { area_m2: 20 }, address: null },
+      }),
+    ),
+  )
+
+  const { dialog } = await openVersion(1)
+
+  expect(await dialog.findByText('Diện tích')).toBeInTheDocument()
+  expect(dialog.getByText('20')).toBeInTheDocument()
+  expect(dialog.getByText('Ghi chú riêng')).toBeInTheDocument()
+  // Mục của loại khác không có dòng.
+  expect(dialog.queryByText('Số phòng ngủ')).not.toBeInTheDocument()
+})
+
+test('comparingTwoPlaceVersionsShowsNameAndAddress', async () => {
+  setUp()
+  const { user } = renderApp({ route: '/w/7/places/301?tab=history', userId: '42' })
+  const view = await main()
+  await user.click(await view.findByRole('checkbox', { name: 'Chọn v2 để so sánh' }))
+  await user.click(view.getByRole('checkbox', { name: 'Chọn v1 để so sánh' }))
+
+  await user.click(view.getByRole('button', { name: 'So sánh' }))
+
+  const dialog = within(await screen.findByRole('dialog', { name: 'So sánh v1 và v2' }))
+  await dialog.findByText('P-301')
+  const rows = dialog
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => within(row).getAllByRole('cell').map((cell) => cell.textContent))
+  // Mã, loại, trạng thái giống nhau nên không hiện.
+  expect(rows).toEqual([
+    ['Tên', 'Phòng 301', 'P-301'],
+    ['Địa chỉ', '1 Tràng Tiền', 'Không có địa chỉ riêng'],
+  ])
+})
+
+test('comparingAMovedPlaceShowsBothParents', async () => {
+  setUp()
+  const summary = (no: number) => ({
+    versionNo: no,
+    action: 'UPDATE',
+    changedFields: ['parentId'],
+    changedBy: '42',
+    changedAt: '2026-11-01T03:00:00Z',
+    note: null,
+  })
+  const snapshot = (parentId: string) => ({ id: '301', name: 'P301', code: 'R1', placeTypeId: '100', status: 'ACTIVE', parentId, address: null })
+  server.use(
+    http.get('/api/registry/places/301/versions/2', () => HttpResponse.json({ ...summary(2), snapshot: snapshot('2') })),
+    http.get('/api/registry/places/301/versions/3', () => HttpResponse.json({ ...summary(3), snapshot: snapshot('1') })),
+    http.get('/api/registry/places/2', () => HttpResponse.json(placeDetail({ id: '2', name: 'Toà B' }))),
+  )
+  const { user } = renderApp({ route: '/w/7/places/301?tab=history', userId: '42' })
+  const view = await main()
+  await user.click(await view.findByRole('checkbox', { name: 'Chọn v3 để so sánh' }))
+  await user.click(view.getByRole('checkbox', { name: 'Chọn v2 để so sánh' }))
+
+  await user.click(view.getByRole('button', { name: 'So sánh' }))
+
+  const dialog = within(await screen.findByRole('dialog', { name: 'So sánh v2 và v3' }))
+  await dialog.findByText('Toà B')
+  await dialog.findByText('Toà A')
+  expect(
+    dialog
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => within(row).getAllByRole('cell').map((cell) => cell.textContent)),
+  ).toEqual([['Chỗ chứa', 'Toà B', 'Toà A']])
 })

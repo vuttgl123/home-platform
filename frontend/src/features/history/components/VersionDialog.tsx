@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useState } from 'react'
 
 import { FormError } from '@/components/common/FormError'
 import { VersionConflictAlert } from '@/components/common/VersionConflictAlert'
@@ -10,7 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from '@/components/ui/toast'
 
 import { useRestoreVersion, useVersion } from '../queries'
-import type { EntityKind } from '../types'
+import type { EntityKind, SnapshotRow } from '../types'
+import { SnapshotFields } from './SnapshotFields'
 
 /**
  * Nội dung của một version, và lối khôi phục về nó (trừ version đang hiện hành). Khôi phục chỉ
@@ -22,7 +23,7 @@ export function VersionDialog<Snapshot>({
   id,
   versionNo,
   currentVersion,
-  renderSnapshot,
+  snapshotRows,
   onRestored,
   onReload,
   onOpenChange,
@@ -32,7 +33,8 @@ export function VersionDialog<Snapshot>({
   id: string
   versionNo: number
   currentVersion: number
-  renderSnapshot: (snapshot: Snapshot) => ReactNode
+  /** Các trường của một bản; `null` khi danh mục để hiện chúng còn đang tải. */
+  snapshotRows: ((snapshot: Snapshot) => SnapshotRow[]) | null
   onRestored: (restored: unknown) => void
   onReload: () => Promise<unknown>
   onOpenChange: (open: boolean) => void
@@ -83,8 +85,10 @@ export function VersionDialog<Snapshot>({
           <DialogTitle>Bản v{versionNo}</DialogTitle>
           {isCurrent && <DialogDescription>Đây là bản đang dùng.</DialogDescription>}
         </DialogHeader>
-        {version.data ? (
-          <div className="text-sm">{renderSnapshot(version.data.snapshot)}</div>
+        {version.data && snapshotRows ? (
+          <div className="text-sm">
+            <SnapshotFields rows={snapshotRows(version.data.snapshot)} />
+          </div>
         ) : version.error ? (
           <FormError messages={[version.error.detail]} />
         ) : (

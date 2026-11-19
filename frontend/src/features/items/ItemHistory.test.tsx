@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { itemCategory, placeType } from '@/test/fixtures'
+import { itemCategory, personDetail, placeDetail, placeType } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { mockItemBackend } from '@/test/itemBackend'
 import { renderApp } from '@/test/render'
@@ -66,4 +66,44 @@ test('ownerChangeIsLabelled', async () => {
   renderApp({ route: '/w/7/items/900?tab=history', userId: '42' })
 
   expect(await screen.findByText('Đã đổi: Chủ')).toBeInTheDocument()
+})
+
+test('comparingShowsAnOwnerChange', async () => {
+  mockShell({ placeTypes: [placeType()] })
+  server.use(http.get('/api/registry/item-categories', () => HttpResponse.json([])))
+  mockItemBackend({ items: [{ id: '900', name: 'Tủ lạnh', version: 2 }] })
+  const summary = (no: number) => ({
+    versionNo: no,
+    action: no === 1 ? 'CREATE' : 'UPDATE',
+    changedFields: no === 1 ? null : ['ownerPersonId'],
+    changedBy: '42',
+    changedAt: '2026-11-01T03:00:00Z',
+    note: null,
+  })
+  const snapshot = (owner: string) => ({ id: '900', name: 'Tủ lạnh', placeId: '1', ownerPersonId: owner, status: 'IN_USE' })
+  server.use(
+    http.get('/api/registry/items/900/versions', () => HttpResponse.json({ items: [summary(2), summary(1)], nextCursor: null })),
+    http.get('/api/registry/items/900/versions/1', () => HttpResponse.json({ ...summary(1), snapshot: snapshot('55') })),
+    http.get('/api/registry/items/900/versions/2', () => HttpResponse.json({ ...summary(2), snapshot: snapshot('56') })),
+    http.get('/api/registry/people/:id', ({ params }) =>
+      HttpResponse.json(personDetail({ id: params.id as string, fullName: params.id === '55' ? 'Nguyễn An' : 'Trần Bình' })),
+    ),
+    http.get('/api/registry/places/1', () => HttpResponse.json(placeDetail({ id: '1', name: 'Toà A' }))),
+  )
+  const { user } = renderApp({ route: '/w/7/items/900?tab=history', userId: '42' })
+  const main = within(await screen.findByRole('main'))
+  await user.click(await main.findByRole('checkbox', { name: 'Chọn v1 để so sánh' }))
+  await user.click(main.getByRole('checkbox', { name: 'Chọn v2 để so sánh' }))
+
+  await user.click(main.getByRole('button', { name: 'So sánh' }))
+
+  const dialog = within(await screen.findByRole('dialog', { name: 'So sánh v1 và v2' }))
+  await dialog.findByText('Trần Bình')
+  // Chỉ chủ đổi; chỗ đặt giống nhau nên không hiện.
+  expect(
+    dialog
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => within(row).getAllByRole('cell').map((cell) => cell.textContent)),
+  ).toEqual([['Chủ', 'Nguyễn An', 'Trần Bình']])
 })

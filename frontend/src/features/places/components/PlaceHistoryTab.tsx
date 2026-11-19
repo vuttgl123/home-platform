@@ -1,11 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query'
 
 import type { RegistrySchemas } from '@/api'
-import { AttributeView, fieldLabelsWith, useFieldDefs, usePlaceTypes } from '@/features/catalog'
-import { HistoryTab, SnapshotFields } from '@/features/history'
+import { attributeRows, defsOfType, fieldLabelsWith, useAllFieldDefs, useFieldDefs, usePlaceTypes } from '@/features/catalog'
+import { HistoryTab, type SnapshotRow } from '@/features/history'
 
 import { refreshAfterWrite, useFetchFreshPlace } from '../queries'
 import type { PlaceDetail } from '../types'
+import { PlaceName } from './PlaceName'
 
 type PlaceSnapshot = RegistrySchemas['PlaceSnapshot']
 
@@ -29,6 +30,7 @@ export function PlaceHistoryTab({ ws, place }: { ws: string; place: PlaceDetail 
   const queryClient = useQueryClient()
   const fetchFresh = useFetchFreshPlace(ws)
   const defs = useFieldDefs(ws, 'PLACE', place.placeTypeId).data ?? []
+  const snapshotRows = usePlaceSnapshotRows(ws)
   return (
     <HistoryTab<PlaceSnapshot>
       ws={ws}
@@ -36,7 +38,7 @@ export function PlaceHistoryTab({ ws, place }: { ws: string; place: PlaceDetail 
       id={place.id}
       currentVersion={place.version}
       fieldLabels={fieldLabelsWith(FIELD_LABELS, defs)}
-      renderSnapshot={(snapshot) => <PlaceSnapshotView ws={ws} snapshot={snapshot} />}
+      snapshotRows={snapshotRows}
       // Tên và địa chỉ có thể đã đổi: đường dẫn tổ tiên và địa chỉ thừa hưởng của con cháu cũng cũ.
       onRestored={(restored) => refreshAfterWrite(queryClient, ws, restored as PlaceDetail, 'descendants')}
       onReload={() => fetchFresh(place.id)}
@@ -44,22 +46,32 @@ export function PlaceHistoryTab({ ws, place }: { ws: string; place: PlaceDetail 
   )
 }
 
-function PlaceSnapshotView({ ws, snapshot }: { ws: string; snapshot: PlaceSnapshot }) {
-  const typeName = usePlaceTypes(ws).data?.find((type) => type.id === snapshot.placeTypeId)?.name
-  const defs = useFieldDefs(ws, 'PLACE', snapshot.placeTypeId).data ?? []
-  return (
-    <div className="flex flex-col gap-4">
-      <SnapshotFields
-        rows={[
-          ['Tên', snapshot.name],
-          ['Mã', snapshot.code],
-          ['Loại', typeName],
-          ['Trạng thái', snapshot.status ? STATUS_LABEL[snapshot.status] : null],
-          ['Mô tả', snapshot.description],
-          ['Địa chỉ', snapshot.address?.fullAddress ?? 'Không có địa chỉ riêng'],
-        ]}
-      />
-      {defs.length > 0 && <AttributeView defs={defs} values={(snapshot.attributes as Record<string, unknown>) ?? null} />}
-    </div>
-  )
+/**
+ * Các trường của một bản địa điểm: tên loại, trạng thái, địa chỉ của chính bản đó, rồi mục tuỳ biến
+ * của loại ở bản đó (loại có thể đã đổi từ đó tới nay). `null` khi loại và mục tuỳ biến còn đang tải.
+ */
+function usePlaceSnapshotRows(ws: string): ((snapshot: PlaceSnapshot) => SnapshotRow[]) | null {
+  const types = usePlaceTypes(ws)
+  const defs = useAllFieldDefs(ws, 'PLACE')
+  if (types.isPending || defs.isPending) {
+    return null
+  }
+  return (snapshot) => [
+    { key: 'name', label: 'Tên', value: snapshot.name, raw: snapshot.name },
+    { key: 'code', label: 'Mã', value: snapshot.code, raw: snapshot.code },
+    {
+      key: 'placeTypeId',
+      label: 'Loại',
+      value: types.data?.find((type) => type.id === snapshot.placeTypeId)?.name,
+      raw: snapshot.placeTypeId,
+    },
+    { key: 'status', label: 'Trạng thái', value: snapshot.status ? STATUS_LABEL[snapshot.status] : null, raw: snapshot.status },
+    { key: 'description', label: 'Mô tả', value: snapshot.description, raw: snapshot.description },
+    { key: 'address', label: 'Địa chỉ', value: snapshot.address?.fullAddress ?? 'Không có địa chỉ riêng', raw: snapshot.address ?? null },
+    // Chuyển chỗ cũng là một version: không có dòng này thì hai bản trước và sau khi chuyển trông giống hệt.
+    { key: 'parentId', label: 'Chỗ chứa', value: snapshot.parentId ? <PlaceName ws={ws} id={snapshot.parentId} /> : null, raw: snapshot.parentId ?? null },
+    ...attributeRows(defsOfType(defs.data ?? [], snapshot.placeTypeId), (snapshot.attributes as Record<string, unknown>) ?? null).map(
+      (row) => ({ ...row, value: row.display, muted: row.archived }),
+    ),
+  ]
 }

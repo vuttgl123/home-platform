@@ -1,8 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query'
 
 import type { RegistrySchemas } from '@/api'
-import { AttributeView, fieldLabelsWith, useFieldDefs, useItemCategories } from '@/features/catalog'
-import { HistoryTab, SnapshotFields } from '@/features/history'
+import { attributeRows, defsOfType, fieldLabelsWith, useAllFieldDefs, useFieldDefs, useItemCategories } from '@/features/catalog'
+import { HistoryTab, type SnapshotRow } from '@/features/history'
+import { usePerson } from '@/features/people'
+import { PlaceName } from '@/features/places'
 import { formatDate } from '@/lib/format'
 
 import { ITEM_STATUS_LABEL } from '../labels'
@@ -34,6 +36,7 @@ export function ItemHistoryTab({ ws, item }: { ws: string; item: ItemDetail }) {
   const queryClient = useQueryClient()
   const fetchFresh = useFetchFreshItem(ws)
   const defs = useFieldDefs(ws, 'ITEM', item.categoryId ?? '0').data ?? []
+  const snapshotRows = useItemSnapshotRows(ws)
   return (
     <HistoryTab<ItemSnapshot>
       ws={ws}
@@ -41,30 +44,57 @@ export function ItemHistoryTab({ ws, item }: { ws: string; item: ItemDetail }) {
       id={item.id}
       currentVersion={item.version}
       fieldLabels={fieldLabelsWith(FIELD_LABELS, defs)}
-      renderSnapshot={(snapshot) => <ItemSnapshotView ws={ws} snapshot={snapshot} />}
+      snapshotRows={snapshotRows}
       onRestored={(restored) => refreshItems(queryClient, ws, restored as ItemDetail)}
       onReload={() => fetchFresh(item.id)}
     />
   )
 }
 
-function ItemSnapshotView({ ws, snapshot }: { ws: string; snapshot: ItemSnapshot }) {
-  const categoryName = useItemCategories(ws).data?.find((category) => category.id === snapshot.categoryId)?.name
-  const defs = useFieldDefs(ws, 'ITEM', snapshot.categoryId ?? '0').data ?? []
-  return (
-    <div className="flex flex-col gap-4">
-      <SnapshotFields
-        rows={[
-          ['Tên', snapshot.name],
-          ['Mã', snapshot.code],
-          ['Nhóm', categoryName],
-          ['Số lượng', [snapshot.quantity, snapshot.unit].filter((part) => part != null).join(' ')],
-          ['Trạng thái', snapshot.status ? ITEM_STATUS_LABEL[snapshot.status] : null],
-          ['Ngày đặt', snapshot.placedAt ? formatDate(snapshot.placedAt) : null],
-          ['Mô tả', snapshot.description],
-        ]}
-      />
-      {defs.length > 0 && <AttributeView defs={defs} values={(snapshot.attributes as Record<string, unknown>) ?? null} />}
-    </div>
-  )
+/**
+ * Các trường của một bản món đồ: tên nhóm, số lượng kèm đơn vị, rồi mục tuỳ biến của nhóm ở bản đó
+ * (nhóm có thể đã đổi từ đó tới nay). `null` khi nhóm và mục tuỳ biến còn đang tải.
+ */
+function useItemSnapshotRows(ws: string): ((snapshot: ItemSnapshot) => SnapshotRow[]) | null {
+  const categories = useItemCategories(ws)
+  const defs = useAllFieldDefs(ws, 'ITEM')
+  if (categories.isPending || defs.isPending) {
+    return null
+  }
+  return (snapshot) => [
+    { key: 'name', label: 'Tên', value: snapshot.name, raw: snapshot.name },
+    { key: 'code', label: 'Mã', value: snapshot.code, raw: snapshot.code },
+    {
+      key: 'categoryId',
+      label: 'Nhóm',
+      value: categories.data?.find((category) => category.id === snapshot.categoryId)?.name,
+      raw: snapshot.categoryId,
+    },
+    {
+      key: 'quantity',
+      label: 'Số lượng',
+      value: [snapshot.quantity, snapshot.unit].filter((part) => part != null).join(' '),
+      raw: [snapshot.quantity ?? null, snapshot.unit ?? null],
+    },
+    { key: 'status', label: 'Trạng thái', value: snapshot.status ? ITEM_STATUS_LABEL[snapshot.status] : null, raw: snapshot.status },
+    { key: 'placedAt', label: 'Ngày đặt', value: snapshot.placedAt ? formatDate(snapshot.placedAt) : null, raw: snapshot.placedAt },
+    { key: 'description', label: 'Mô tả', value: snapshot.description, raw: snapshot.description },
+    // Chuyển chỗ, đổi chủ cũng là một version: không có hai dòng này thì hai bản trông giống hệt.
+    { key: 'placeId', label: 'Chỗ đặt', value: snapshot.placeId ? <PlaceName ws={ws} id={snapshot.placeId} /> : null, raw: snapshot.placeId ?? null },
+    {
+      key: 'ownerPersonId',
+      label: 'Chủ',
+      value: snapshot.ownerPersonId ? <PersonName ws={ws} id={snapshot.ownerPersonId} /> : null,
+      raw: snapshot.ownerPersonId ?? null,
+    },
+    ...attributeRows(defsOfType(defs.data ?? [], snapshot.categoryId), (snapshot.attributes as Record<string, unknown>) ?? null).map(
+      (row) => ({ ...row, value: row.display, muted: row.archived }),
+    ),
+  ]
+}
+
+/** Tên hiện tại của một người theo id; không mở được (đã xoá) thì hiện `#id`. */
+function PersonName({ ws, id }: { ws: string; id: string }) {
+  const person = usePerson(ws, id)
+  return <>{person.data?.fullName ?? (person.error ? `#${id}` : '…')}</>
 }
