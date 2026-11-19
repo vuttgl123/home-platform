@@ -81,7 +81,9 @@ là `id` vừa nhận.
 | `/places` (đọc) | `GET` (cấp cao nhất), `GET /{id}/children`, `GET /{id}/subtree`, `GET /by-type/{typeId}`, `GET /by-area?province=&ward=`, `GET /search?name=` hoặc `?code=`; phân trang bằng `cursor`, `limit` |
 | `/places/{id}/versions` | Lịch sử version; `GET /{no}` xem nội dung; `POST /{no}/restore` khôi phục nội dung (không đổi chỗ đứng) |
 | `GET /trash?entityType=PLACE\|PERSON\|ITEM` | Thùng rác: bản ghi đang bị xoá của một loại, mới xoá trước, kèm `version` để khôi phục; không có xoá hẳn |
-| `GET /activity` | Hoạt động gần đây của không gian, mới nhất trước; lọc `entityType` |
+| `GET /activity` | Hoạt động gần đây của không gian, mới nhất trước; lọc `entityType`, `action` (`CREATE`, `UPDATE`, `DELETE`, `RESTORE`), `changedBy` (id người dùng), `from`, `to` (mốc ISO-8601; `from` tính cả mốc, `to` không tính; `from` phải trước `to`, không thì 400); các lọc dùng cùng lúc được |
+| `GET /overview` | Số liệu của trang tổng quan, một request: số địa điểm và số theo loại (kèm số chỗ có người ở hôm nay), số hồ sơ người và số người đang ở, số đồ theo từng trạng thái, số địa điểm và đồ chưa có mã. Chỉ tính bản ghi chưa xoá |
+| `/exports` | File Excel (`.xlsx`): `GET /items.xlsx?status=&categoryId=` (sheet Đồ đạc, lọc như `GET /items` không phạm vi), `GET /people.xlsx` (sheet Người), `GET /workspace.xlsx` (năm sheet: Địa điểm, Người, Cư trú, Sở hữu, Đồ đạc). Nhãn tiếng Việt như giao diện, ô ngày và ô số đúng kiểu, đường dẫn tên ngăn bằng ` / `; không có bản ghi đã xoá. Đọc và ghi theo lô 500 dòng trong một transaction chỉ đọc, ghi thẳng ra response |
 | `/people` | Hồ sơ người: `POST`, `GET /{id}` (kèm nơi đang ở), `PUT /{id}`, `DELETE /{id}` (khi không còn cư trú, sở hữu hiện tại hay sắp tới, và không còn là chủ món đồ chưa gỡ), `POST /{id}/restore`, `GET` (theo tên), `GET /search?name=` \| `?phone=` \| `?idNumber=`, `/{id}/versions` như địa điểm. Hai người chưa xoá không trùng cặp loại và số giấy tờ (database giữ luật này bằng khoá duy nhất `uk_reg_person_live_document`) |
 | `/occupancies` | Cư trú: `POST`, `GET /{id}`, `PUT /{id}` (sửa nhập nhầm; địa điểm và người của dòng phải chưa xoá), `POST /{id}/end` (chuyển đi), `DELETE /{id}`; `GET ?placeId=&status=CURRENT\|UPCOMING\|PAST`, `?subtreeOf=` (đang ở trong cả toà nhà), `?personId=`. Một người không có hai dòng giao thời gian ở cùng một chỗ. Quan hệ `OWNER` không còn nhận cho dòng mới (chủ ghi ở `/ownerships`) |
 | `/ownerships` | Sở hữu địa điểm: `POST`, `GET /{id}`, `PUT /{id}` (sửa nhập nhầm), `POST /{id}/end` (thôi sở hữu), `POST /{id}/transfer` (chuyển nhượng cả dòng cho người khác), `DELETE /{id}`; `GET ?placeId=&status=CURRENT\|UPCOMING\|PAST`, `?subtreeOf=`, `?personId=`. Một người không có hai dòng giao thời gian ở cùng chỗ; tổng tỷ lệ của một địa điểm không vượt 100% trong bất kỳ ngày nào |
@@ -158,9 +160,10 @@ giá trị nó trả về.
   `CursorPage`. Cột sắp xếp là hằng số trong code, `NOT NULL`, nên có index phục vụ.
 - **Lịch sử version:** service đặt `platform.history.table` (ví dụ `reg_entity_version`) thì có
   bean `EntityHistory`. Service của nghiệp vụ gọi `record(...)` ngay sau lần sửa, trong cùng
-  transaction; `changed_fields` được tự tính. Sau mỗi lần ghi có sự kiện `EntityChangedEvent`. `listRecent(workspaceId, entityType, page)` liệt kê mọi version của
-  không gian, mới nhất trước (màn hình "hoạt động gần đây"); bảng version cần index
-  `(workspace_id, changed_at)` cho việc này.
+  transaction; `changed_fields` được tự tính. Sau mỗi lần ghi có sự kiện `EntityChangedEvent`. `listRecent(workspaceId, filter, page)` liệt kê mọi version của
+  không gian, mới nhất trước (màn hình "hoạt động gần đây"); `ChangeFilter(entityType, action, changedBy, from, to)`
+  lọc, trường null là không lọc (`ChangeFilter.none()`). Bảng version cần index `(workspace_id, changed_at)` cho việc
+  này; `from`, `to` thu hẹp khoảng quét.
 - **Log:** mỗi request có một mã: lấy từ header `X-Request-Id` nếu client gửi (chữ, số, `.`, `_`,
   `-`, tối đa 64 ký tự), không thì tự sinh; trả lại trong cùng header. Mã có trong mọi dòng log của
   request (`[mã]` ở bản text; `requestId`, `workspaceId`, `userId` ở bản JSON) và trong thuộc tính
@@ -169,6 +172,8 @@ giá trị nó trả về.
 - **Mapper:** `@Mapper(config = PlatformMapperConfig.class)`. Build báo lỗi nếu một trường của
   kiểu đích không được gán.
 - **Cache:** dùng `@Cacheable`; khoá cache luôn có `workspace_id`.
+- **Xuất Excel:** registry ghi `.xlsx` bằng `org.dhatim:fastexcel` (ghi luồng, chữ ghi thẳng trong ô thay vì bảng
+  chuỗi chung, nên không giữ cả file trong bộ nhớ). Test đọc lại file bằng `fastexcel-reader` (chỉ ở scope `test`).
 - **Luật kiến trúc:** `ArchitectureTests` của mỗi service chạy `PlatformArchitectureRules`
   trong `./mvnw test`: không JPA, không dùng lớp của service khác, chỉ repository chạy SQL,
   controller không gọi thẳng repository, hàm public của repository nhận `workspaceId` trước.

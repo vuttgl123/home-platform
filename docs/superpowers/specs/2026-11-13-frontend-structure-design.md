@@ -97,15 +97,16 @@ Phiên bản cụ thể chốt lúc lập kế hoạch, sau khi kiểm tra trên
 
 ```
 /                                  chọn hoặc tạo người dùng
-/w/:workspaceId                    trạng thái trống "Chọn một địa điểm trên cây" + nút thêm địa điểm cấp cao nhất
+/w/:workspaceId                    trang tổng quan (2026-11-17); chưa có địa điểm thì trạng thái trống "Chọn một địa điểm trên cây" + nút thêm địa điểm cấp cao nhất
 /w/:workspaceId/places/:placeId    trang một địa điểm (màn hình chính)
+/w/:workspaceId/places/:placeId/print   hồ sơ để in (2026-11-17), mở ở thẻ mới, ngoài khung có thanh bên; `?subtree=1` lấy đồ cả cây con
 /w/:workspaceId/people             danh sách, tìm người
 /w/:workspaceId/people/:personId   hồ sơ một người (thông tin, nơi đang ở, lịch sử)
 /w/:workspaceId/items              đồ đạc của cả không gian, lọc theo trạng thái và nhóm (2026-11-16)
 /w/:workspaceId/items/:itemId      một món đồ
 /w/:workspaceId/trash              thùng rác (2026-11-16); Ctrl+K mở ô tìm chung ở mọi trang
 /w/:workspaceId/catalog            loại địa điểm, nhóm đồ, mục tuỳ biến
-/w/:workspaceId/activity           hoạt động gần đây
+/w/:workspaceId/activity           hoạt động gần đây; lọc `?type=&action=&mine=1&from=&to=` (2026-11-17)
 ```
 
 Màn hình chính:
@@ -159,8 +160,11 @@ frontend/src/
 │   ├── people/             danh sách, hồ sơ, cư trú
 │   ├── items/              đồ đạc
 │   ├── catalog/            loại địa điểm, nhóm đồ, mục tuỳ biến, form mục tuỳ biến dùng chung
-│   ├── history/            danh sách version, xem và khôi phục (dùng cho địa điểm, người, đồ đạc)
-│   └── activity/           hoạt động gần đây
+│   ├── history/            danh sách version, xem, khôi phục, so sánh hai version (dùng cho địa điểm, người, đồ đạc)
+│   ├── activity/           hoạt động gần đây, thùng rác
+│   ├── overview/           trang tổng quan (2026-11-17)
+│   ├── exports/            nút tải file Excel (2026-11-17)
+│   └── print/              trang in hồ sơ địa điểm (2026-11-17)
 │   (mỗi thư mục: api.ts, queries.ts, components/, pages/ nếu có trang riêng)
 ├── components/
 │   ├── ui/                 component shadcn (đã có, giữ nguyên)

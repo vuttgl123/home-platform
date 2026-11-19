@@ -64,8 +64,11 @@ src/
 │   ├── people/         danh sách và hồ sơ người, cư trú (tab Người ở của địa điểm, nơi ở của một người)
 │   ├── ownership/      tab Sở hữu của địa điểm và của một người: thêm chủ, sửa, thôi sở hữu, chuyển nhượng
 │   ├── items/          tab Đồ đạc của địa điểm, trang món đồ: thêm, sửa, chuyển chỗ, gỡ, thay, đưa lại, xoá
-│   ├── history/        tab Lịch sử dùng chung: danh sách version, xem và khôi phục một version
-│   ├── activity/       trang Hoạt động và Thùng rác: mọi thay đổi của không gian, khôi phục thứ đã xoá
+│   ├── history/        tab Lịch sử dùng chung: danh sách version, xem và khôi phục một version, so sánh hai version
+│   ├── activity/       trang Hoạt động (lọc theo loại, hành động, ngày, "chỉ việc tôi làm") và Thùng rác
+│   ├── overview/       trang tổng quan của không gian (trang chủ `/w/:ws` khi đã có địa điểm)
+│   ├── exports/        nút tải file Excel (`ExportButton`) và tên file
+│   ├── print/          trang in hồ sơ một địa điểm (`/w/:ws/places/:id/print`, ngoài khung trang)
 │   └── search/         ô tìm chung (Ctrl+K): địa điểm, người, đồ đạc theo tên và theo mã
 ├── components/
 │   ├── ui/         component shadcn, không sửa tay; thêm bằng `npx shadcn add <tên>`
@@ -91,6 +94,9 @@ Luật phụ thuộc:
   như vậy (`PersonTabSlots`). `places` không nhập `ownership`; tab "Sở hữu" của địa điểm là một slot.
 - `search` và `activity` đứng trên ba feature bản ghi (places, people, items) và nhập chúng qua `index.ts`;
   chiều ngược lại không có.
+- `overview` và `print` cũng đứng trên các feature bản ghi (print ghép places, people, ownership, items,
+  catalog); không feature nào nhập chúng, chỉ `app/`.
+- `exports` chỉ nhập `workspaces` (tên không gian cho tên file); trang Đồ đạc và trang Người nhập `ExportButton`.
 - `components/ui` không biết gì về nghiệp vụ.
 
 ## Cây địa điểm
@@ -168,3 +174,23 @@ cũ kết quả tìm.
 Xoá một địa điểm, người hay món đồ hiện thông báo có nút "Hoàn tác" trong 8 giây (`deletedToast`).
 Hoàn tác gửi lệnh khôi phục với `version` lúc xoá cộng 1; bản ghi đã đổi sau lần xoá thì báo rõ, không
 thử lại.
+
+## Tổng quan, Excel, in, lọc và so sánh
+
+- **Tổng quan** (`features/overview`): một request `GET /overview` cho mọi con số; số theo trạng thái đồ
+  là liên kết tới `/w/:ws/items?status=…`. Query đánh dấu `meta.refreshAfterWrites` được làm cũ sau mọi
+  lệnh ghi thành công (`api/queryClient.ts`), nên khôi phục từ "Hoạt động gần đây" cập nhật ngay các số.
+- **Excel** (`features/exports`, `api/download.ts`): `downloadFile` tải bằng `fetch` với header của không
+  gian, rồi lưu blob dưới tên `<tên không gian bỏ dấu>-<toan-bo|do-dac|nguoi>-<yyyy-MM-dd>.xlsx` (ngày
+  theo giờ Việt Nam). Luồng bị cắt giữa chừng thì không lưu gì.
+- **In hồ sơ** (`features/print`): `useAllPages` gọi "tải thêm" tới khi hết trang; nút "In" chỉ bật khi mọi
+  danh sách đã đủ. `print:hidden` ẩn nút và công tắc khi in; khối `@media print` ở `src/index.css` giữ
+  nguyên một dòng bảng trên một trang.
+- **Lọc hoạt động** (`features/activity/filters.ts`): bộ lọc nằm trên URL
+  (`?type=&action=&mine=1&from=yyyy-MM-dd&to=yyyy-MM-dd`), giá trị lạ bị bỏ qua. `toQuery` đổi ngày sang mốc
+  theo giờ máy: `from` là 00:00 của ngày đó, `to` là 00:00 của ngày hôm sau (backend không tính mốc `to`).
+- **So sánh version** (`features/history`): mỗi tab Lịch sử đưa cho `HistoryTab` một hàm `snapshotRows` biến
+  một bản thành các dòng `{ key, label, value, raw }`; hộp xem một version và hộp so sánh dùng chung các
+  dòng đó. `compareRows` ghép hai bản theo `key` và so `raw` theo nội dung. Mục tuỳ biến lấy bằng
+  `attributeRows` với mục của chính loại (nhóm) ở bản đó (`defsOfType`).
+
