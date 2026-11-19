@@ -6,6 +6,7 @@ import { ItemPage, ItemsPage, PersonItemsTab, PlaceItemsTab } from '@/features/i
 import { PeoplePage, PersonPage, PlaceOccupantsTab, type PersonTabSlots } from '@/features/people'
 import { PersonOwnershipsTab, PlaceOwnersTab } from '@/features/ownership'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
+import { PlacePrintPage } from '@/features/print'
 
 import { AppLayout } from './layout/AppLayout'
 import { NotFoundPage } from './layout/NotFoundPage'
@@ -36,6 +37,8 @@ export const routes: RouteObject[] = [
     path: '/w/:workspaceId',
     element: <RequireUser />,
     children: [
+      // Trang in đứng riêng: không có thanh bên, cây địa điểm.
+      { path: 'places/:placeId/print', element: <PlacePrintPage /> },
       {
         element: <AppLayout />,
         children: [

@@ -4,6 +4,7 @@ import type { RegistrySchemas } from '@/api'
 import { attributeRows, defsOfType, fieldLabelsWith, useAllFieldDefs, useFieldDefs, usePlaceTypes } from '@/features/catalog'
 import { HistoryTab, type SnapshotRow } from '@/features/history'
 
+import { PLACE_STATUS_LABEL } from '../labels'
 import { refreshAfterWrite, useFetchFreshPlace } from '../queries'
 import type { PlaceDetail } from '../types'
 import { PlaceName } from './PlaceName'
@@ -22,8 +23,6 @@ const FIELD_LABELS: Record<string, string> = {
   parentId: 'Chỗ chứa',
   deletedAt: 'Xoá',
 }
-
-const STATUS_LABEL = { ACTIVE: 'Đang dùng', INACTIVE: 'Tạm ngưng' } as const
 
 /** Tab "Lịch sử" của một địa điểm. Khôi phục đổi cả địa chỉ của version đó, nhưng không di chuyển địa điểm. */
 export function PlaceHistoryTab({ ws, place }: { ws: string; place: PlaceDetail }) {
@@ -65,7 +64,7 @@ function usePlaceSnapshotRows(ws: string): ((snapshot: PlaceSnapshot) => Snapsho
       value: types.data?.find((type) => type.id === snapshot.placeTypeId)?.name,
       raw: snapshot.placeTypeId,
     },
-    { key: 'status', label: 'Trạng thái', value: snapshot.status ? STATUS_LABEL[snapshot.status] : null, raw: snapshot.status },
+    { key: 'status', label: 'Trạng thái', value: snapshot.status ? PLACE_STATUS_LABEL[snapshot.status] : null, raw: snapshot.status },
     { key: 'description', label: 'Mô tả', value: snapshot.description, raw: snapshot.description },
     { key: 'address', label: 'Địa chỉ', value: snapshot.address?.fullAddress ?? 'Không có địa chỉ riêng', raw: snapshot.address ?? null },
     // Chuyển chỗ cũng là một version: không có dòng này thì hai bản trước và sau khi chuyển trông giống hệt.

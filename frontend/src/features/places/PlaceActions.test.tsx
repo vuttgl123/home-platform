@@ -349,3 +349,14 @@ test('undoAfterSomeoneElseChangedItSaysSo', async () => {
   expect(await screen.findByText('Không hoàn tác được: bản ghi đã thay đổi')).toBeInTheDocument()
   expect(router.state.location.pathname).toBe('/w/7/places/13')
 })
+
+test('printLinkOpensInANewTab', async () => {
+  setUp()
+  const { user } = renderApp({ route: '/w/7/places/301', userId: '42' })
+
+  await user.click(await (await main()).findByRole('button', { name: 'Thao tác khác' }))
+
+  const print = await screen.findByRole('menuitem', { name: 'In hồ sơ' })
+  expect(print).toHaveAttribute('href', '/w/7/places/301/print')
+  expect(print).toHaveAttribute('target', '_blank')
+})

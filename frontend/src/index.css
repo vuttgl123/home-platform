@@ -123,3 +123,20 @@
     @apply bg-background text-foreground;}
   html {
     @apply font-sans;}}
+
+/* Trang in hồ sơ (`PlacePrintPage`): một dòng bảng hay một trường không bị cắt ngang giữa hai trang;
+   tiêu đề bảng lặp lại ở đầu mỗi trang. */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  tr,
+  dl > div {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+}

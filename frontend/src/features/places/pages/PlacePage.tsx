@@ -86,7 +86,7 @@ export function PlacePage({ tabs = {} }: { tabs?: PlaceTabSlots }) {
               <PencilIcon aria-hidden="true" />
               Sửa
             </Button>
-            <PlaceActionsMenu hasCode={detail.code != null} onSelect={setDialog} />
+            <PlaceActionsMenu hasCode={detail.code != null} printHref={`/w/${workspaceId}/places/${detail.id}/print`} onSelect={setDialog} />
           </>
         }
       />

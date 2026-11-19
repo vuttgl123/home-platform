@@ -1,4 +1,5 @@
-import { FolderInputIcon, HashIcon, MapPinIcon, MoreHorizontalIcon, Trash2Icon } from 'lucide-react'
+import { FolderInputIcon, HashIcon, MapPinIcon, MoreHorizontalIcon, PrinterIcon, Trash2Icon } from 'lucide-react'
+import { Link } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -11,8 +12,19 @@ import {
 
 export type PlaceAction = 'move' | 'address' | 'reissueCode' | 'delete'
 
-/** Menu `⋯` trên đầu trang một địa điểm. */
-export function PlaceActionsMenu({ hasCode, onSelect }: { hasCode: boolean; onSelect: (action: PlaceAction) => void }) {
+/**
+ * Menu `⋯` trên đầu trang một địa điểm.
+ * @param printHref trang in hồ sơ, mở ở thẻ mới
+ */
+export function PlaceActionsMenu({
+  hasCode,
+  printHref,
+  onSelect,
+}: {
+  hasCode: boolean
+  printHref: string
+  onSelect: (action: PlaceAction) => void
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="outline" size="icon" aria-label="Thao tác khác" />}>
@@ -30,6 +42,10 @@ export function PlaceActionsMenu({ hasCode, onSelect }: { hasCode: boolean; onSe
         <DropdownMenuItem onClick={() => onSelect('reissueCode')}>
           <HashIcon aria-hidden="true" />
           {hasCode ? 'Cấp mã mới' : 'Cấp mã'}
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<Link to={printHref} target="_blank" rel="noopener" />}>
+          <PrinterIcon aria-hidden="true" />
+          In hồ sơ
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={() => onSelect('delete')}>
