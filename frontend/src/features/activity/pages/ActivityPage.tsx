@@ -1,31 +1,43 @@
+import { useId } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
+import { TextField } from '@/components/common/TextField'
+import { Button } from '@/components/ui/button'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ACTION_LABEL, type ChangeAction } from '@/features/history'
 
 import { ActivityRow } from '../components/ActivityRow'
+import { hasFilters, rangeIsValid, readFilter, writeFilter } from '../filters'
 import { ENTITY_LABEL } from '../labels'
 import { useActivity } from '../queries'
-import type { EntityType } from '../types'
+import type { ActivityFilter, EntityType } from '../types'
 
-const FILTERS: (EntityType | 'ALL')[] = ['ALL', 'PLACE', 'PERSON', 'ITEM']
-
-function isEntityType(value: string | null): value is EntityType {
-  return value === 'PLACE' || value === 'PERSON' || value === 'ITEM'
-}
+const TABS: (EntityType | 'ALL')[] = ['ALL', 'PLACE', 'PERSON', 'ITEM']
+const ACTIONS: ChangeAction[] = ['CREATE', 'UPDATE', 'DELETE', 'RESTORE']
 
 /**
- * Trang `/w/:workspaceId/activity`: mọi thay đổi của không gian, mới nhất trước, lọc theo loại
- * bản ghi (trên URL `?type=`). Cũng là chỗ khôi phục thứ đã xoá.
+ * Trang `/w/:workspaceId/activity`: mọi thay đổi của không gian, mới nhất trước. Lọc theo loại bản
+ * ghi (tab), hành động, khoảng ngày và "chỉ việc tôi làm"; mọi lọc nằm trên URL
+ * (`?type=&action=&mine=1&from=&to=`) để chép gửi người khác. Cũng là chỗ khôi phục thứ đã xoá.
  */
 export function ActivityPage() {
   const { workspaceId = '' } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
-  const requested = searchParams.get('type')
-  const type = isEntityType(requested) ? requested : null
-  const activity = useActivity(workspaceId, type)
+  const filter = readFilter(searchParams)
+  const validRange = rangeIsValid(filter)
+  const filtered = hasFilters(filter)
+  const activity = useActivity(workspaceId, filter)
+  const actionId = useId()
+
+  function update(change: Partial<ActivityFilter>) {
+    setSearchParams(writeFilter({ ...filter, ...change }), { replace: true })
+  }
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -40,16 +52,62 @@ export function ActivityPage() {
           .
         </p>
       </header>
-      <Tabs value={type ?? 'ALL'} onValueChange={(value) => setSearchParams(value === 'ALL' ? {} : { type: value as string }, { replace: true })}>
+      <Tabs value={filter.type ?? 'ALL'} onValueChange={(value) => update({ type: value === 'ALL' ? null : (value as EntityType) })}>
         <TabsList variant="line" className="w-full justify-start overflow-x-auto">
-          {FILTERS.map((filter) => (
-            <TabsTrigger key={filter} value={filter} className="flex-none">
-              {filter === 'ALL' ? 'Tất cả' : ENTITY_LABEL[filter]}
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab} value={tab} className="flex-none">
+              {tab === 'ALL' ? 'Tất cả' : ENTITY_LABEL[tab]}
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
-      {activity.isLoading ? (
+      <div className="flex flex-col gap-3">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field>
+            <FieldLabel htmlFor={actionId}>Hành động</FieldLabel>
+            <NativeSelect
+              id={actionId}
+              className="w-full"
+              value={filter.action ?? ''}
+              onChange={(event) => update({ action: (event.target.value || null) as ChangeAction | null })}
+            >
+              <NativeSelectOption value="">Tất cả</NativeSelectOption>
+              {ACTIONS.map((action) => (
+                <NativeSelectOption key={action} value={action}>
+                  {ACTION_LABEL[action]}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Field>
+          <TextField
+            label="Từ ngày"
+            type="date"
+            value={filter.from ?? ''}
+            max={filter.to ?? undefined}
+            onChange={(event) => update({ from: event.target.value || null })}
+          />
+          <TextField
+            label="Đến ngày"
+            type="date"
+            value={filter.to ?? ''}
+            min={filter.from ?? undefined}
+            onChange={(event) => update({ to: event.target.value || null })}
+          />
+        </div>
+        {!validRange && <FieldError>Từ ngày phải trước hoặc bằng Đến ngày</FieldError>}
+        <div className="flex min-h-8 flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={filter.mine} onCheckedChange={(mine) => update({ mine })} aria-label="Chỉ việc tôi làm" />
+            Chỉ việc tôi làm
+          </label>
+          {filtered && (
+            <Button variant="ghost" size="sm" onClick={() => update({ action: null, mine: false, from: null, to: null })}>
+              Bỏ lọc
+            </Button>
+          )}
+        </div>
+      </div>
+      {!validRange ? null : activity.isLoading ? (
         <div className="flex flex-col gap-2" aria-label="Đang tải">
           <Skeleton className="h-12" />
           <Skeleton className="h-12" />
@@ -57,7 +115,7 @@ export function ActivityPage() {
       ) : activity.error ? (
         <ErrorState error={activity.error} onRetry={activity.refetch} />
       ) : activity.items.length === 0 ? (
-        <p className="text-muted-foreground">Chưa có hoạt động nào.</p>
+        <p className="text-muted-foreground">{filtered ? 'Không có hoạt động khớp bộ lọc.' : 'Chưa có hoạt động nào.'}</p>
       ) : (
         <div className="flex flex-col gap-3">
           <ol className="flex flex-col divide-y rounded-lg border">

@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { page, placeDetail, problem } from '@/test/fixtures'
+import { page, place, placeDetail, problem } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { mockPlaceBackend } from '@/test/placeBackend'
 import { renderApp } from '@/test/render'
@@ -24,14 +24,14 @@ function entry(overrides: Record<string, unknown>) {
   }
 }
 
-/** Trả `entries`; ghi lại `entityType` của mỗi lần hỏi. */
+/** Trả `entries` (lọc theo `entityType` như backend); ghi lại tham số của mỗi lần hỏi. */
 function mockActivity(entries: Record<string, unknown>[]) {
-  const asked: (string | null)[] = []
+  const asked: Record<string, string>[] = []
   server.use(
     http.get('/api/registry/activity', ({ request }) => {
-      const type = new URL(request.url).searchParams.get('entityType')
-      asked.push(type)
-      return HttpResponse.json(page(entries.filter((row) => type == null || row.entityType === type)))
+      const query = Object.fromEntries(new URL(request.url).searchParams)
+      asked.push(query)
+      return HttpResponse.json(page(entries.filter((row) => query.entityType == null || row.entityType === query.entityType)))
     }),
   )
   return asked
@@ -73,8 +73,100 @@ test('filterFollowsTheUrl', async () => {
   await user.click((await main()).getByRole('tab', { name: 'Người' }))
 
   await waitFor(() => expect(router.state.location.search).toBe('?type=PERSON'))
-  await waitFor(() => expect(asked).toContain('PERSON'))
+  await waitFor(() => expect(asked.map((query) => query.entityType)).toContain('PERSON'))
   await waitFor(async () => expect(await rows()).toHaveLength(1))
+})
+
+test('filtersAreReadFromTheUrl', async () => {
+  mockShell()
+  const asked = mockActivity([])
+  renderApp({ route: '/w/7/activity?type=ITEM&action=DELETE&mine=1&from=2026-11-01&to=2026-11-17', userId: '42' })
+  const view = await main()
+
+  await waitFor(() => expect(asked).not.toHaveLength(0))
+  // "Đến ngày" 17/11 gửi 00:00 (giờ máy) ngày 18/11: backend không tính mốc `to`.
+  expect(asked.at(-1)).toEqual({
+    entityType: 'ITEM',
+    action: 'DELETE',
+    changedBy: '42',
+    from: new Date(2026, 10, 1).toISOString(),
+    to: new Date(2026, 10, 18).toISOString(),
+  })
+  expect(view.getByLabelText('Hành động')).toHaveValue('DELETE')
+  expect(view.getByRole('switch', { name: 'Chỉ việc tôi làm' })).toBeChecked()
+  expect(view.getByLabelText('Từ ngày')).toHaveValue('2026-11-01')
+  expect(view.getByLabelText('Đến ngày')).toHaveValue('2026-11-17')
+})
+
+test('changingAFilterUpdatesTheUrl', async () => {
+  mockShell()
+  const asked = mockActivity([])
+  const { user, router } = renderApp({ route: '/w/7/activity', userId: '42' })
+  const view = await main()
+
+  await user.selectOptions(await view.findByLabelText('Hành động'), 'Xoá')
+  await waitFor(() => expect(router.state.location.search).toBe('?action=DELETE'))
+  await user.click(view.getByRole('switch', { name: 'Chỉ việc tôi làm' }))
+  await waitFor(() => expect(router.state.location.search).toBe('?action=DELETE&mine=1'))
+  await user.type(view.getByLabelText('Từ ngày'), '2026-11-01')
+  await waitFor(() => expect(router.state.location.search).toBe('?action=DELETE&mine=1&from=2026-11-01'))
+  // Đổi tab loại bản ghi không làm mất các lọc khác.
+  await user.click(view.getByRole('tab', { name: 'Đồ đạc' }))
+
+  await waitFor(() => expect(router.state.location.search).toBe('?type=ITEM&action=DELETE&mine=1&from=2026-11-01'))
+  await waitFor(() =>
+    expect(asked.at(-1)).toEqual({ entityType: 'ITEM', action: 'DELETE', changedBy: '42', from: new Date(2026, 10, 1).toISOString() }),
+  )
+})
+
+test('clearFiltersKeepsTheTypeTab', async () => {
+  mockShell()
+  mockActivity([])
+  const { user, router } = renderApp({ route: '/w/7/activity?type=PERSON&action=DELETE&mine=1&from=2026-11-01', userId: '42' })
+  const view = await main()
+
+  await user.click(await view.findByRole('button', { name: 'Bỏ lọc' }))
+
+  await waitFor(() => expect(router.state.location.search).toBe('?type=PERSON'))
+  // Chỉ còn tab loại bản ghi: không còn gì để bỏ.
+  expect(view.queryByRole('button', { name: 'Bỏ lọc' })).not.toBeInTheDocument()
+  expect(view.getByLabelText('Hành động')).toHaveValue('')
+})
+
+test('fromAfterToShowsAMessageAndSendsNothing', async () => {
+  // Cây địa điểm tải cùng lúc với danh sách: khi cây đã hiện thì request hoạt động (nếu có) cũng đã đi.
+  mockShell({ places: [place({ id: '1', name: 'Toà A' })] })
+  const asked = mockActivity([entry({})])
+  const { user } = renderApp({ route: '/w/7/activity?from=2026-11-18&to=2026-11-17', userId: '42' })
+  const view = await main()
+
+  expect(await view.findByText('Từ ngày phải trước hoặc bằng Đến ngày')).toBeInTheDocument()
+  await screen.findByRole('treeitem', { name: 'Toà A' })
+  expect(asked).toEqual([])
+  expect(view.queryByRole('listitem')).not.toBeInTheDocument()
+
+  // Sửa lại khoảng ngày thì danh sách tải.
+  await user.clear(view.getByLabelText('Từ ngày'))
+
+  await waitFor(() => expect(asked).toEqual([{ to: new Date(2026, 10, 18).toISOString() }]))
+  expect(await rows()).toHaveLength(1)
+  expect(view.queryByText('Từ ngày phải trước hoặc bằng Đến ngày')).not.toBeInTheDocument()
+})
+
+test('emptyFilteredListSaysSo', async () => {
+  mockShell()
+  mockActivity([])
+  renderApp({ route: '/w/7/activity?action=RESTORE', userId: '42' })
+
+  expect(await (await main()).findByText('Không có hoạt động khớp bộ lọc.')).toBeInTheDocument()
+})
+
+test('emptyListWithoutFiltersKeepsItsMessage', async () => {
+  mockShell()
+  mockActivity([])
+  renderApp({ route: '/w/7/activity?type=ITEM', userId: '42' })
+
+  expect(await (await main()).findByText('Chưa có hoạt động nào.')).toBeInTheDocument()
 })
 
 test('rowsLinkToTheirRecords', async () => {
