@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 
+import { InfoCard, InfoList } from '@/components/common/InfoCard'
 import { AttributeView, useFieldDefs } from '@/features/catalog'
 import { formatDateTime } from '@/lib/format'
 
@@ -17,44 +18,40 @@ export function PersonInfoTab({ ws, person }: { ws: string; person: PersonDetail
   ]
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[minmax(8rem,max-content)_1fr]">
-        {rows.map(([label, value]) => (
-          <div key={label} className="contents">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className="mb-2 sm:mb-0">{value ?? '—'}</dd>
-          </div>
-        ))}
-        <div className="contents">
-          <dt className="text-muted-foreground">Đang ở</dt>
-          <dd className="mb-2 sm:mb-0">
-            {person.currentOccupancies.length === 0
-              ? '—'
-              : person.currentOccupancies.map((stay, index) => (
-                  <span key={stay.id}>
-                    {index > 0 && ', '}
-                    <Link to={`/w/${ws}/places/${stay.placeId}`} className="font-medium hover:underline">
-                      {stay.placeName}
-                    </Link>{' '}
-                    <span className="text-muted-foreground">({RELATION_LABEL[stay.relation]})</span>
-                  </span>
-                ))}
-          </dd>
-        </div>
-      </dl>
+    <div className="grid max-w-5xl gap-4 lg:grid-cols-2">
+      <InfoCard title="Thông tin">
+        <InfoList
+          rows={[
+            ...rows.map(([label, value]) => ({ label, value })),
+            {
+              label: 'Đang ở',
+              value:
+                person.currentOccupancies.length === 0
+                ? null
+                : person.currentOccupancies.map((stay, index) => (
+                    <span key={stay.id}>
+                      {index > 0 && ', '}
+                      <Link to={`/w/${ws}/places/${stay.placeId}`} className="font-medium hover:underline">
+                        {stay.placeName}
+                      </Link>{' '}
+                      <span className="text-muted-foreground">({RELATION_LABEL[stay.relation]})</span>
+                    </span>
+                  )),
+            },
+          ]}
+        />
+      </InfoCard>
       {person.note && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium">Ghi chú</h2>
-          <p className="whitespace-pre-line">{person.note}</p>
-        </section>
+        <InfoCard title="Ghi chú">
+          <p className="text-sm whitespace-pre-line">{person.note}</p>
+        </InfoCard>
       )}
       {defs.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium">Thông tin thêm</h2>
+        <InfoCard title="Mục tuỳ biến" className="lg:col-span-2">
           <AttributeView defs={defs} values={person.attributes} />
-        </section>
+        </InfoCard>
       )}
-      <p className="text-xs text-muted-foreground">Sửa lần cuối {formatDateTime(person.updatedAt)}</p>
+      <p className="text-xs text-muted-foreground lg:col-span-2">Sửa lần cuối {formatDateTime(person.updatedAt)}</p>
     </div>
   )
 }

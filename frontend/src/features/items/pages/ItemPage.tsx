@@ -2,6 +2,9 @@ import { ArrowRightLeftIcon, FolderInputIcon, HashIcon, MoreHorizontalIcon, User
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
+import { PersonAvatar } from '@/components/common/PersonAvatar'
+import { InfoCard, InfoList } from '@/components/common/InfoCard'
 import { WithTooltip } from '@/components/common/WithTooltip'
 import { ToneBadge } from '@/components/common/ToneBadge'
 import { ErrorState } from '@/components/common/ErrorState'
@@ -73,20 +76,21 @@ export function ItemPage() {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">
-          Ở{' '}
-          <Link to={`/w/${workspaceId}/places/${detail.placeId}?tab=items`} className="font-medium text-foreground hover:underline">
-            {detail.placeName}
-          </Link>
-          {detail.ownerPersonId && (
-            <>
-              {' · của '}
-              <Link to={`/w/${workspaceId}/people/${detail.ownerPersonId}`} className="font-medium text-foreground hover:underline">
-                {detail.ownerName}
-              </Link>
-            </>
-          )}
-        </p>
+        <Breadcrumb aria-label="Đường dẫn">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink render={<Link to={`/w/${workspaceId}/items`} />}>Đồ đạc</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink render={<Link to={`/w/${workspaceId}/places/${detail.placeId}?tab=items`} />}>{detail.placeName}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{detail.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
           <h1 className="min-w-0 flex-1 text-2xl font-semibold tracking-tight break-words">{detail.name}</h1>
           <div className="flex shrink-0 gap-2">
@@ -160,6 +164,18 @@ export function ItemPage() {
           <dd className="text-muted-foreground" title="Số lần đã sửa, tính cả lần tạo">
             v{detail.version}
           </dd>
+          {detail.ownerPersonId && (
+            <>
+              <dt className="sr-only">Chủ</dt>
+              <dd className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <PersonAvatar name={detail.ownerName} size="sm" />
+                của{' '}
+                <Link to={`/w/${workspaceId}/people/${detail.ownerPersonId}`} className="font-medium text-foreground hover:underline">
+                  {detail.ownerName}
+                </Link>
+              </dd>
+            </>
+          )}
         </dl>
         {removed && (
           <Alert>
@@ -215,34 +231,27 @@ export function ItemPage() {
 
 function ItemInfo({ ws, item }: { ws: string; item: ItemDetail }) {
   const defs = useFieldDefs(ws, 'ITEM', item.categoryId ?? '0').data ?? []
-  const rows: [string, string | null][] = [
+  const rows: [string, React.ReactNode][] = [
     ['Mã', item.code],
     ['Ngày đặt', item.placedAt ? formatDate(item.placedAt) : null],
     ['Ngày gỡ', item.removedAt ? formatDate(item.removedAt) : null],
   ]
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[minmax(8rem,max-content)_1fr]">
-        {rows.map(([label, value]) => (
-          <div key={label} className="contents">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className="mb-2 sm:mb-0">{value ?? '—'}</dd>
-          </div>
-        ))}
-      </dl>
-      {item.description && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium">Mô tả</h2>
-          <p className="whitespace-pre-line">{item.description}</p>
-        </section>
-      )}
+    <div className="grid max-w-5xl gap-4 lg:grid-cols-2">
+      <InfoCard title="Thông tin">
+        <InfoList
+          rows={[
+            ...rows.map(([label, value]) => ({ label, value })),
+            { label: 'Mô tả', value: item.description ? <span className="whitespace-pre-line">{item.description}</span> : null },
+          ]}
+        />
+      </InfoCard>
       {defs.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium">Thông tin thêm</h2>
+        <InfoCard title="Mục tuỳ biến">
           <AttributeView defs={defs} values={item.attributes} />
-        </section>
+        </InfoCard>
       )}
-      <p className="text-xs text-muted-foreground">Sửa lần cuối {formatDateTime(item.updatedAt)}</p>
+      <p className="text-xs text-muted-foreground lg:col-span-2">Sửa lần cuối {formatDateTime(item.updatedAt)}</p>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
+import { PersonAvatar } from '@/components/common/PersonAvatar'
 import { ToneBadge } from '@/components/common/ToneBadge'
 import type { CursorList } from '@/api'
 import { ErrorState } from '@/components/common/ErrorState'
@@ -9,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/format'
 
 import { OCCUPANCY_STATUS_TONE, RELATION_LABEL, STATUS_LABEL } from '../labels'
+import { PersonHoverCard } from './PersonHoverCard'
 import type { Occupancy } from '../types'
 
 /**
@@ -53,9 +55,10 @@ export function OccupancyList({
     </Link>
   )
   const personLink = (row: Occupancy) => (
-    <Link to={`/w/${ws}/people/${row.personId}`} className="font-medium hover:underline">
-      {row.personFullName}
-    </Link>
+    <span className="inline-flex items-center gap-2">
+      <PersonAvatar name={row.personFullName} size="sm" />
+      <PersonHoverCard ws={ws} personId={row.personId} name={row.personFullName} />
+    </span>
   )
 
   return (

@@ -142,6 +142,8 @@ test('replaceMovesTheOldOneToRemovedAndLinksTheNewOne', async () => {
   // Món cũ: đã gỡ, có liên kết tới món mới.
   await router.navigate('/w/7/items/900')
   const old = await main()
+  // Chờ trang món cũ hiện: trang món mới cũng có "Tủ lạnh mới" (mục cuối của đường dẫn).
+  await old.findByRole('heading', { name: 'Tủ lạnh' })
   expect(await old.findByRole('link', { name: 'Tủ lạnh mới' })).toHaveAttribute('href', '/w/7/items/9500')
   expect(old.getByRole('button', { name: 'Đưa lại' })).toBeDisabled()
 })
@@ -342,4 +344,15 @@ test('undoRestoresTheDeletedItem', async () => {
   await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/items/900'))
   expect(backend.items.get('900')?.version).toBe(3)
   expect(await (await main()).findByRole('heading', { name: 'Tủ lạnh' })).toBeInTheDocument()
+})
+
+test('itemPageShowsWhereItIsAsABreadcrumb', async () => {
+  setUp([{ id: '900', placeId: '301', name: 'Tủ lạnh' }])
+
+  renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  const trail = within(await (await main()).findByRole('navigation', { name: 'Đường dẫn' }))
+  expect(trail.getByRole('link', { name: 'Đồ đạc' })).toHaveAttribute('href', '/w/7/items')
+  expect(trail.getByRole('link', { name: 'P301' })).toHaveAttribute('href', '/w/7/places/301?tab=items')
+  expect(trail.getByText('Tủ lạnh')).toHaveAttribute('aria-current', 'page')
 })

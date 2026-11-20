@@ -1,12 +1,13 @@
 import { Link } from 'react-router'
 
+import { InfoCard, InfoList } from '@/components/common/InfoCard'
 import { AttributeView, useFieldDefs } from '@/features/catalog'
 import { formatDateTime } from '@/lib/format'
 
 import { placeUrl } from '../routes'
 import type { PlaceDetail } from '../types'
 
-/** Tab "Tổng quan": địa chỉ, mô tả, mục tuỳ biến theo loại. */
+/** Tab "Tổng quan": nằm trong đâu, mô tả, địa chỉ, mục tuỳ biến theo loại. */
 export function PlaceOverviewTab({
   ws,
   place,
@@ -17,36 +18,38 @@ export function PlaceOverviewTab({
   addressActions?: React.ReactNode
 }) {
   const defs = useFieldDefs(ws, 'PLACE', place.placeTypeId).data ?? []
+  const parent = place.ancestors.at(-1)
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <Section title="Địa chỉ" actions={addressActions}>
+    <div className="grid max-w-5xl gap-4 lg:grid-cols-2">
+      {/* Loại, mã, trạng thái đã ở đầu trang; khối này nói thêm nằm ở đâu và mô tả. */}
+      <InfoCard title="Thông tin">
+        <InfoList
+          rows={[
+            {
+              label: 'Nằm trong',
+              value: parent ? (
+                <Link to={placeUrl(ws, parent.id)} className="font-medium hover:underline">
+                  {parent.name}
+                </Link>
+              ) : (
+                'Cấp cao nhất'
+              ),
+            },
+            { label: 'Mô tả', value: place.description ? <span className="whitespace-pre-line">{place.description}</span> : null },
+          ]}
+        />
+      </InfoCard>
+      <InfoCard title="Địa chỉ" actions={addressActions}>
         <AddressView ws={ws} place={place} />
-      </Section>
-      {place.description && (
-        <Section title="Mô tả">
-          <p className="whitespace-pre-line">{place.description}</p>
-        </Section>
-      )}
+      </InfoCard>
       {defs.length > 0 && (
-        <Section title="Thông tin thêm">
+        <InfoCard title="Mục tuỳ biến" className="lg:col-span-2">
           <AttributeView defs={defs} values={place.attributes} />
-        </Section>
+        </InfoCard>
       )}
-      <p className="text-xs text-muted-foreground">Sửa lần cuối {formatDateTime(place.updatedAt)}</p>
+      <p className="text-xs text-muted-foreground lg:col-span-2">Sửa lần cuối {formatDateTime(place.updatedAt)}</p>
     </div>
-  )
-}
-
-function Section({ title, actions, children }: { title: string; actions?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">{title}</h2>
-        {actions}
-      </div>
-      {children}
-    </section>
   )
 }
 

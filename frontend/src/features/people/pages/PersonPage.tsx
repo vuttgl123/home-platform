@@ -2,6 +2,7 @@ import { MapPinPlusIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'luci
 import { useState, type ReactNode } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
+import { PersonAvatar } from '@/components/common/PersonAvatar'
 import { WithTooltip } from '@/components/common/WithTooltip'
 import { ErrorState } from '@/components/common/ErrorState'
 import { NotFoundState } from '@/components/common/NotFoundState'
@@ -138,7 +139,10 @@ function PersonHeader({
         Người
       </Link>
       <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-        <h1 className="min-w-0 flex-1 text-2xl font-semibold tracking-tight break-words">{person.fullName}</h1>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <PersonAvatar name={person.fullName} size="lg" className="size-12" />
+          <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words">{person.fullName}</h1>
+        </div>
         <div className="flex shrink-0 gap-2">
           <Button variant="outline" onClick={onEdit}>
             <PencilIcon aria-hidden="true" />

@@ -202,3 +202,14 @@ test('ownersTabSitsBeforeOccupants', async () => {
   const names = tabs.getAllByRole('tab').map((tab) => tab.textContent)
   expect(names.indexOf('Sở hữu')).toBe(names.indexOf('Người ở') - 1)
 })
+
+test('placeOverviewShowsTheInformationCard', async () => {
+  mockP301()
+
+  renderApp({ route: '/w/7/places/301', userId: '42' })
+
+  // Loại, mã, trạng thái đã ở đầu trang; khối "Thông tin" nói thêm nằm trong đâu và mô tả.
+  const info = within(await (await main()).findByRole('region', { name: 'Thông tin' }))
+  expect(info.getByRole('link', { name: 'Tầng 3' })).toHaveAttribute('href', '/w/7/places/13')
+  expect(info.getByText('Phòng góc, hai cửa sổ.')).toBeInTheDocument()
+})

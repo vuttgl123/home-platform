@@ -2,6 +2,7 @@ import { PlusIcon, UsersIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 
+import { PersonAvatar } from '@/components/common/PersonAvatar'
 import type { CursorList } from '@/api'
 import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
@@ -108,13 +109,14 @@ function PeopleList({ ws, list, empty }: { ws: string; list: CursorList<PersonSu
   }
   return (
     <div className="flex flex-col gap-3">
-      <ul className="divide-y rounded-lg border">
+      <ul className="divide-y rounded-xl border bg-card">
         {list.items.map((person) => (
           <li key={person.id}>
             <Link
               to={`/w/${ws}/people/${person.id}`}
-              className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-3 py-2.5 outline-none hover:bg-muted focus-visible:bg-muted"
+              className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2.5 outline-none hover:bg-muted focus-visible:bg-muted"
             >
+              <PersonAvatar name={person.fullName} />
               <span className="min-w-0 flex-1 truncate font-medium">{person.fullName}</span>
               {person.phone && <span className="text-sm text-muted-foreground">{person.phone}</span>}
               {person.idNumber && (

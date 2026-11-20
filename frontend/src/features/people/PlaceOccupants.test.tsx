@@ -4,7 +4,7 @@ import { expect, test } from 'vitest'
 
 import { todayInBusinessZone } from '@/lib/dates'
 import { formatDate } from '@/lib/format'
-import { placeType, problem } from '@/test/fixtures'
+import { personDetail, placeType, problem } from '@/test/fixtures'
 import { mockShell, recordRequests } from '@/test/handlers'
 import { mockPeopleBackend } from '@/test/peopleBackend'
 import { mockPlaceBackend } from '@/test/placeBackend'
@@ -294,4 +294,19 @@ test('currentResidentIsMarkedSuccess', async () => {
   const upcoming = await group('Sắp đến')
   await upcoming.findByRole('link', { name: 'Trần Bình' })
   expect(upcoming.getByText('Sắp đến', { selector: 'td *' })).toHaveAttribute('data-tone', 'warning')
+})
+
+test('hoveringAResidentShowsTheirPhone', async () => {
+  setUp([{ id: '1', personId: '55', placeId: '301', startDate: '2026-01-01' }])
+  server.use(
+    http.get('/api/registry/people/55', () =>
+      HttpResponse.json(personDetail({ id: '55', fullName: 'Nguyễn An', phone: '0912 345 678', email: 'nguyen.an@example.com' })),
+    ),
+  )
+  const { user } = renderApp({ route: '/w/7/places/301?tab=people', userId: '42' })
+
+  await user.hover(await (await group('Đang ở')).findByRole('link', { name: 'Nguyễn An' }))
+
+  expect(await screen.findByText('0912 345 678')).toBeInTheDocument()
+  expect(screen.getByText('nguyen.an@example.com')).toBeInTheDocument()
 })

@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
+import { PersonAvatar } from '@/components/common/PersonAvatar'
 import { ToneBadge } from '@/components/common/ToneBadge'
+import { Progress } from '@/components/ui/progress'
 import type { CursorList } from '@/api'
 import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PersonHoverCard } from '@/features/people'
 import { formatDate } from '@/lib/format'
 
 import { OWNERSHIP_STATUS_LABEL, OWNERSHIP_STATUS_TONE } from '../labels'
@@ -56,9 +59,10 @@ export function OwnershipList({
     </Link>
   )
   const personLink = (row: Ownership) => (
-    <Link to={`/w/${ws}/people/${row.personId}`} className="font-medium hover:underline">
-      {row.personFullName}
-    </Link>
+    <span className="inline-flex items-center gap-2">
+      <PersonAvatar name={row.personFullName} size="sm" />
+      <PersonHoverCard ws={ws} personId={row.personId} name={row.personFullName} />
+    </span>
   )
   const shares = list.items.filter((row) => row.sharePercent != null)
   const total = showTotal && !list.hasMore && shares.length > 0 ? shares.reduce((sum, row) => sum + row.sharePercent!, 0) : null
@@ -103,7 +107,13 @@ export function OwnershipList({
               <tr>
                 <td className="px-3 py-2 font-medium">Tổng</td>
                 {showBoth && <td />}
-                <td className="px-3 py-2 font-medium whitespace-nowrap">{formatShare(total)}</td>
+                <td className="px-3 py-2 font-medium whitespace-nowrap">
+                  <span className="inline-flex items-center gap-3">
+                    {formatShare(total)}
+                    {/* Tổng có thể dưới 100% (chưa ghi đủ chủ); thanh dừng ở 100. */}
+                    <Progress value={Math.min(total, 100)} aria-label="Tổng tỷ lệ sở hữu" className="w-24 [&_[data-slot=progress-track]]:h-1.5" />
+                  </span>
+                </td>
                 <td colSpan={columns - (showBoth ? 3 : 2)} />
               </tr>
             </tfoot>

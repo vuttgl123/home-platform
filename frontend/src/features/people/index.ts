@@ -1,5 +1,6 @@
 export { PersonFormDialog } from './components/PersonFormDialog'
 export { PersonChoiceField } from './components/PersonChoiceField'
+export { PersonHoverCard } from './components/PersonHoverCard'
 export { PersonPicker } from './components/PersonPicker'
 export { usePersonChoice } from './components/personChoice'
 export type { PersonChoice, PersonChoiceState } from './components/personChoice'

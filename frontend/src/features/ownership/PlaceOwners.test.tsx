@@ -216,3 +216,15 @@ test('emptyTabInvitesToAddAnOwner', async () => {
   expect(await (await group('Đang sở hữu')).findByText('Chưa có ai đang sở hữu.')).toBeInTheDocument()
   expect((await main()).getByRole('button', { name: 'Thêm chủ' })).toBeInTheDocument()
 })
+
+test('currentOwnersShowTheirTotalShare', async () => {
+  setUp([
+    { id: '1', personId: '55', sharePercent: 50 },
+    { id: '2', personId: '56', sharePercent: 30 },
+  ])
+  await openTab()
+
+  const current = await group('Đang sở hữu')
+
+  expect(await current.findByRole('progressbar', { name: 'Tổng tỷ lệ sở hữu' })).toHaveAttribute('aria-valuenow', '80')
+})
