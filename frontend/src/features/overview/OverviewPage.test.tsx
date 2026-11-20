@@ -89,8 +89,11 @@ test('placeTypesShowOccupiedAndVacant', async () => {
   const rows = types.getAllByRole('listitem')
 
   expect(rows).toHaveLength(2)
-  expect(rows[0]).toHaveTextContent(/^Phòng\s*2 có người · 1 trống$/)
-  expect(rows[1]).toHaveTextContent(/^Tầng\s*0 có người · 1 trống$/)
+  // So từng phần chữ: thanh tỷ lệ (base-ui) chèn một chữ ẩn vào nội dung của dòng.
+  expect(within(rows[0]).getByText('Phòng')).toBeInTheDocument()
+  expect(within(rows[0]).getByText('2 có người · 1 trống')).toBeInTheDocument()
+  expect(within(rows[1]).getByText('Tầng')).toBeInTheDocument()
+  expect(within(rows[1]).getByText('0 có người · 1 trống')).toBeInTheDocument()
 })
 
 test('todoSectionHiddenWhenNothingIsMissing', async () => {
@@ -202,4 +205,22 @@ test('failedOverviewShowsAnErrorWithRetry', async () => {
   await user.click(view.getByRole('button', { name: 'Thử lại' }))
 
   expect(await view.findByRole('heading', { name: 'Tổng quan' })).toBeInTheDocument()
+})
+
+test('occupancyIsShownAsAShareOfPlaces', async () => {
+  setUp({
+    placeTypes: [
+      { typeId: '500', name: 'Phòng', total: 3, occupied: 2 },
+      { typeId: '501', name: 'Tầng', total: 1, occupied: 0 },
+      { typeId: '502', name: 'Căn hộ', total: 3, occupied: 3 },
+    ],
+  })
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const types = within((await main()).getByRole('region', { name: 'Chỗ ở theo loại' }))
+
+  // 2/3 làm tròn thành 67%; không ai ở là 0, ở kín là 100.
+  expect(types.getByRole('progressbar', { name: 'Tỷ lệ có người của Phòng' })).toHaveAttribute('aria-valuenow', '67')
+  expect(types.getByRole('progressbar', { name: 'Tỷ lệ có người của Tầng' })).toHaveAttribute('aria-valuenow', '0')
+  expect(types.getByRole('progressbar', { name: 'Tỷ lệ có người của Căn hộ' })).toHaveAttribute('aria-valuenow', '100')
 })

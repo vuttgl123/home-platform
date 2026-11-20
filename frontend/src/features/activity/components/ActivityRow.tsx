@@ -1,9 +1,9 @@
 import { Link } from 'react-router'
 
 import { ToneBadge } from '@/components/common/ToneBadge'
-import { currentUserId } from '@/api'
 import { Badge } from '@/components/ui/badge'
 import { ACTION_LABEL, ACTION_TONE } from '@/features/history'
+import { UserChip } from '@/features/users'
 import { formatDateTime } from '@/lib/format'
 
 import { ENTITY_LABEL, ENTITY_PATH, FIELD_LABEL } from '../labels'
@@ -31,8 +31,11 @@ export function ActivityRow({ ws, entry }: { ws: string; entry: ActivityEntry })
           </Link>
         )}
         <ToneBadge tone={ACTION_TONE[entry.action]}>{ACTION_LABEL[entry.action]}</ToneBadge>
-        <span className="text-muted-foreground">
-          v{entry.versionNo} · {formatDateTime(entry.changedAt)} · {entry.changedBy === currentUserId() ? 'Bạn' : 'Người dùng khác'}
+        <span className="inline-flex flex-wrap items-center gap-x-2 text-muted-foreground">
+          <span className="tabular-nums">
+            v{entry.versionNo} · {formatDateTime(entry.changedAt)}
+          </span>
+          <UserChip userId={entry.changedBy} />
         </span>
         {deleted && <RestoreButton ws={ws} entityType={entry.entityType} entityId={entry.entityId} version={entry.versionNo} name={name} />}
       </div>

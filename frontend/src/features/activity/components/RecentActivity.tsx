@@ -15,10 +15,10 @@ export function RecentActivity({ ws }: { ws: string }) {
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id={headingId} className="font-medium">
+        <h2 id={headingId} className="font-semibold">
           Hoạt động gần đây
         </h2>
-        <Link to={`/w/${ws}/activity`} className="text-sm underline underline-offset-4">
+        <Link to={`/w/${ws}/activity`} className="text-sm font-medium text-primary underline-offset-4 hover:underline">
           Xem tất cả
         </Link>
       </div>
@@ -32,7 +32,7 @@ export function RecentActivity({ ws }: { ws: string }) {
       ) : recent.data.length === 0 ? (
         <p className="text-sm text-muted-foreground">Chưa có hoạt động nào.</p>
       ) : (
-        <ol className="flex flex-col divide-y rounded-lg border">
+        <ol className="flex flex-col divide-y rounded-xl border bg-card">
           {recent.data.map((entry) => (
             <ActivityRow key={`${entry.entityType}:${entry.entityId}:${entry.versionNo}`} ws={ws} entry={entry} />
           ))}
