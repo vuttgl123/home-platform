@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
+import { ToneBadge } from '@/components/common/ToneBadge'
 import type { CursorList } from '@/api'
 import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/format'
 
-import { OWNERSHIP_STATUS_LABEL } from '../labels'
+import { OWNERSHIP_STATUS_LABEL, OWNERSHIP_STATUS_TONE } from '../labels'
 import type { Ownership } from '../types'
 import { formatShare } from './ownershipForm'
 
@@ -90,7 +90,7 @@ export function OwnershipList({
                 <td className="px-3 py-2 whitespace-nowrap">{row.endDate ? formatDate(row.endDate) : '—'}</td>
                 {showStatus && (
                   <td className="px-3 py-2">
-                    <Badge variant={row.status === 'CURRENT' ? 'secondary' : 'outline'}>{OWNERSHIP_STATUS_LABEL[row.status]}</Badge>
+                    <ToneBadge tone={OWNERSHIP_STATUS_TONE[row.status]}>{OWNERSHIP_STATUS_LABEL[row.status]}</ToneBadge>
                   </td>
                 )}
                 <td className="px-3 py-2">{row.documentNo ?? '—'}</td>

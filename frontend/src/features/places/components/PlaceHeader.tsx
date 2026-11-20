@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router'
 
+import { ToneBadge } from '@/components/common/ToneBadge'
 import { Badge } from '@/components/ui/badge'
 import {
   Breadcrumb,
@@ -12,10 +13,9 @@ import {
 } from '@/components/ui/breadcrumb'
 import { usePlaceTypes } from '@/features/catalog'
 
+import { PLACE_STATUS_LABEL, PLACE_STATUS_TONE } from '../labels'
 import { placeUrl } from '../routes'
 import type { PlaceDetail } from '../types'
-
-const STATUS_LABEL = { ACTIVE: 'Đang dùng', INACTIVE: 'Tạm ngưng' } as const
 
 /**
  * Đầu trang của một địa điểm: chuỗi tổ tiên, tên, loại, trạng thái, mã, version.
@@ -52,7 +52,7 @@ export function PlaceHeader({ ws, place, actions }: { ws: string; place: PlaceDe
         </dd>
         <dt className="sr-only">Trạng thái</dt>
         <dd>
-          <Badge variant={place.status === 'ACTIVE' ? 'outline' : 'destructive'}>{STATUS_LABEL[place.status]}</Badge>
+          <ToneBadge tone={PLACE_STATUS_TONE[place.status]}>{PLACE_STATUS_LABEL[place.status]}</ToneBadge>
         </dd>
         {place.code && (
           <>

@@ -1,15 +1,15 @@
 import { useState } from 'react'
 
+import { ToneBadge } from '@/components/common/ToneBadge'
 import { currentUserId } from '@/api'
 import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateTime } from '@/lib/format'
 
-import { ACTION_LABEL } from '../labels'
+import { ACTION_LABEL, ACTION_TONE } from '../labels'
 import { useVersions } from '../queries'
 import type { EntityKind, SnapshotRow } from '../types'
 import { CompareDialog } from './CompareDialog'
@@ -97,8 +97,8 @@ export function HistoryTab<Snapshot>({
               >
                 <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="font-medium">v{version.versionNo}</span>
-                  <Badge variant="outline">{ACTION_LABEL[version.action]}</Badge>
-                  {version.versionNo === currentVersion && <Badge variant="secondary">Hiện tại</Badge>}
+                  <ToneBadge tone={ACTION_TONE[version.action]}>{ACTION_LABEL[version.action]}</ToneBadge>
+                  {version.versionNo === currentVersion && <ToneBadge tone="primary">Hiện tại</ToneBadge>}
                   <span className="text-muted-foreground">
                     {formatDateTime(version.changedAt)} · {version.changedBy === me ? 'Bạn' : 'Người dùng khác'}
                   </span>

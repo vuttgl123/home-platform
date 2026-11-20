@@ -280,3 +280,18 @@ test('editingAnOwnerRowKeepsTheOwnerOption', async () => {
   await waitFor(() => expect(backend.writes).toHaveLength(1))
   expect(backend.writes[0].body).toMatchObject({ relation: 'OWNER', note: 'vẫn ở' })
 })
+
+test('currentResidentIsMarkedSuccess', async () => {
+  setUp([
+    { id: '1', personId: '55', placeId: '301', startDate: '2026-01-01' },
+    { id: '2', personId: '56', placeId: '301', startDate: LATER },
+  ])
+  renderApp({ route: '/w/7/places/301?tab=people', userId: '42' })
+
+  const current = await group('Đang ở')
+  await current.findByRole('link', { name: 'Nguyễn An' })
+  expect(current.getAllByText('Đang ở').find((node) => node.closest('td'))).toHaveAttribute('data-tone', 'success')
+  const upcoming = await group('Sắp đến')
+  await upcoming.findByRole('link', { name: 'Trần Bình' })
+  expect(upcoming.getByText('Sắp đến', { selector: 'td *' })).toHaveAttribute('data-tone', 'warning')
+})

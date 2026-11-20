@@ -288,3 +288,20 @@ test('linksToTheTrash', async () => {
 
   expect(await (await main()).findByRole('link', { name: 'Mở Thùng rác' })).toHaveAttribute('href', '/w/7/trash')
 })
+
+test('actionsHaveTheirTone', async () => {
+  mockShell()
+  mockActivity([
+    entry({ entityId: '1', versionNo: 1, action: 'CREATE' }),
+    entry({ entityId: '2', versionNo: 2, action: 'UPDATE', changedFields: ['name'] }),
+    entry({ entityId: '3', versionNo: 3, action: 'DELETE' }),
+    entry({ entityId: '4', versionNo: 4, action: 'RESTORE' }),
+  ])
+  renderApp({ route: '/w/7/activity', userId: '42' })
+
+  const [created, updated, deleted, restored] = await rows()
+  expect(within(created).getByText('Tạo')).toHaveAttribute('data-tone', 'success')
+  expect(within(updated).getByText('Sửa')).toHaveAttribute('data-tone', 'info')
+  expect(within(deleted).getByText('Xoá')).toHaveAttribute('data-tone', 'danger')
+  expect(within(restored).getByText('Khôi phục')).toHaveAttribute('data-tone', 'violet')
+})

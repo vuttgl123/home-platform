@@ -174,3 +174,15 @@ test('itemsExportWithoutAFilterSendsNoParameters', async () => {
   await waitFor(() => expect(saved).toHaveLength(1))
   expect(sent).toBe('')
 })
+
+test('brokenItemIsMarkedDanger', async () => {
+  setUp()
+  renderApp({ route: '/w/7/items', userId: '42' })
+  const view = await main()
+  await view.findByRole('link', { name: 'Quạt' })
+
+  const row = (name: string) => within(view.getByRole('link', { name }).closest('tr') as HTMLElement)
+  // Màu đi kèm chữ: nhãn vẫn ghi đủ, `data-tone` cho biết nghĩa màu.
+  expect(row('Quạt').getByText('Hỏng')).toHaveAttribute('data-tone', 'danger')
+  expect(row('Tủ lạnh').getByText('Đang dùng')).toHaveAttribute('data-tone', 'success')
+})

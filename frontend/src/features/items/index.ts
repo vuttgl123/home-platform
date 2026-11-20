@@ -1,6 +1,6 @@
 export { PersonItemsTab } from './components/PersonItemsTab'
 export { PlaceItemsTab } from './components/PlaceItemsTab'
-export { ITEM_STATUS_LABEL } from './labels'
+export { ITEM_STATUS_LABEL, ITEM_STATUS_TONE } from './labels'
 export { ItemPage } from './pages/ItemPage'
 export { ItemsPage } from './pages/ItemsPage'
 export { itemKeys, useItem, useItemQuickFind, useItemsAtPlace, useItemsInSubtree, useRestoreItem } from './queries'

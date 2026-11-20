@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
+import { ToneBadge } from '@/components/common/ToneBadge'
 import type { CursorList } from '@/api'
 import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/format'
 
-import { RELATION_LABEL, STATUS_LABEL } from '../labels'
+import { OCCUPANCY_STATUS_TONE, RELATION_LABEL, STATUS_LABEL } from '../labels'
 import type { Occupancy } from '../types'
 
 /**
@@ -82,7 +82,7 @@ export function OccupancyList({
                 <td className="px-3 py-2 whitespace-nowrap">{formatDate(row.startDate)}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{row.endDate ? formatDate(row.endDate) : '—'}</td>
                 <td className="px-3 py-2">
-                  <Badge variant={row.status === 'CURRENT' ? 'secondary' : 'outline'}>{STATUS_LABEL[row.status]}</Badge>
+                  <ToneBadge tone={OCCUPANCY_STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</ToneBadge>
                 </td>
                 {actions && <td className="px-3 py-2 text-right">{actions(row)}</td>}
               </tr>

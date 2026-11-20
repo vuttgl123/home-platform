@@ -1,13 +1,13 @@
 import { Link } from 'react-router'
 
+import { ToneBadge } from '@/components/common/ToneBadge'
 import type { CursorList } from '@/api'
 import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/format'
 
-import { ITEM_STATUS_LABEL } from '../labels'
+import { ITEM_STATUS_LABEL, ITEM_STATUS_TONE } from '../labels'
 import type { ItemSummary } from '../types'
 
 /**
@@ -77,7 +77,7 @@ export function ItemList({
                   {removed ? (
                     item.removedAt ? formatDate(item.removedAt) : '—'
                   ) : (
-                    <Badge variant={item.status === 'BROKEN' ? 'destructive' : 'secondary'}>{ITEM_STATUS_LABEL[item.status]}</Badge>
+                    <ToneBadge tone={ITEM_STATUS_TONE[item.status]}>{ITEM_STATUS_LABEL[item.status]}</ToneBadge>
                   )}
                 </td>
               </tr>

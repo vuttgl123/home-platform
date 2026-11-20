@@ -1,11 +1,12 @@
 import { Link } from 'react-router'
 
+import { ToneBadge } from '@/components/common/ToneBadge'
 import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePlaceTypes } from '@/features/catalog'
 
+import { PLACE_STATUS_LABEL, PLACE_STATUS_TONE } from '../labels'
 import { useSubtree } from '../queries'
 import { placeUrl } from '../routes'
 import type { PlaceDetail } from '../types'
@@ -49,9 +50,7 @@ export function PlaceSubtreeTable({ ws, place }: { ws: string; place: PlaceDetai
                 <td className="px-3 py-2">{types.find((type) => type.id === row.placeTypeId)?.name ?? '—'}</td>
                 <td className="px-3 py-2 font-mono text-xs">{row.code ?? '—'}</td>
                 <td className="px-3 py-2">
-                  <Badge variant={row.status === 'ACTIVE' ? 'secondary' : 'outline'}>
-                    {row.status === 'ACTIVE' ? 'Đang dùng' : 'Tạm ngưng'}
-                  </Badge>
+                  <ToneBadge tone={PLACE_STATUS_TONE[row.status]}>{PLACE_STATUS_LABEL[row.status]}</ToneBadge>
                 </td>
               </tr>
             ))}

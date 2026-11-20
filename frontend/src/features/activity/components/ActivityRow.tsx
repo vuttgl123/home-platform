@@ -1,8 +1,9 @@
 import { Link } from 'react-router'
 
+import { ToneBadge } from '@/components/common/ToneBadge'
 import { currentUserId } from '@/api'
 import { Badge } from '@/components/ui/badge'
-import { ACTION_LABEL } from '@/features/history'
+import { ACTION_LABEL, ACTION_TONE } from '@/features/history'
 import { formatDateTime } from '@/lib/format'
 
 import { ENTITY_LABEL, ENTITY_PATH, FIELD_LABEL } from '../labels'
@@ -29,7 +30,7 @@ export function ActivityRow({ ws, entry }: { ws: string; entry: ActivityEntry })
             {name}
           </Link>
         )}
-        <Badge variant={deleted ? 'destructive' : 'secondary'}>{ACTION_LABEL[entry.action]}</Badge>
+        <ToneBadge tone={ACTION_TONE[entry.action]}>{ACTION_LABEL[entry.action]}</ToneBadge>
         <span className="text-muted-foreground">
           v{entry.versionNo} · {formatDateTime(entry.changedAt)} · {entry.changedBy === currentUserId() ? 'Bạn' : 'Người dùng khác'}
         </span>

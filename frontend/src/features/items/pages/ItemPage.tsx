@@ -2,6 +2,7 @@ import { ArrowRightLeftIcon, FolderInputIcon, HashIcon, MoreHorizontalIcon, User
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
+import { ToneBadge } from '@/components/common/ToneBadge'
 import { ErrorState } from '@/components/common/ErrorState'
 import { NotFoundState } from '@/components/common/NotFoundState'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -29,7 +30,7 @@ import { PutBackItemDialog } from '../components/PutBackItemDialog'
 import { ReissueItemCodeDialog } from '../components/ReissueItemCodeDialog'
 import { RemoveItemDialog } from '../components/RemoveItemDialog'
 import { ReplaceItemDialog } from '../components/ReplaceItemDialog'
-import { ITEM_STATUS_LABEL } from '../labels'
+import { ITEM_STATUS_LABEL, ITEM_STATUS_TONE } from '../labels'
 import { useItem } from '../queries'
 import type { ItemDetail } from '../types'
 
@@ -148,9 +149,7 @@ export function ItemPage() {
           )}
           <dt className="sr-only">Trạng thái</dt>
           <dd>
-            <Badge variant={detail.status === 'BROKEN' || removed ? 'destructive' : 'outline'}>
-              {ITEM_STATUS_LABEL[detail.status]}
-            </Badge>
+            <ToneBadge tone={ITEM_STATUS_TONE[detail.status]}>{ITEM_STATUS_LABEL[detail.status]}</ToneBadge>
           </dd>
           <dt className="sr-only">Số lượng</dt>
           <dd className="text-muted-foreground">{[detail.quantity, detail.unit].filter((part) => part != null).join(' ')}</dd>

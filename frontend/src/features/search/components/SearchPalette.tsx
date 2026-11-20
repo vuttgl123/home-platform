@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 
-import { Badge } from '@/components/ui/badge'
+import { ToneBadge } from '@/components/common/ToneBadge'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useItemQuickFind } from '@/features/items'
@@ -108,8 +108,8 @@ function Group({
             <span className="truncate">{row.title}</span>
             {row.detail && <span className="truncate text-xs text-muted-foreground">{row.detail}</span>}
           </span>
-          {row.removed && <Badge variant="outline">Đã gỡ</Badge>}
-          {row.code && <span className="shrink-0 font-mono text-xs text-muted-foreground">{row.code}</span>}
+          {row.removed && <ToneBadge tone="neutral">Đã gỡ</ToneBadge>}
+          {row.code && <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{row.code}</span>}
         </CommandItem>
       ))}
     </CommandGroup>

@@ -1,6 +1,6 @@
 export { AncestorTrail } from './components/AncestorTrail'
 export { PlaceFormDialog } from './components/PlaceFormDialog'
-export { PLACE_STATUS_LABEL } from './labels'
+export { PLACE_STATUS_LABEL, PLACE_STATUS_TONE } from './labels'
 export { PlaceName } from './components/PlaceName'
 export { PlacePicker } from './components/PlacePicker'
 export type { PlaceChoice } from './components/PlacePicker'

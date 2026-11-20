@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { Badge } from '@/components/ui/badge'
+import { ToneBadge } from '@/components/common/ToneBadge'
 
 /** Một phần của trang danh mục: tiêu đề, nút thêm, và bảng. */
 export function CatalogSection({
@@ -52,5 +52,5 @@ export function CatalogTable({ headers, children }: { headers: string[]; childre
 }
 
 export function StatusBadge({ archived }: { archived: boolean }) {
-  return <Badge variant={archived ? 'outline' : 'secondary'}>{archived ? 'Đã lưu trữ' : 'Đang dùng'}</Badge>
+  return <ToneBadge tone={archived ? 'neutral' : 'success'}>{archived ? 'Đã lưu trữ' : 'Đang dùng'}</ToneBadge>
 }

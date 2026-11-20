@@ -1,5 +1,5 @@
 export { PersonOwnershipsTab } from './components/PersonOwnershipsTab'
 export { PlaceOwnersTab } from './components/PlaceOwnersTab'
-export { OWNERSHIP_STATUS_LABEL } from './labels'
+export { OWNERSHIP_STATUS_LABEL, OWNERSHIP_STATUS_TONE } from './labels'
 export { ownershipKeys, useOwnershipsAtPlace } from './queries'
 export type { Ownership, OwnershipStatus } from './types'
