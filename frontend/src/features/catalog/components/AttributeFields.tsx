@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { Controller, type Control, type FieldValues } from 'react-hook-form'
 
+import { DateInput } from '@/components/common/DateInput'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
@@ -95,10 +96,12 @@ function AttributeField({
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
+            ) : def.dataType === 'DATE' ? (
+              <DateInput {...common} pickerLabel={`Chọn ${def.label} trên lịch`} />
             ) : (
               <Input
                 {...common}
-                type={def.dataType === 'DATE' ? 'date' : 'text'}
+                type="text"
                 inputMode={def.dataType === 'NUMBER' ? 'decimal' : undefined}
                 placeholder={def.dataType === 'NUMBER' ? 'Ví dụ: 25 hoặc 25.5' : undefined}
               />

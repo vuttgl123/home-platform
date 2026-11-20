@@ -305,3 +305,18 @@ test('actionsHaveTheirTone', async () => {
   expect(within(deleted).getByText('Xoá')).toHaveAttribute('data-tone', 'danger')
   expect(within(restored).getByText('Khôi phục')).toHaveAttribute('data-tone', 'violet')
 })
+
+test('pickingADayOnTheCalendarFillsTheField', async () => {
+  mockShell()
+  mockActivity([])
+  const { user, router } = renderApp({ route: '/w/7/activity?from=2026-11-01', userId: '42' })
+  const view = await main()
+
+  await user.click(await view.findByRole('button', { name: 'Chọn Từ ngày trên lịch' }))
+  // Lịch mở ở tháng của ngày đang chọn; bấm ngày 18.
+  const calendar = within(await screen.findByRole('grid'))
+  await user.click(calendar.getByText('18', { selector: 'button' }))
+
+  await waitFor(() => expect(router.state.location.search).toBe('?from=2026-11-18'))
+  expect(view.getByLabelText('Từ ngày')).toHaveValue('2026-11-18')
+})
