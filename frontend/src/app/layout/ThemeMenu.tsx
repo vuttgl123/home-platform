@@ -30,7 +30,8 @@ export function ThemeMenu() {
           <SunMoonIcon aria-hidden="true" />
         </DropdownMenuTrigger>
       </WithTooltip>
-      <DropdownMenuContent align="end" side="top" className="min-w-40">
+      {/* Mở từ thanh bên tối: menu cũng mang bộ màu tối (`dark`), dù nằm ngoài thanh bên. */}
+      <DropdownMenuContent align="end" side="top" className="dark min-w-40">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Giao diện</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={mode} onValueChange={(value) => setMode(value as ThemeMode)}>

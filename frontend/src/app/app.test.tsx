@@ -253,3 +253,16 @@ test('navigationComesBeforeThePlaceTree', async () => {
   expect(overview.compareDocumentPosition(tree) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   expect(tree.closest('[data-slot="scroll-area"]')).not.toBeNull()
 })
+
+test('menusOpenedFromTheSidebarStayDark', async () => {
+  mockShell()
+  const { user } = renderApp({ route: '/w/7', userId: '42' })
+
+  // Menu nằm ngoài thanh bên (portal) nhưng mở từ thanh bên tối, nên cũng mang bộ màu tối.
+  await user.click(await screen.findByRole('button', { name: 'Giao diện' }))
+  expect((await screen.findByRole('menu')).closest('.dark')).not.toBeNull()
+  await user.keyboard('{Escape}')
+
+  await user.click(screen.getByRole('button', { name: /Nhà An/ }))
+  expect((await screen.findByRole('menu')).closest('.dark')).not.toBeNull()
+})

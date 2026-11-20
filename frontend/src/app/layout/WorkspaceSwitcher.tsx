@@ -33,7 +33,8 @@ export function WorkspaceSwitcher({ workspaces, current }: { workspaces: Workspa
             </span>
             <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" aria-hidden="true" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="min-w-56" align="start">
+          {/* Mở từ thanh bên tối: menu cũng mang bộ màu tối (`dark`), dù nằm ngoài thanh bên. */}
+          <DropdownMenuContent className="dark min-w-56" align="start">
             <DropdownMenuGroup>
               <DropdownMenuLabel>Không gian của tôi</DropdownMenuLabel>
               {workspaces.map((workspace) => (
