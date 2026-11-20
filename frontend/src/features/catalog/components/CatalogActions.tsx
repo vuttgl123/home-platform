@@ -1,5 +1,6 @@
 import { ArchiveIcon, ArchiveRestoreIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 
+import { WithTooltip } from '@/components/common/WithTooltip'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -25,9 +26,11 @@ export function CatalogActions({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Thao tác với ${label}`} />}>
-        <MoreHorizontalIcon aria-hidden="true" />
-      </DropdownMenuTrigger>
+      <WithTooltip label={`Thao tác với ${label}`}>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Thao tác với ${label}`} />}>
+          <MoreHorizontalIcon aria-hidden="true" />
+        </DropdownMenuTrigger>
+      </WithTooltip>
       <DropdownMenuContent align="end" className="min-w-40">
         <DropdownMenuItem onClick={onEdit}>
           <PencilIcon aria-hidden="true" />

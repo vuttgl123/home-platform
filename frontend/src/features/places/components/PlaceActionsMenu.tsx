@@ -1,6 +1,7 @@
 import { FolderInputIcon, HashIcon, MapPinIcon, MoreHorizontalIcon, PrinterIcon, Trash2Icon } from 'lucide-react'
 import { Link } from 'react-router'
 
+import { WithTooltip } from '@/components/common/WithTooltip'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -27,9 +28,11 @@ export function PlaceActionsMenu({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="icon" aria-label="Thao tác khác" />}>
-        <MoreHorizontalIcon aria-hidden="true" />
-      </DropdownMenuTrigger>
+      <WithTooltip label="Thao tác khác">
+        <DropdownMenuTrigger render={<Button variant="outline" size="icon" aria-label="Thao tác khác" />}>
+          <MoreHorizontalIcon aria-hidden="true" />
+        </DropdownMenuTrigger>
+      </WithTooltip>
       <DropdownMenuContent align="end" className="min-w-44">
         <DropdownMenuItem onClick={() => onSelect('move')}>
           <FolderInputIcon aria-hidden="true" />

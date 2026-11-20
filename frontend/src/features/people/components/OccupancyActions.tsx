@@ -1,6 +1,7 @@
 import { DoorOpenIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 
+import { WithTooltip } from '@/components/common/WithTooltip'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -22,11 +23,13 @@ export function OccupancyActions({ ws, row }: { ws: string; row: Occupancy }) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon-sm" aria-label={`Thao tác với ${row.personFullName}`} />}
-        >
-          <MoreHorizontalIcon aria-hidden="true" />
-        </DropdownMenuTrigger>
+        <WithTooltip label={`Thao tác với ${row.personFullName}`}>
+          <DropdownMenuTrigger
+            render={<Button variant="ghost" size="icon-sm" aria-label={`Thao tác với ${row.personFullName}`} />}
+          >
+            <MoreHorizontalIcon aria-hidden="true" />
+          </DropdownMenuTrigger>
+        </WithTooltip>
         <DropdownMenuContent align="end" className="min-w-48">
           {row.status !== 'PAST' && (
             <DropdownMenuItem onClick={() => setDialog('end')}>

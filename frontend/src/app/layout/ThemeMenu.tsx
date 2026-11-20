@@ -1,5 +1,6 @@
 import { LaptopIcon, MoonIcon, SunIcon, SunMoonIcon } from 'lucide-react'
 
+import { WithTooltip } from '@/components/common/WithTooltip'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -24,9 +25,11 @@ export function ThemeMenu() {
   const [mode, setMode] = useThemeMode()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Giao diện" />}>
-        <SunMoonIcon aria-hidden="true" />
-      </DropdownMenuTrigger>
+      <WithTooltip label="Giao diện">
+        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Giao diện" />}>
+          <SunMoonIcon aria-hidden="true" />
+        </DropdownMenuTrigger>
+      </WithTooltip>
       <DropdownMenuContent align="end" side="top" className="min-w-40">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Giao diện</DropdownMenuLabel>

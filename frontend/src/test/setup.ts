@@ -46,3 +46,8 @@ if (!globalThis.ResizeObserver) {
 if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {}
 }
+
+// Vùng cuộn (scroll-area) hỏi các hiệu ứng đang chạy của phần tử; jsdom không có hiệu ứng nào.
+if (!Element.prototype.getAnimations) {
+  Element.prototype.getAnimations = () => []
+}

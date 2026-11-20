@@ -2,6 +2,7 @@ import { MapPinPlusIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'luci
 import { useState, type ReactNode } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
+import { WithTooltip } from '@/components/common/WithTooltip'
 import { ErrorState } from '@/components/common/ErrorState'
 import { NotFoundState } from '@/components/common/NotFoundState'
 import { Badge } from '@/components/ui/badge'
@@ -144,9 +145,11 @@ function PersonHeader({
             Sửa
           </Button>
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="outline" size="icon" aria-label="Thao tác khác" />}>
-              <MoreHorizontalIcon aria-hidden="true" />
-            </DropdownMenuTrigger>
+            <WithTooltip label="Thao tác khác">
+              <DropdownMenuTrigger render={<Button variant="outline" size="icon" aria-label="Thao tác khác" />}>
+                <MoreHorizontalIcon aria-hidden="true" />
+              </DropdownMenuTrigger>
+            </WithTooltip>
             <DropdownMenuContent align="end" className="min-w-40">
               <DropdownMenuItem variant="destructive" onClick={onDelete}>
                 <Trash2Icon aria-hidden="true" />

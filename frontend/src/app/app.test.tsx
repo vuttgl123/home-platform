@@ -233,3 +233,23 @@ test('themeMenuSwitchesToDark', async () => {
   expect(document.documentElement).toHaveClass('dark')
   expect(localStorage.getItem('hp.theme')).toBe('dark')
 })
+
+test('iconButtonsExplainThemselves', async () => {
+  mockShell()
+  const { user } = renderApp({ route: '/w/7', userId: '42' })
+
+  await user.hover(await screen.findByRole('button', { name: 'Ẩn hoặc hiện thanh bên' }))
+
+  expect(await screen.findByText('Ẩn hoặc hiện thanh bên', { selector: '[data-slot="tooltip-content"], [data-slot="tooltip-content"] *' })).toBeInTheDocument()
+})
+
+test('navigationComesBeforeThePlaceTree', async () => {
+  mockShell()
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const overview = await screen.findByRole('link', { name: 'Tổng quan' })
+  const tree = await screen.findByRole('navigation', { name: 'Cây địa điểm' })
+  // Điều hướng chính đứng trên, cây địa điểm ở dưới trong vùng cuộn riêng.
+  expect(overview.compareDocumentPosition(tree) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(tree.closest('[data-slot="scroll-area"]')).not.toBeNull()
+})

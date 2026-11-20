@@ -11,12 +11,16 @@ import {
 import { useCallback, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 
+import { WithTooltip } from '@/components/common/WithTooltip'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -72,36 +76,52 @@ export function AppLayout() {
         <SidebarHeader>
           <WorkspaceSwitcher workspaces={workspaces.data} current={current} />
         </SidebarHeader>
-        <SidebarContent>
-          {/* `key`: đổi không gian thì cây bắt đầu lại, không giữ các nhánh đã mở của không gian cũ. */}
-          <PlaceTree key={current.id} workspaceId={current.id} />
+        <SidebarContent className="gap-0 overflow-hidden">
+          <SidebarGroup>
+            <SidebarMenu>
+              {SECTIONS.map(({ path, label, icon: Icon }) => (
+                <SidebarMenuItem key={path}>
+                  {/* NavLink đặt aria-current="page" cho công cụ đọc màn hình; isActive tô dòng (data-active). */}
+                  <SidebarMenuButton
+                    isActive={path === '' ? pathname === base || pathname === `${base}/` : pathname.startsWith(`${base}/${path}`)}
+                    render={<NavLink to={path === '' ? base : `${base}/${path}`} end={path === ''} />}
+                  >
+                    <Icon aria-hidden="true" />
+                    <span>{label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+          <SidebarSeparator />
+          {/* Cây dài thì cuộn trong vùng của nó; điều hướng chính và người dùng luôn thấy. */}
+          <SidebarGroup className="min-h-0 flex-1">
+            <SidebarGroupLabel>Địa điểm</SidebarGroupLabel>
+            <ScrollArea className="min-h-0 flex-1">
+              {/* `key`: đổi không gian thì cây bắt đầu lại, không giữ các nhánh đã mở của không gian cũ. */}
+              <PlaceTree key={current.id} workspaceId={current.id} />
+            </ScrollArea>
+          </SidebarGroup>
         </SidebarContent>
         <SidebarSeparator />
         <SidebarFooter>
-          <SidebarMenu>
-            {SECTIONS.map(({ path, label, icon: Icon }) => (
-              <SidebarMenuItem key={path}>
-                {/* NavLink đặt aria-current="page" cho công cụ đọc màn hình; isActive tô dòng (data-active). */}
-                <SidebarMenuButton
-                  isActive={path === '' ? pathname === base || pathname === `${base}/` : pathname.startsWith(`${base}/${path}`)}
-                  render={<NavLink to={path === '' ? base : `${base}/${path}`} end={path === ''} />}
-                >
-                  <Icon aria-hidden="true" />
-                  <span>{label}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
           <UserMenu />
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger aria-label="Ẩn hoặc hiện thanh bên" />
-          <Button variant="outline" size="sm" className="text-muted-foreground" onClick={openSearch}>
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b bg-background/85 px-4 backdrop-blur">
+          <WithTooltip label="Ẩn hoặc hiện thanh bên">
+            <SidebarTrigger aria-label="Ẩn hoặc hiện thanh bên" />
+          </WithTooltip>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full max-w-sm justify-start bg-card text-muted-foreground shadow-none"
+            onClick={openSearch}
+          >
             <SearchIcon aria-hidden="true" />
             Tìm…
-            <Kbd className="ml-2">Ctrl K</Kbd>
+            <Kbd className="ml-auto hidden sm:inline-flex">Ctrl K</Kbd>
           </Button>
         </header>
         {/* `key`: đổi không gian thì ô tìm bắt đầu lại. */}

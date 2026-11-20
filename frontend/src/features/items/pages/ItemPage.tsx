@@ -2,6 +2,7 @@ import { ArrowRightLeftIcon, FolderInputIcon, HashIcon, MoreHorizontalIcon, User
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
+import { WithTooltip } from '@/components/common/WithTooltip'
 import { ToneBadge } from '@/components/common/ToneBadge'
 import { ErrorState } from '@/components/common/ErrorState'
 import { NotFoundState } from '@/components/common/NotFoundState'
@@ -101,9 +102,11 @@ export function ItemPage() {
               </Button>
             )}
             <DropdownMenu>
-              <DropdownMenuTrigger render={<Button variant="outline" size="icon" aria-label="Thao tác khác" />}>
-                <MoreHorizontalIcon aria-hidden="true" />
-              </DropdownMenuTrigger>
+              <WithTooltip label="Thao tác khác">
+                <DropdownMenuTrigger render={<Button variant="outline" size="icon" aria-label="Thao tác khác" />}>
+                  <MoreHorizontalIcon aria-hidden="true" />
+                </DropdownMenuTrigger>
+              </WithTooltip>
               <DropdownMenuContent align="end" className="min-w-44">
                 {!removed && (
                   <>
