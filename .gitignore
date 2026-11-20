@@ -39,3 +39,6 @@ logs/
 **/src/main/resources/application-uat.yaml
 **/src/main/resources/application-prod.yaml
 **/src/test/resources/application-uat.yaml
+
+### Thư mục nháp của công cụ AI (kế hoạch đang chạy, ảnh chụp xem thử) ###
+.superpowers/
