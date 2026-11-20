@@ -192,7 +192,7 @@ function PersonPlacesTab({ ws, person }: { ws: string; person: PersonDetail }) {
   const stays = useOccupanciesOfPerson(ws, person.id)
   const [adding, setAdding] = useState(false)
   return (
-    <div className="flex max-w-4xl flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex justify-end">
         <Button variant="outline" onClick={() => setAdding(true)}>
           <MapPinPlusIcon aria-hidden="true" />

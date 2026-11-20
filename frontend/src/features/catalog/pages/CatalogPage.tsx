@@ -9,7 +9,7 @@ import { PlaceTypeSection } from '../components/PlaceTypeSection'
 export function CatalogPage() {
   const { workspaceId = '' } = useParams()
   return (
-    <div className="flex max-w-4xl flex-col gap-10">
+    <div className="flex flex-col gap-10">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Danh mục</h1>
         <p className="text-muted-foreground">Những gì không gian này dùng để phân loại và mô tả địa điểm, người, đồ đạc.</p>

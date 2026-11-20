@@ -1165,6 +1165,18 @@ export interface components {
             items?: components["schemas"]["TrashResponse"][];
             nextCursor?: string;
         };
+        DayActivity: {
+            /** Format: date */
+            date?: string;
+            /** Format: int32 */
+            created?: number;
+            /** Format: int32 */
+            updated?: number;
+            /** Format: int32 */
+            deleted?: number;
+            /** Format: int32 */
+            restored?: number;
+        };
         EffectiveAddressResponse: {
             fromPlaceId?: string;
             address?: components["schemas"]["AddressResponse"];
@@ -1473,6 +1485,7 @@ export interface components {
                 [key: string]: number;
             };
             missingCodes?: components["schemas"]["MissingCodes"];
+            activityByDay?: components["schemas"]["DayActivity"][];
         };
         OwnershipCreateRequest: {
             placeId: string;

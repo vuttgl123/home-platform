@@ -248,7 +248,7 @@ function ItemInfo({ ws, item }: { ws: string; item: ItemDetail }) {
     ['Ngày gỡ', item.removedAt ? formatDate(item.removedAt) : null],
   ]
   return (
-    <div className="grid max-w-5xl gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2">
       <InfoCard title="Thông tin">
         <InfoList
           rows={[

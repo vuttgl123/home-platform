@@ -4,6 +4,9 @@ import type { ItemStatus } from '@/features/items'
 /** Một loại địa điểm có ít nhất một chỗ: tổng số chỗ, và số chỗ có người đang ở hôm nay. */
 export type PlaceTypeCount = Present<RegistrySchemas['PlaceTypeCount'], 'typeId' | 'name' | 'total' | 'occupied'>
 
+/** Số thay đổi của một ngày (giờ Việt Nam) theo hành động. */
+export type DayActivity = Present<RegistrySchemas['DayActivity'], 'date' | 'created' | 'updated' | 'deleted' | 'restored'>
+
 /** Số liệu của trang tổng quan; mọi con số chỉ tính bản ghi chưa xoá. */
 export type Overview = {
   places: number
@@ -16,4 +19,9 @@ export type Overview = {
   itemsByStatus: Record<ItemStatus, number>
   /** Số bản ghi chưa có mã, như `GET /codes/status`. */
   missingCodes: { places: number; items: number }
+  /**
+   * 14 ngày gần nhất tính cả hôm nay, cũ trước. Có thể thiếu khi registry chạy bản trước khi có trường
+   * này: trang vẫn hiện, chỉ thiếu biểu đồ hoạt động.
+   */
+  activityByDay?: DayActivity[]
 }

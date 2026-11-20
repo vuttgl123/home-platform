@@ -44,7 +44,7 @@ export function PeoplePage() {
   )
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center gap-3">
         <h1 className="flex-1 text-2xl font-semibold tracking-tight">Người</h1>
         <ExportButton ws={workspaceId} kind="people" label="Xuất Excel" />

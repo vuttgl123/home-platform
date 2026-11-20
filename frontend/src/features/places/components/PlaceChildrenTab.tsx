@@ -24,7 +24,7 @@ export function PlaceChildrenTab({ ws, place, addAction }: { ws: string; place: 
 
   if (children.isLoading) {
     return (
-      <div className="flex max-w-3xl flex-col gap-2" aria-label="Đang tải">
+      <div className="flex flex-col gap-2" aria-label="Đang tải">
         <Skeleton className="h-9" />
         <Skeleton className="h-9" />
       </div>
@@ -45,7 +45,7 @@ export function PlaceChildrenTab({ ws, place, addAction }: { ws: string; place: 
     )
   }
   return (
-    <div className="flex max-w-3xl flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={whole} onCheckedChange={setWhole} aria-label="Cả bên trong" />

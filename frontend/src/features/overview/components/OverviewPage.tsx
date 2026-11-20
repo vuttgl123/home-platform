@@ -2,20 +2,19 @@ import { cn } from 'cn'
 import { Building2Icon, PackageCheckIcon, TriangleAlertIcon, UsersIcon, WrenchIcon, type LucideIcon } from 'lucide-react'
 import { type ReactNode, useId } from 'react'
 import { Link } from 'react-router'
-import { Bar, BarChart, Cell, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts'
 
 import type { Tone } from '@/components/common/ToneBadge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ChartContainer, type ChartConfig } from '@/components/ui/chart'
-import { Progress } from '@/components/ui/progress'
+import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 import { RecentActivity } from '@/features/activity'
 import { ExportButton } from '@/features/exports'
 import { ITEM_STATUS_LABEL, ITEM_STATUS_TONE, type ItemStatus } from '@/features/items'
 import { formatNumber } from '@/lib/format'
 
-import type { Overview } from '../types'
+import type { DayActivity, Overview } from '../types'
 
 const STATUSES: ItemStatus[] = ['IN_USE', 'BROKEN', 'STORED', 'REMOVED']
 
@@ -49,7 +48,7 @@ export function OverviewPage({ ws, overview }: { ws: string; overview: Overview 
   const { missingCodes } = overview
 
   return (
-    <div className="flex max-w-6xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center gap-3">
         <div className="flex flex-1 flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">Tổng quan</h1>
@@ -86,10 +85,11 @@ export function OverviewPage({ ws, overview }: { ws: string; overview: Overview 
           </Alert>
         </Section>
       )}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="Chỗ ở theo loại">
-          <Card className="gap-0 py-1">
-            <ul className="flex flex-col divide-y text-sm">
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Section title="Chỗ ở theo loại" className="xl:col-span-2">
+          <Card className="gap-3 p-4">
+            <OccupancyChart types={overview.placeTypes} />
+            <ul className="grid gap-x-6 text-sm sm:grid-cols-2">
               {overview.placeTypes.map((type) => (
                 <OccupancyRow key={type.typeId} name={type.name} total={type.total} occupied={type.occupied} />
               ))}
@@ -98,14 +98,11 @@ export function OverviewPage({ ws, overview }: { ws: string; overview: Overview 
         </Section>
         <Section title="Đồ đạc theo trạng thái">
           <Card className="gap-3 p-4">
-            <ItemsChart counts={overview.itemsByStatus} />
+            <ItemsDonut counts={overview.itemsByStatus} />
             <ul className="grid gap-1 text-sm sm:grid-cols-2">
               {STATUSES.map((status) => (
                 <li key={status}>
-                  <Link
-                    to={itemsWith(status)}
-                    className="flex items-center justify-between gap-4 rounded-md px-2 py-1.5 hover:bg-muted"
-                  >
+                  <Link to={itemsWith(status)} className="flex items-center justify-between gap-4 rounded-md px-2 py-1.5 hover:bg-muted">
                     <span className="inline-flex items-center gap-2">
                       <span aria-hidden="true" className={cn('size-2 rounded-full', TONE_CHIP[ITEM_STATUS_TONE[status]], 'bg-current')} />
                       {ITEM_STATUS_LABEL[status]}
@@ -117,8 +114,13 @@ export function OverviewPage({ ws, overview }: { ws: string; overview: Overview 
             </ul>
           </Card>
         </Section>
+        <Section title="Hoạt động 14 ngày qua" className="xl:col-span-2">
+          <Card className="gap-3 p-4">
+            <ActivityChart days={overview.activityByDay} />
+          </Card>
+        </Section>
+        <RecentActivity ws={ws} />
       </div>
-      <RecentActivity ws={ws} />
     </div>
   )
 }
@@ -157,43 +159,99 @@ function Tile({ icon: Icon, tone, value, label, to }: { icon: LucideIcon; tone: 
 function OccupancyRow({ name, total, occupied }: { name: string; total: number; occupied: number }) {
   const percent = total === 0 ? 0 : Math.round((occupied / total) * 100)
   return (
-    <li className="flex flex-col gap-2 px-4 py-3">
-      <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <span className="font-medium">{name}</span>{' '}
-        <span className="text-muted-foreground tabular-nums">
+    <li className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b py-2 last:border-b-0">
+      <span className="font-medium">{name}</span>{' '}
+      <span className="inline-flex items-baseline gap-3 text-muted-foreground tabular-nums">
+        <span>
           {formatNumber(occupied)} có người · {formatNumber(total - occupied)} trống
         </span>
+        <span className="font-semibold text-primary">{percent}%</span>
       </span>
-      <Progress value={percent} aria-label={`Tỷ lệ có người của ${name}`} className="[&_[data-slot=progress-track]]:h-2" />
     </li>
   )
 }
 
-/** Cột ngang theo trạng thái đồ; chỉ để nhìn (số và liên kết nằm ở danh sách bên dưới). */
-function ItemsChart({ counts }: { counts: Record<ItemStatus, number> }) {
-  const data = STATUSES.map((status) => ({ status, label: ITEM_STATUS_LABEL[status], value: counts[status] }))
-  const config = Object.fromEntries(
-    STATUSES.map((status) => [status, { label: ITEM_STATUS_LABEL[status], color: TONE_FILL[ITEM_STATUS_TONE[status]] }]),
-  ) satisfies ChartConfig
+/** Cột chồng theo loại địa điểm: phần có người và phần trống. Chỉ để nhìn; số nằm ở danh sách. */
+function OccupancyChart({ types }: { types: Overview['placeTypes'] }) {
+  const config = { occupied: { label: 'Có người', color: 'var(--primary)' }, vacant: { label: 'Trống', color: 'var(--muted-foreground)' } } satisfies ChartConfig
+  const data = types.map((type) => ({ name: type.name, occupied: type.occupied, vacant: type.total - type.occupied }))
   return (
-    <ChartContainer config={config} aria-hidden="true" className="aspect-auto h-36 w-full">
-      <BarChart data={data} layout="vertical" margin={{ left: 0, right: 12, top: 4, bottom: 4 }} barCategoryGap={8}>
-        <XAxis type="number" hide allowDecimals={false} />
-        <YAxis type="category" dataKey="label" width={88} tickLine={false} axisLine={false} />
-        <Bar dataKey="value" radius={4} isAnimationActive={false}>
-          {data.map((row) => (
-            <Cell key={row.status} fill={`var(--color-${row.status})`} />
-          ))}
-        </Bar>
+    <ChartContainer config={config} aria-hidden="true" className="aspect-auto h-56 w-full">
+      <BarChart data={data} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+        <XAxis dataKey="name" tickLine={false} axisLine={false} />
+        <YAxis allowDecimals={false} width={32} tickLine={false} axisLine={false} />
+        <ChartTooltip content={<ChartTooltipContent />} />
+        <ChartLegend content={<ChartLegendContent />} />
+        <Bar dataKey="occupied" stackId="a" fill="var(--color-occupied)" isAnimationActive={false} />
+        <Bar dataKey="vacant" stackId="a" fill="var(--color-vacant)" fillOpacity={0.35} radius={[4, 4, 0, 0]} isAnimationActive={false} />
       </BarChart>
     </ChartContainer>
   )
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+/** Vành khuyên theo trạng thái đồ, tổng số món ở giữa; số từng trạng thái nằm ở danh sách bên dưới. */
+function ItemsDonut({ counts }: { counts: Record<ItemStatus, number> }) {
+  const data = STATUSES.map((status) => ({ status, label: ITEM_STATUS_LABEL[status], value: counts[status], fill: TONE_FILL[ITEM_STATUS_TONE[status]] }))
+  const total = data.reduce((sum, row) => sum + row.value, 0)
+  const config = Object.fromEntries(STATUSES.map((status) => [status, { label: ITEM_STATUS_LABEL[status] }])) satisfies ChartConfig
+  return (
+    <div className="relative">
+      <ChartContainer config={config} aria-hidden="true" className="aspect-auto h-48 w-full">
+        <PieChart>
+          <Pie data={data} dataKey="value" nameKey="label" innerRadius="62%" outerRadius="90%" strokeWidth={2} isAnimationActive={false}>
+            {data.map((row) => (
+              <Cell key={row.status} fill={row.fill} />
+            ))}
+          </Pie>
+        </PieChart>
+      </ChartContainer>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-semibold tabular-nums">{formatNumber(total)}</span>
+        <span className="text-xs text-muted-foreground">món đồ</span>
+      </div>
+    </div>
+  )
+}
+
+/** Cột chồng theo ngày (14 ngày) và hành động; kèm tổng để đọc nhanh. Backend cũ chưa có số liệu thì báo. */
+function ActivityChart({ days }: { days: DayActivity[] | undefined }) {
+  if (!days || days.length === 0) {
+    return <p className="text-sm text-muted-foreground">Chưa có số liệu hoạt động theo ngày.</p>
+  }
+  const sum = (day: DayActivity) => day.created + day.updated + day.deleted + day.restored
+  const total = days.reduce((acc, day) => acc + sum(day), 0)
+  const config = {
+    created: { label: 'Tạo', color: TONE_FILL.success },
+    updated: { label: 'Sửa', color: TONE_FILL.info },
+    deleted: { label: 'Xoá', color: TONE_FILL.danger },
+    restored: { label: 'Khôi phục', color: TONE_FILL.violet },
+  } satisfies ChartConfig
+  const data = days.map((day) => ({ ...day, label: `${day.date.slice(8, 10)}/${day.date.slice(5, 7)}` }))
+  return (
+    <>
+      <p className="flex flex-wrap gap-x-4 text-sm text-muted-foreground">
+        <span className="font-semibold text-foreground">{formatNumber(total)} thay đổi</span>
+        <span>Hôm nay: {formatNumber(sum(days[days.length - 1]))}</span>
+      </p>
+      <ChartContainer config={config} aria-hidden="true" className="aspect-auto h-56 w-full">
+        <BarChart data={data} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+          <XAxis dataKey="label" tickLine={false} axisLine={false} interval="preserveStartEnd" />
+          <YAxis allowDecimals={false} width={32} tickLine={false} axisLine={false} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <ChartLegend content={<ChartLegendContent />} />
+          {(['created', 'updated', 'deleted', 'restored'] as const).map((key, index, keys) => (
+            <Bar key={key} dataKey={key} stackId="a" fill={`var(--color-${key})`} radius={index === keys.length - 1 ? [4, 4, 0, 0] : 0} isAnimationActive={false} />
+          ))}
+        </BarChart>
+      </ChartContainer>
+    </>
+  )
+}
+
+function Section({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   const headingId = useId()
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-2">
+    <section aria-labelledby={headingId} className={cn('flex flex-col gap-2', className)}>
       <h2 id={headingId} className="font-semibold">
         {title}
       </h2>

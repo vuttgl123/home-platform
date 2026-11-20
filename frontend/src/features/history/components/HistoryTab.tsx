@@ -59,7 +59,7 @@ export function HistoryTab<Snapshot>({
 
   if (versions.isLoading) {
     return (
-      <div className="flex max-w-3xl flex-col gap-2" aria-label="Đang tải">
+      <div className="flex flex-col gap-2" aria-label="Đang tải">
         <Skeleton className="h-14" />
         <Skeleton className="h-14" />
       </div>
@@ -70,7 +70,7 @@ export function HistoryTab<Snapshot>({
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <p className="flex-1 text-sm text-muted-foreground">Chọn hai version để so sánh.</p>
         <Button type="button" size="sm" variant="outline" disabled={chosen.length !== 2} onClick={() => setComparing(true)}>

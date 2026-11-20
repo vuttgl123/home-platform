@@ -40,7 +40,7 @@ export function ActivityPage() {
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Hoạt động</h1>
         <p className="text-muted-foreground">Mọi lần tạo, sửa, xoá, khôi phục trong không gian này. Thứ đã xoá khôi phục được từ đây.</p>

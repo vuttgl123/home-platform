@@ -36,7 +36,7 @@ export function TrashPage() {
   const trash = useTrash(workspaceId, type)
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Thùng rác</h1>
         <p className="text-muted-foreground">Những thứ đang bị xoá. Khôi phục để đưa chúng trở lại đúng chỗ cũ.</p>

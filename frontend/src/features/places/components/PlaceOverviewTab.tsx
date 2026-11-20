@@ -21,7 +21,7 @@ export function PlaceOverviewTab({
   const parent = place.ancestors.at(-1)
 
   return (
-    <div className="grid max-w-5xl gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2">
       {/* Loại, mã, trạng thái đã ở đầu trang; khối này nói thêm nằm ở đâu và mô tả. */}
       <InfoCard title="Thông tin">
         <InfoList

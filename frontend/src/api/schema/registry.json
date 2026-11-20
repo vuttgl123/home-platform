@@ -6458,6 +6458,31 @@
           }
         }
       },
+      "DayActivity": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "created": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updated": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deleted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "restored": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "EffectiveAddressResponse": {
         "type": "object",
         "properties": {
@@ -7380,6 +7405,12 @@
           },
           "missingCodes": {
             "$ref": "#/components/schemas/MissingCodes"
+          },
+          "activityByDay": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayActivity"
+            }
           }
         }
       },

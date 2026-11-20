@@ -3,12 +3,17 @@
 //
 //   npm run api:sync    cần identity-service (8081) và registry-service (8082) đang chạy
 //   npm run api:types   chỉ sinh lại kiểu từ JSON đã có
+//   --only=registry     chỉ một service; HP_REGISTRY_PORT=18082 (HP_<SERVICE>_PORT) đổi cổng
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import openapiTS, { astToString } from 'openapi-typescript'
 
-const services = { identity: 8081, registry: 8082 }
+const port = (name, fallback) => Number(process.env[`HP_${name.toUpperCase()}_PORT`] ?? fallback)
+const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice('--only='.length)
+const services = Object.fromEntries(
+  Object.entries({ identity: port('identity', 8081), registry: port('registry', 8082) }).filter(([name]) => !only || name === only),
+)
 const schemaDir = path.resolve(import.meta.dirname, '../src/api/schema')
 const typesOnly = process.argv.includes('--types-only')
 

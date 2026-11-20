@@ -31,8 +31,24 @@ export function overview(overrides: Partial<Overview> = {}): Overview {
     peopleLiving: 18,
     itemsByStatus: { IN_USE: 230, BROKEN: 3, STORED: 12, REMOVED: 40 },
     missingCodes: { places: 4, items: 2 },
+    activityByDay: activityDays(),
     ...overrides,
   }
+}
+
+/**
+ * 14 ngày hoạt động liên tiếp, kết thúc ngày 2026-11-20; `counts` đặt số cho vài ngày theo chỉ số
+ * (0 là ngày cũ nhất), các ngày khác là 0.
+ */
+export function activityDays(counts: Record<number, Partial<Record<'created' | 'updated' | 'deleted' | 'restored', number>>> = {}) {
+  return Array.from({ length: 14 }, (_, index) => ({
+    date: `2026-11-${String(7 + index).padStart(2, '0')}`,
+    created: 0,
+    updated: 0,
+    deleted: 0,
+    restored: 0,
+    ...counts[index],
+  }))
 }
 
 /** Số liệu của một không gian chưa có gì: trang chủ giữ lời mời "chọn một địa điểm". */

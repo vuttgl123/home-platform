@@ -44,7 +44,7 @@ export function ItemsPage() {
 
   const filtered = status != null || categoryId != null
   return (
-    <div className="flex max-w-5xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start gap-3">
         <div className="flex flex-1 flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">Đồ đạc</h1>

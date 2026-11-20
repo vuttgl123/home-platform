@@ -29,7 +29,7 @@ export function PlaceOwnersTab({ ws, place }: { ws: string; place: PlaceDetail }
   const actions = (row: Ownership) => <OwnershipActions ws={ws} row={row} />
 
   return (
-    <div className="flex max-w-4xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {hasInside ? (
           <label className="flex items-center gap-2 text-sm">

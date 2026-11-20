@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { mockDownloads } from '@/test/downloads'
-import { overview, page, placeDetail, problem } from '@/test/fixtures'
+import { activityDays, overview, page, placeDetail, problem } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
@@ -219,8 +219,41 @@ test('occupancyIsShownAsAShareOfPlaces', async () => {
 
   const types = within((await main()).getByRole('region', { name: 'Chỗ ở theo loại' }))
 
-  // 2/3 làm tròn thành 67%; không ai ở là 0, ở kín là 100.
-  expect(types.getByRole('progressbar', { name: 'Tỷ lệ có người của Phòng' })).toHaveAttribute('aria-valuenow', '67')
-  expect(types.getByRole('progressbar', { name: 'Tỷ lệ có người của Tầng' })).toHaveAttribute('aria-valuenow', '0')
-  expect(types.getByRole('progressbar', { name: 'Tỷ lệ có người của Căn hộ' })).toHaveAttribute('aria-valuenow', '100')
+  // 2/3 làm tròn thành 67%; không ai ở là 0, ở kín là 100. Mỗi dòng ghi tỷ lệ cạnh số chỗ.
+  // Tìm trong danh sách: tên loại cũng là nhãn trục của biểu đồ.
+  const share = (name: string) => within(types.getAllByRole('listitem').find((row) => row.textContent?.startsWith(name)) as HTMLElement)
+  expect(share('Phòng').getByText('67%')).toBeInTheDocument()
+  expect(share('Tầng').getByText('0%')).toBeInTheDocument()
+  expect(share('Căn hộ').getByText('100%')).toBeInTheDocument()
 })
+
+test('itemsDonutShowsTheTotal', async () => {
+  setUp({ itemsByStatus: { IN_USE: 230, BROKEN: 3, STORED: 12, REMOVED: 40 } })
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const statuses = within((await main()).getByRole('region', { name: 'Đồ đạc theo trạng thái' }))
+
+  // Giữa vòng: tổng số món của mọi trạng thái (230 + 3 + 12 + 40).
+  expect(statuses.getByText('285')).toBeInTheDocument()
+  expect(statuses.getByText('món đồ')).toBeInTheDocument()
+})
+
+test('activityChartSumsTheFortnight', async () => {
+  setUp({ activityByDay: activityDays({ 0: { created: 2 }, 12: { deleted: 1 }, 13: { created: 3, updated: 4, restored: 2 } }) })
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const activity = within((await main()).getByRole('region', { name: 'Hoạt động 14 ngày qua' }))
+
+  expect(activity.getByText('12 thay đổi')).toBeInTheDocument()
+  expect(activity.getByText('Hôm nay: 9')).toBeInTheDocument()
+})
+
+test('olderRegistryWithoutActivityStillShowsTheOverview', async () => {
+  setUp({ activityByDay: undefined })
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const activity = within((await main()).getByRole('region', { name: 'Hoạt động 14 ngày qua' }))
+
+  expect(activity.getByText('Chưa có số liệu hoạt động theo ngày.')).toBeInTheDocument()
+})
+
