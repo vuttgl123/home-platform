@@ -1,13 +1,20 @@
 import { screen, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
-import { page, person } from '@/test/fixtures'
+import { page, person, placeDetail } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { mockItemBackend } from '@/test/itemBackend'
 import { mockPeopleBackend } from '@/test/peopleBackend'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
+
+// Trang món đồ tải chỗ đặt để dựng thanh đường dẫn; ở đây chỗ đặt nào cũng là một địa điểm cấp cao nhất.
+beforeEach(() => {
+  server.use(
+    http.get('/api/registry/places/:id', ({ params }) => HttpResponse.json(placeDetail({ id: params.id as string, name: `P${params.id as string}` }))),
+  )
+})
 
 function setUp(items: Parameters<typeof mockItemBackend>[0]['items']) {
   mockShell()

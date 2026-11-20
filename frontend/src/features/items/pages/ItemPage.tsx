@@ -1,5 +1,5 @@
 import { ArrowRightLeftIcon, FolderInputIcon, HashIcon, MoreHorizontalIcon, UserRoundIcon, PackageMinusIcon, PencilIcon, Trash2Icon, Undo2Icon } from 'lucide-react'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
@@ -22,6 +22,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AttributeView, useFieldDefs } from '@/features/catalog'
+import { usePlace } from '@/features/places'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { isId } from '@/lib/ids'
 
@@ -49,6 +50,8 @@ export function ItemPage() {
   const [dialog, setDialog] = useState<Dialog | null>(null)
   // Món đã bị thay: đọc món thay nó để biết có đưa lại được không.
   const replacement = useItem(workspaceId, item.data?.replacedByItemId)
+  // Tổ tiên của chỗ đặt cho thanh đường dẫn; chưa tải xong (hay không mở được) thì chỉ có tên chỗ đặt.
+  const place = usePlace(workspaceId, item.data?.placeId)
 
   if (!isId(itemId) || item.error?.isNotFound) {
     return <NotFoundState description="Món đồ này không có, hoặc đã bị xoá." homeHref={`/w/${workspaceId}`} />
@@ -82,6 +85,14 @@ export function ItemPage() {
               <BreadcrumbLink render={<Link to={`/w/${workspaceId}/items`} />}>Đồ đạc</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
+            {(place.data?.id === detail.placeId ? place.data.ancestors : []).map((ancestor) => (
+              <Fragment key={ancestor.id}>
+                <BreadcrumbItem>
+                  <BreadcrumbLink render={<Link to={`/w/${workspaceId}/places/${ancestor.id}`} />}>{ancestor.name}</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+              </Fragment>
+            ))}
             <BreadcrumbItem>
               <BreadcrumbLink render={<Link to={`/w/${workspaceId}/places/${detail.placeId}?tab=items`} />}>{detail.placeName}</BreadcrumbLink>
             </BreadcrumbItem>

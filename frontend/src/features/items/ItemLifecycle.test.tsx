@@ -353,6 +353,8 @@ test('itemPageShowsWhereItIsAsABreadcrumb', async () => {
 
   const trail = within(await (await main()).findByRole('navigation', { name: 'Đường dẫn' }))
   expect(trail.getByRole('link', { name: 'Đồ đạc' })).toHaveAttribute('href', '/w/7/items')
+  // Đủ đường dẫn của chỗ đặt: các tổ tiên rồi tới chính nó.
+  expect(await trail.findByRole('link', { name: 'Toà A' })).toHaveAttribute('href', '/w/7/places/1')
   expect(trail.getByRole('link', { name: 'P301' })).toHaveAttribute('href', '/w/7/places/301?tab=items')
   expect(trail.getByText('Tủ lạnh')).toHaveAttribute('aria-current', 'page')
 })
