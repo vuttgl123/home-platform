@@ -13,6 +13,7 @@ import { NotFoundPage } from './layout/NotFoundPage'
 import { StartPage } from './layout/StartPage'
 import { WorkspaceHomePage } from './layout/WorkspaceHomePage'
 import { RequireUser } from './session/RequireUser'
+import { RequireWorkspace } from './session/RequireWorkspace'
 
 /** Các tab của trang địa điểm thuộc nghiệp vụ khác; trang địa điểm không nhập các feature đó. */
 const placeTabs: PlaceTabSlots = {
@@ -37,21 +38,26 @@ export const routes: RouteObject[] = [
     path: '/w/:workspaceId',
     element: <RequireUser />,
     children: [
-      // Trang in đứng riêng: không có thanh bên, cây địa điểm.
-      { path: 'places/:placeId/print', element: <PlacePrintPage /> },
       {
-        element: <AppLayout />,
+        element: <RequireWorkspace />,
         children: [
-          { index: true, element: <WorkspaceHomePage /> },
-          { path: 'places/:placeId', element: <PlacePage tabs={placeTabs} /> },
-          { path: 'people', element: <PeoplePage /> },
-          { path: 'people/:personId', element: <PersonPage tabs={personTabs} /> },
-          { path: 'items', element: <ItemsPage /> },
-          { path: 'items/:itemId', element: <ItemPage /> },
-          { path: 'catalog', element: <CatalogPage /> },
-          { path: 'activity', element: <ActivityPage /> },
-          { path: 'trash', element: <TrashPage /> },
-          { path: '*', element: <NotFoundPage /> },
+          // Trang in đứng riêng: không có thanh bên, cây địa điểm.
+          { path: 'places/:placeId/print', element: <PlacePrintPage /> },
+          {
+            element: <AppLayout />,
+            children: [
+              { index: true, element: <WorkspaceHomePage /> },
+              { path: 'places/:placeId', element: <PlacePage tabs={placeTabs} /> },
+              { path: 'people', element: <PeoplePage /> },
+              { path: 'people/:personId', element: <PersonPage tabs={personTabs} /> },
+              { path: 'items', element: <ItemsPage /> },
+              { path: 'items/:itemId', element: <ItemPage /> },
+              { path: 'catalog', element: <CatalogPage /> },
+              { path: 'activity', element: <ActivityPage /> },
+              { path: 'trash', element: <TrashPage /> },
+              { path: '*', element: <NotFoundPage /> },
+            ],
+          },
         ],
       },
     ],

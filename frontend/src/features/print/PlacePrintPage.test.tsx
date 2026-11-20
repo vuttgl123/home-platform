@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { afterEach, expect, test, vi } from 'vitest'
 
 import { fieldDef, item, occupancy, ownership, page, placeType } from '@/test/fixtures'
-import { mockShell } from '@/test/handlers'
+import { mockShell, recordRequests } from '@/test/handlers'
 import { mockPlaceBackend } from '@/test/placeBackend'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
@@ -178,4 +178,16 @@ test('unknownPlaceShowsNotFound', async () => {
 
   expect(await screen.findByText('Địa điểm này không có, hoặc đã bị xoá.')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'In' })).not.toBeInTheDocument()
+})
+
+test('workspaceIAmNotInShowsNotFound', async () => {
+  setUp()
+  const requests = recordRequests()
+
+  // Trang in nằm ngoài khung có thanh bên, nhưng vẫn phải chặn không gian mà người dùng không ở trong đó.
+  renderApp({ route: '/w/999/places/301/print', userId: '42' })
+
+  expect(await screen.findByText('Không tìm thấy không gian')).toBeInTheDocument()
+  expect(requests.filter((request) => request.includes('/api/registry/'))).toEqual([])
+  expect(screen.queryByRole('heading', { name: 'P301' })).not.toBeInTheDocument()
 })

@@ -8,13 +8,11 @@ import {
   UsersIcon,
   type LucideIcon,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { useCallback, useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router'
 
-import { ErrorState } from '@/components/common/ErrorState'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import {
   Sidebar,
   SidebarContent,
@@ -28,14 +26,11 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { Spinner } from '@/components/ui/spinner'
 import { PlaceTree } from '@/features/places'
 import { SearchPalette, useSearchShortcut } from '@/features/search'
-import { useCurrentUser } from '@/features/users'
 import { useMyWorkspaces } from '@/features/workspaces'
 
-import { sessionStore } from '../session/sessionStore'
-import { useSession, useWorkspaceId } from '../session/useSession'
+import { useWorkspaceId } from '../session/useSession'
 import { UserMenu } from './UserMenu'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 
@@ -53,67 +48,20 @@ const SECTIONS: { path: string; label: string; icon: LucideIcon }[] = [
  * Khung của mọi trang trong một không gian: thanh bên (không gian, cây địa điểm, các mục khác,
  * người dùng) và phần chính.
  *
- * Không gian trên URL phải là một không gian của người dùng. Registry chưa kiểm tra điều đó, nên
- * khung này chặn trước khi trang con nào kịp gọi nó.
+ * Nằm dưới `RequireWorkspace`: không gian trên URL đã được kiểm tra là của người dùng.
  */
 export function AppLayout() {
   const workspaceId = useWorkspaceId()
   const workspaces = useMyWorkspaces()
-  const me = useCurrentUser()
-  const { signOut } = useSession()
   const { pathname } = useLocation()
   const [searching, setSearching] = useState(false)
   const openSearch = useCallback(() => setSearching(true), [])
   useSearchShortcut(openSearch)
 
-  // Id đã lưu không còn ứng với người dùng nào (database đã đổi): quay về chọn người dùng.
-  const userIsGone = me.error?.isNotFound === true
-  useEffect(() => {
-    if (userIsGone) {
-      signOut()
-    }
-  }, [userIsGone, signOut])
-
+  // RequireWorkspace đã chặn không gian không phải của người dùng, nên ở đây luôn tìm thấy.
   const current = workspaces.data?.find((workspace) => workspace.id === workspaceId)
-  const currentId = current?.id
-  useEffect(() => {
-    if (currentId) {
-      sessionStore.rememberWorkspace(currentId)
-    }
-  }, [currentId])
-
-  if (workspaces.isPending) {
-    return (
-      <div className="flex min-h-svh items-center justify-center">
-        <Spinner aria-label="Đang tải" />
-      </div>
-    )
-  }
-  if (workspaces.isError) {
-    return (
-      <div className="flex min-h-svh items-center justify-center p-6">
-        <ErrorState error={workspaces.error} onRetry={() => void workspaces.refetch()} />
-      </div>
-    )
-  }
-  if (!current) {
-    return (
-      <main className="flex min-h-svh items-center justify-center p-6">
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>Không tìm thấy không gian</EmptyTitle>
-            <EmptyDescription>
-              Không gian này không có, hoặc bạn không phải thành viên của nó.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button nativeButton={false} render={<Link to="/" />}>
-              Về không gian của tôi
-            </Button>
-          </EmptyContent>
-        </Empty>
-      </main>
-    )
+  if (!current || !workspaces.data) {
+    return null
   }
 
   const base = `/w/${current.id}`
