@@ -26,7 +26,7 @@ Người dùng: người quản lý một toà nhà hay một gia đình, mở t
 
 **Không làm ở đợt này**
 
-- Đổi ô chọn ngày (`<input type="date">`) sang lịch bật lên (`calendar` + `popover`), đổi `NativeSelect` sang `select`/`combobox`. Ô gốc của trình duyệt dùng tốt trên điện thoại, và test hiện gõ thẳng vào chúng. **(tôi chọn)** Ghi vào lộ trình.
+- Đổi `NativeSelect` sang `select`/`combobox`. Ô gốc của trình duyệt dùng tốt trên điện thoại. **(tôi chọn)** (Ô ngày: sau khi xây, bạn bảo làm luôn phần còn lại; ô ngày vẫn gõ được và có thêm nút lịch, xem `DateInput`.)
 - Phân trang bằng số trang (`pagination`): danh sách đi bằng cursor, "Tải thêm" đúng với API.
 - Thêm thư viện JS. Chỉ thêm một gói font. **(tôi chọn)**
 - Trang in hồ sơ: giữ đen trắng cho máy in.

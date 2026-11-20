@@ -31,7 +31,7 @@ Vì sao: trang tổng quan đã đếm "trống", nhưng chưa biết một phò
 - Trang "Chỗ trống": lọc theo loại, theo toà; thấy còn mấy chỗ; bấm để xếp người vào.
 - Dòng thời gian cư trú của một địa điểm và của một người (ai ở từ khi nào tới khi nào), dùng `chart` hoặc dải thời gian.
 - Danh sách "sắp chuyển đi" (cư trú có ngày kết thúc trong 30 ngày tới) trên trang tổng quan.
-- Component: `calendar` + `popover` cho ô chọn ngày của cư trú (thay `input type=date` ở form này, kèm sửa test), `toggle-group` cho bộ lọc nhanh.
+- Component: `toggle-group` cho bộ lọc nhanh. (Ô chọn ngày có lịch, `calendar` + `popover`, đã làm ở Đợt 5 cho mọi ô ngày.)
 - Backend: một cột `capacity` cho địa điểm (migration), truy vấn chỗ trống.
 
 ### Đợt 7: Ảnh (media)

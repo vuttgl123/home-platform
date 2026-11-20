@@ -216,6 +216,7 @@ Thiết kế: `docs/superpowers/specs/2026-11-20-ui-refresh-design.md`.
   `InfoCard` và `InfoList` (khối có tiêu đề trên trang chi tiết, là một vùng có tên), `WithTooltip` (bọc
   nút chỉ có biểu tượng; nút vẫn cần `aria-label` cùng chữ), `UserChip` (feature users: "Bạn" hay "Người
   dùng khác" kèm avatar), `PersonHoverCard` (feature people: tên người, rê chuột thấy số điện thoại, chỉ tải
-  hồ sơ khi mở).
+  hồ sơ khi mở), `DateInput` (ô ngày gõ được kèm nút lịch tiếng Việt; `TextField type="date"` tự dùng nó).
+- **Điện thoại**: danh sách đồ đạc thành thẻ dưới mốc `sm` (cùng một bảng, chỉ đổi CSS).
 - Trang in (`features/print`) giữ đen trắng.
 
