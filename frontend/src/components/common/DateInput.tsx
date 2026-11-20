@@ -87,7 +87,8 @@ export function DateInput({ ref, pickerLabel, className, disabled, ...props }: C
             startMonth={new Date(1900, 0)}
             endMonth={new Date(2100, 11)}
             selected={selected}
-            defaultMonth={selected ?? new Date()}
+            // Không có ngày đang chọn thì lịch tự mở ở tháng hiện tại.
+            defaultMonth={selected}
             disabled={[...(min ? [{ before: min }] : []), ...(max ? [{ after: max }] : [])]}
             onSelect={(date) => {
               if (!date || !inputRef.current) return

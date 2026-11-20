@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest'
 
 import { cleanup } from '@testing-library/react'
-import { createElement, type ReactNode } from 'react'
+import { type ComponentType, createElement, type ReactNode } from 'react'
 import { afterAll, afterEach, beforeAll, vi } from 'vitest'
 
 import { sessionStore } from '@/app/session/sessionStore'
@@ -60,7 +60,7 @@ vi.mock('recharts', async (importOriginal) => {
   return {
     ...actual,
     ResponsiveContainer: ({ children }: { children: ReactNode }) =>
-      createElement(actual.ResponsiveContainer, { width: 600, height: 300 }, children),
+      createElement(actual.ResponsiveContainer as ComponentType<{ width: number; height: number; children?: ReactNode }>, { width: 600, height: 300 }, children),
   }
 })
 
