@@ -1,10 +1,16 @@
 package com.home_platform.registry.overview;
 
+import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
+import com.home_platform.common.history.ChangeAction;
 import com.home_platform.common.jdbc.RepositorySupport;
 import com.home_platform.registry.item.ItemStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -88,6 +94,42 @@ public class OverviewRepository {
 
 	private int count(String sql, long workspaceId) {
 		return this.jdbc.sql(sql).param("workspaceId", workspaceId).query(Integer.class).single();
+	}
+
+
+	/**
+	 * Số version theo ngày và hành động, từ đầu ngày {@code first} tới hết ngày {@code last} theo
+	 * {@code zone}; mỗi ngày một dòng (cả ngày không có gì), cũ trước. Chia ngày ở Java chứ không ở SQL
+	 * để đúng với mọi múi giờ; đi theo index {@code (workspace_id, changed_at)}.
+	 */
+	public List<DayActivity> activityByDay(long workspaceId, LocalDate first, LocalDate last, ZoneId zone) {
+		Map<LocalDate, int[]> counts = new TreeMap<>();
+		for (LocalDate day = first; !day.isAfter(last); day = day.plusDays(1)) {
+			counts.put(day, new int[4]);
+		}
+		this.jdbc.sql("SELECT action, changed_at FROM reg_entity_version WHERE workspace_id = :workspaceId "
+				+ "AND changed_at >= :from AND changed_at < :to")
+			.param("workspaceId", workspaceId)
+			.param("from", LocalDateTime.ofInstant(first.atStartOfDay(zone).toInstant(), ZoneOffset.UTC))
+			.param("to", LocalDateTime.ofInstant(last.plusDays(1).atStartOfDay(zone).toInstant(), ZoneOffset.UTC))
+			.query((ResultSet rs) -> {
+				LocalDate day = LocalDate.ofInstant(rs.getObject("changed_at", LocalDateTime.class).toInstant(ZoneOffset.UTC),
+						zone);
+				int[] perAction = counts.get(day);
+				if (perAction != null) {
+					perAction[switch (ChangeAction.valueOf(rs.getString("action"))) {
+						case CREATE -> 0;
+						case UPDATE -> 1;
+						case DELETE -> 2;
+						case RESTORE -> 3;
+					}]++;
+				}
+			});
+		return counts.entrySet()
+			.stream()
+			.map((entry) -> new DayActivity(entry.getKey(), entry.getValue()[0], entry.getValue()[1], entry.getValue()[2],
+					entry.getValue()[3]))
+			.toList();
 	}
 
 }

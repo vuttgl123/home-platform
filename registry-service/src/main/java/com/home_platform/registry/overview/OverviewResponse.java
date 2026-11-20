@@ -13,9 +13,11 @@ import com.home_platform.registry.item.ItemStatus;
  * @param peopleLiving số người khác nhau đang ở đâu đó hôm nay
  * @param itemsByStatus số món theo trạng thái; đủ mọi trạng thái, không có món nào thì 0
  * @param missingCodes bản ghi chưa có mã, đúng con số của {@code GET /codes/status}
+ * @param activityByDay số thay đổi theo ngày của 14 ngày gần nhất (tính cả hôm nay), cũ trước; ngày không có gì
+ *   vẫn có dòng với các số 0
  */
 public record OverviewResponse(int places, List<PlaceTypeCount> placeTypes, int people, int peopleLiving,
-		Map<ItemStatus, Integer> itemsByStatus, MissingCodes missingCodes) {
+		Map<ItemStatus, Integer> itemsByStatus, MissingCodes missingCodes, List<DayActivity> activityByDay) {
 
 	public record MissingCodes(int places, int items) {
 	}

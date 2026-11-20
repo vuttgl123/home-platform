@@ -9,6 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 import com.home_platform.registry.RegistryIT;
 import com.home_platform.registry.person.PersonRequest;
@@ -58,7 +61,36 @@ class OverviewIT extends RegistryIT {
 			.andExpect(jsonPath("$.itemsByStatus.STORED").value(0))
 			.andExpect(jsonPath("$.itemsByStatus.REMOVED").value(0))
 			.andExpect(jsonPath("$.missingCodes.places").value(0))
-			.andExpect(jsonPath("$.missingCodes.items").value(0));
+			.andExpect(jsonPath("$.missingCodes.items").value(0))
+			.andExpect(jsonPath("$.activityByDay", hasSize(14)))
+			.andExpect(jsonPath("$.activityByDay[13].date").value(this.today.toString()))
+			.andExpect(jsonPath("$.activityByDay[13].created").value(0));
+	}
+
+	@Test
+	void activityByDayCountsTheLastFourteenDaysByAction() throws Exception {
+		// Giờ Việt Nam; 00:30 hôm nay là 17:30 hôm qua theo UTC nhưng vẫn là việc của hôm nay.
+		version(WS_A, 1, "CREATE", this.today.atTime(0, 30));
+		version(WS_A, 2, "CREATE", this.today.atTime(10, 0));
+		version(WS_A, 3, "UPDATE", this.today.atTime(23, 59));
+		version(WS_A, 4, "DELETE", this.today.minusDays(1).atTime(12, 0));
+		version(WS_A, 5, "RESTORE", this.today.minusDays(13).atTime(8, 0));
+		// Ngoài 14 ngày, và của không gian khác: không tính.
+		version(WS_A, 6, "CREATE", this.today.minusDays(14).atTime(23, 59));
+		version(WS_B, 7, "CREATE", this.today.atTime(9, 0));
+
+		this.mvc.perform(asA(get("/overview")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.activityByDay", hasSize(14)))
+			.andExpect(jsonPath("$.activityByDay[0].date").value(this.today.minusDays(13).toString()))
+			.andExpect(jsonPath("$.activityByDay[0].restored").value(1))
+			.andExpect(jsonPath("$.activityByDay[0].created").value(0))
+			.andExpect(jsonPath("$.activityByDay[12].deleted").value(1))
+			.andExpect(jsonPath("$.activityByDay[13].date").value(this.today.toString()))
+			.andExpect(jsonPath("$.activityByDay[13].created").value(2))
+			.andExpect(jsonPath("$.activityByDay[13].updated").value(1))
+			.andExpect(jsonPath("$.activityByDay[13].deleted").value(0))
+			.andExpect(jsonPath("$.activityByDay[13].restored").value(0));
 	}
 
 	@Test
@@ -230,6 +262,21 @@ class OverviewIT extends RegistryIT {
 			.andExpect(jsonPath("$.people").value(0))
 			.andExpect(jsonPath("$.peopleLiving").value(0))
 			.andExpect(jsonPath("$.itemsByStatus.IN_USE").value(0));
+	}
+
+	/** Một dòng version lúc {@code local} giờ Việt Nam, lưu UTC như {@code EntityHistory}. */
+	private void version(long workspaceId, long entityId, String action, LocalDateTime local) {
+		LocalDateTime utc = local.atZone(ZoneId.of("Asia/Ho_Chi_Minh")).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+		this.jdbc.sql("""
+				INSERT INTO reg_entity_version (workspace_id, entity_type, entity_id, version_no, action, snapshot,
+				  changed_by, changed_at)
+				VALUES (:ws, 'ITEM', :entity, 1, :action, '{}', :user, :at)""")
+			.param("ws", workspaceId)
+			.param("entity", entityId)
+			.param("action", action)
+			.param("user", USER)
+			.param("at", utc)
+			.update();
 	}
 
 	private long type(String code, String name, int sortOrder) {

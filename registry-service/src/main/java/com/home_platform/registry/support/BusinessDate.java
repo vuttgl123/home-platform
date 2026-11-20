@@ -27,4 +27,9 @@ public class BusinessDate {
 		return LocalDate.ofInstant(this.clock.instant(), this.zone);
 	}
 
+	/** Múi giờ nghiệp vụ: một thời điểm thuộc ngày nào thì tính theo múi này. */
+	public ZoneId zone() {
+		return this.zone;
+	}
+
 }
