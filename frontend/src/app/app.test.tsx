@@ -1,13 +1,20 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { afterEach, expect, test } from 'vitest'
 
 import { overview, page, placeType, problem, user, workspace } from '@/test/fixtures'
 import { mockShell, recordRequests } from '@/test/handlers'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
 
+import { themeStore } from './theme'
+
 const BIG_ID = '114540094935228416'
+
+afterEach(() => {
+  themeStore.setMode('system')
+  localStorage.removeItem('hp.theme')
+})
 
 test('redirectsToLoginWithoutUser', async () => {
   const requests = recordRequests()
@@ -214,4 +221,15 @@ test('overviewLinkIsActiveOnlyOnTheHomePage', async () => {
   await screen.findByText('Không tìm thấy')
   expect(screen.getByRole('link', { name: 'Tổng quan' })).not.toHaveAttribute('aria-current')
   expect(screen.getByRole('link', { name: 'Tổng quan' })).not.toHaveAttribute('data-active')
+})
+
+test('themeMenuSwitchesToDark', async () => {
+  mockShell()
+  const { user } = renderApp({ route: '/w/7', userId: '42' })
+
+  await user.click(await screen.findByRole('button', { name: 'Giao diện' }))
+  await user.click(await screen.findByRole('menuitemradio', { name: 'Tối' }))
+
+  expect(document.documentElement).toHaveClass('dark')
+  expect(localStorage.getItem('hp.theme')).toBe('dark')
 })

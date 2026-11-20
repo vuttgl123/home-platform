@@ -67,7 +67,8 @@ export function AppLayout() {
   const base = `/w/${current.id}`
   return (
     <SidebarProvider>
-      <Sidebar>
+      {/* Thanh bên luôn tối: lớp `dark` đổi mọi token bên trong nó sang bộ tối. */}
+      <Sidebar className="dark">
         <SidebarHeader>
           <WorkspaceSwitcher workspaces={workspaces.data} current={current} />
         </SidebarHeader>
