@@ -116,7 +116,7 @@ export function AppLayout() {
           <Button
             variant="outline"
             size="sm"
-            className="w-full max-w-sm justify-start bg-card text-muted-foreground shadow-none"
+            className="min-w-0 max-w-sm flex-1 justify-start bg-card text-muted-foreground shadow-none"
             onClick={openSearch}
           >
             <SearchIcon aria-hidden="true" />
