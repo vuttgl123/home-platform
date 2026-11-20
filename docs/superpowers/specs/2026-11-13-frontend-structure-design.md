@@ -168,7 +168,7 @@ frontend/src/
 │   (mỗi thư mục: api.ts, queries.ts, components/, pages/ nếu có trang riêng)
 ├── components/
 │   ├── ui/                 component shadcn (đã có, giữ nguyên)
-│   └── common/             component dùng chung tự viết: ô lỗi, trạng thái trống, nút tải thêm
+│   └── common/             component dùng chung tự viết: ô lỗi, trạng thái trống, nút tải thêm, nhãn có màu, avatar, khối thông tin, chú thích (2026-11-20)
 ├── hooks/, lib/            như hiện tại
 └── test/                   cấu hình Vitest, MSW
 ```

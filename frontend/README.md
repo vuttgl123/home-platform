@@ -21,7 +21,9 @@ npm run lint         # oxlint
 ```
 
 Trong lúc phát triển, trình duyệt gọi `/api/identity/...`, `/api/registry/...`, `/api/media/...`; Vite
-chuyển chúng tới service tương ứng và bỏ tiền tố (`vite.config.ts`).
+chuyển chúng tới service tương ứng và bỏ tiền tố (`vite.config.ts`). Biến môi trường `HP_IDENTITY_PORT`,
+`HP_REGISTRY_PORT`, `HP_MEDIA_PORT` đổi cổng đích, để chạy một bộ service thứ hai song song với bộ đang
+dùng (ví dụ registry `--server.port=18082` và `npm run dev -- --port 15173`).
 
 Chưa có đăng nhập: trang đầu cho tạo người dùng hoặc nhập `id` của người dùng đã có. `id` lưu ở
 `localStorage` (`hp.userId`) và được gửi trong header `X-User-Id`; mọi lời gọi registry gửi thêm
@@ -72,7 +74,8 @@ src/
 │   └── search/         ô tìm chung (Ctrl+K): địa điểm, người, đồ đạc theo tên và theo mã
 ├── components/
 │   ├── ui/         component shadcn, không sửa tay; thêm bằng `npx shadcn add <tên>`
-│   └── common/     component dùng chung tự viết: ô nhập có nhãn, lỗi, trạng thái trống, "Tải thêm"
+│   └── common/     component dùng chung tự viết: ô nhập có nhãn, lỗi, trạng thái trống, "Tải thêm",
+│                   nhãn có màu (ToneBadge), avatar chữ cái đầu, khối thông tin (InfoCard), chú thích (WithTooltip)
 ├── hooks/, lib/    hook và hàm nhỏ dùng chung (định dạng ngày giờ, kiểm tra id)
 └── test/           cấu hình Vitest, server giả (MSW), dữ liệu mẫu, backend giả của địa điểm
 ```
@@ -193,4 +196,26 @@ thử lại.
   một bản thành các dòng `{ key, label, value, raw }`; hộp xem một version và hộp so sánh dùng chung các
   dòng đó. `compareRows` ghép hai bản theo `key` và so `raw` theo nội dung. Mục tuỳ biến lấy bằng
   `attributeRows` với mục của chính loại (nhóm) ở bản đó (`defsOfType`).
+
+## Giao diện
+
+Thiết kế: `docs/superpowers/specs/2026-11-20-ui-refresh-design.md`.
+
+- **Màu** là token trong `src/index.css` (sáng ở `:root`, tối ở `.dark`): xanh cổ vịt là màu chính, nền
+  giấy lạnh, chữ màu mực. Không viết màu Tailwind thô (`amber-500`, `red-600`…) trong feature: dùng token.
+- **Màu mang nghĩa** (`success`, `warning`, `danger`, `info`, `violet`, kèm bản `-foreground` để làm chữ
+  trên nền nhạt `bg-success/12`). Bảng "trạng thái nào mang nghĩa nào" nằm cạnh bảng nhãn của feature:
+  `ITEM_STATUS_TONE`, `PLACE_STATUS_TONE`, `OCCUPANCY_STATUS_TONE`, `OWNERSHIP_STATUS_TONE`, `ACTION_TONE`.
+  Hiện bằng `<ToneBadge tone=…>`: nhãn vẫn ghi đủ chữ, màu chỉ giúp quét mắt; `data-tone` để test.
+- **Chữ**: Be Vietnam Pro (`@fontsource/be-vietnam-pro`). Số đếm, mã, ngày dùng `tabular-nums`, không dùng
+  font monospace.
+- **Chế độ sáng tối** (`app/theme.ts`): Sáng, Tối, Theo máy; nhớ ở `localStorage` (`hp.theme`), "Theo máy"
+  đổi ngay khi máy đổi. Thanh bên luôn tối: phần tử `Sidebar` mang lớp `dark`, nên mọi thứ bên trong dùng
+  bộ token tối.
+- **Component dùng chung**: `PersonAvatar` (chữ cái đầu, màu theo tên; ẩn với công cụ đọc màn hình),
+  `InfoCard` và `InfoList` (khối có tiêu đề trên trang chi tiết, là một vùng có tên), `WithTooltip` (bọc
+  nút chỉ có biểu tượng; nút vẫn cần `aria-label` cùng chữ), `UserChip` (feature users: "Bạn" hay "Người
+  dùng khác" kèm avatar), `PersonHoverCard` (feature people: tên người, rê chuột thấy số điện thoại, chỉ tải
+  hồ sơ khi mở).
+- Trang in (`features/print`) giữ đen trắng.
 

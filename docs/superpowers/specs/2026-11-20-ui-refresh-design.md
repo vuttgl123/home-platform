@@ -1,6 +1,6 @@
 # Giao diện mới: màu có nghĩa, chữ cho tiếng Việt, dùng đủ bộ component
 
-Ngày: 2026-11-20 · Trạng thái: **đã duyệt** (2026-11-20, bạn: "cứ đề xuất rồi tự làm luôn")
+Ngày: 2026-11-20 · Trạng thái: **đã duyệt, đã xây** (2026-11-20, bạn: "cứ đề xuất rồi tự làm luôn")
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 

@@ -48,7 +48,7 @@ export function PlaceSubtreeTable({ ws, place }: { ws: string; place: PlaceDetai
                   </Link>
                 </td>
                 <td className="px-3 py-2">{types.find((type) => type.id === row.placeTypeId)?.name ?? '—'}</td>
-                <td className="px-3 py-2 font-mono text-xs">{row.code ?? '—'}</td>
+                <td className="px-3 py-2 tabular-nums text-xs">{row.code ?? '—'}</td>
                 <td className="px-3 py-2">
                   <ToneBadge tone={PLACE_STATUS_TONE[row.status]}>{PLACE_STATUS_LABEL[row.status]}</ToneBadge>
                 </td>

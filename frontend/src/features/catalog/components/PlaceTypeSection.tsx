@@ -45,7 +45,7 @@ export function PlaceTypeSection({ ws }: { ws: string }) {
           {rows.map((type) => (
             <tr key={type.id} className={type.status === 'ARCHIVED' ? 'text-muted-foreground' : undefined}>
               <td className="px-3 py-2 font-medium">{type.name}</td>
-              <td className="px-3 py-2 font-mono text-xs">{type.code}</td>
+              <td className="px-3 py-2 tabular-nums text-xs">{type.code}</td>
               <td className="px-3 py-2">{type.sortOrder}</td>
               <td className="px-3 py-2">
                 <StatusBadge archived={type.status === 'ARCHIVED'} />
@@ -138,7 +138,7 @@ function PlaceTypeDialog({
     >
       {type ? (
         <p className="text-sm text-muted-foreground">
-          Mã <span className="font-mono">{type.code}</span> không đổi được sau khi tạo.
+          Mã <span className="tabular-nums">{type.code}</span> không đổi được sau khi tạo.
         </p>
       ) : null}
       <TextField label="Tên" required value={name} onChange={(event) => setName(event.target.value)} error={errors.name} />

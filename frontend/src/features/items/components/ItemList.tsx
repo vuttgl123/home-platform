@@ -61,7 +61,7 @@ export function ItemList({
                   <Link to={`/w/${ws}/items/${item.id}`} className="font-medium hover:underline">
                     {item.name}
                   </Link>
-                  {item.code && <span className="ml-2 text-xs text-muted-foreground">{item.code}</span>}
+                  {item.code && <span className="ml-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums">{item.code}</span>}
                   {item.ownerName && <span className="block text-xs text-muted-foreground">{`của ${item.ownerName}`}</span>}
                 </td>
                 {showPlace && (

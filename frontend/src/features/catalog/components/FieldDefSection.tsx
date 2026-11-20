@@ -98,7 +98,7 @@ export function FieldDefSection({ ws }: { ws: string }) {
           {rows.map((def) => (
             <tr key={def.id} className={def.status === 'ARCHIVED' ? 'text-muted-foreground' : undefined}>
               <td className="px-3 py-2 font-medium">{def.label}</td>
-              <td className="px-3 py-2 font-mono text-xs">{def.fieldKey}</td>
+              <td className="px-3 py-2 tabular-nums text-xs">{def.fieldKey}</td>
               <td className="px-3 py-2">{DATA_TYPES.find((type) => type.value === def.dataType)?.label}</td>
               <td className="px-3 py-2">{scopeName(def)}</td>
               <td className="px-3 py-2">{def.required ? 'Có' : 'Không'}</td>
@@ -215,7 +215,7 @@ function FieldDefDialog({
       {def ? (
         <div className="flex flex-col gap-1 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
           <span>
-            Khoá <span className="font-mono">{def.fieldKey}</span> · {DATA_TYPES.find((type) => type.value === def.dataType)?.label} ·{' '}
+            Khoá <span className="tabular-nums">{def.fieldKey}</span> · {DATA_TYPES.find((type) => type.value === def.dataType)?.label} ·{' '}
             {scopeName}
           </span>
           <span className="text-muted-foreground">

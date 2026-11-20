@@ -67,11 +67,11 @@ export function CodeRuleSection({ ws }: { ws: string }) {
             return (
               <tr key={`${rule.target}:${rule.typeId}`}>
                 <td className={rule.typeId === '0' ? 'px-3 py-2 font-medium' : 'py-2 pr-3 pl-7'}>{label}</td>
-                <td className="px-3 py-2 font-mono text-xs">{rule.prefix}</td>
+                <td className="px-3 py-2 tabular-nums text-xs">{rule.prefix}</td>
                 <td className="px-3 py-2">{rule.digits}</td>
                 <td className="px-3 py-2">{rule.yearly ? 'Có' : 'Không'}</td>
                 <td className="px-3 py-2">
-                  <span className="font-mono text-xs">{codeExample(rule, year)}</span>
+                  <span className="tabular-nums text-xs">{codeExample(rule, year)}</span>
                   {rule.builtIn && <span className="ml-2 text-xs text-muted-foreground">(có sẵn)</span>}
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -231,10 +231,10 @@ function CodeRuleDialog({
         <Switch checked={yearly} onCheckedChange={setYearly} aria-label="Bắt đầu lại mỗi năm" />
         Bắt đầu lại mỗi năm
       </label>
-      <p className="font-mono text-sm">
+      <p className="tabular-nums text-sm">
         {`Ví dụ: ${PREFIX_PATTERN.test(prefix) ? codeExample({ prefix, digits, yearly }, year) : '—'}`}
       </p>
-      {sharesPrefix && <p className="text-sm text-amber-700 dark:text-amber-400">Địa điểm và đồ đạc sẽ có mã giống nhau</p>}
+      {sharesPrefix && <p className="text-sm text-warning-foreground">Địa điểm và đồ đạc sẽ có mã giống nhau</p>}
     </CatalogEntryDialog>
   )
 }

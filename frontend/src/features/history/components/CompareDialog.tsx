@@ -86,7 +86,7 @@ export function CompareDialog<Snapshot>({
                     <TableRow
                       key={line.key}
                       data-changed={line.changed || undefined}
-                      className={cn('align-top', line.changed && 'bg-amber-50 font-semibold dark:bg-amber-950/30')}
+                      className={cn('align-top', line.changed && 'bg-warning/10 font-semibold')}
                     >
                       <TableCell className="text-muted-foreground">{line.label}</TableCell>
                       <TableCell className="whitespace-normal">{blankAsDash(line.older)}</TableCell>

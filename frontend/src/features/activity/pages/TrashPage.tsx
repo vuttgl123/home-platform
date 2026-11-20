@@ -65,7 +65,7 @@ export function TrashPage() {
             {trash.items.map((entry) => (
               <li key={entry.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2.5 text-sm">
                 <span className="font-medium">{entry.name}</span>
-                {entry.code && <span className="font-mono text-xs text-muted-foreground">{entry.code}</span>}
+                {entry.code && <span className="tabular-nums text-xs text-muted-foreground">{entry.code}</span>}
                 {contextOf(entry) && <span className="text-muted-foreground">{contextOf(entry)}</span>}
                 <span className="text-muted-foreground">
                   · xoá lúc {formatDateTime(entry.deletedAt)} · {entry.deletedBy === currentUserId() ? 'Bạn' : 'Người dùng khác'}
