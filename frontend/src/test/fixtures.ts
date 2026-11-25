@@ -5,6 +5,7 @@ import type { Overview } from '@/features/overview'
 import type { Ownership } from '@/features/ownership'
 import type { Occupancy, PersonDetail, PersonSummary } from '@/features/people'
 import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from '@/features/places'
+import type { Todo, TodoSummary } from '@/features/todos'
 import type { User } from '@/features/users'
 import type { Workspace } from '@/features/workspaces'
 
@@ -282,4 +283,28 @@ export function ownership(overrides: Partial<Ownership> = {}): Ownership {
     version: 1,
     ...overrides,
   }
+}
+
+/** Một việc cần làm: mặc định món "Tủ lạnh" hỏng từ hôm 20/11. */
+export function todo(overrides: Partial<Todo> = {}): Todo {
+  const key = overrides.key ?? `${overrides.kind ?? 'BROKEN'}:${overrides.subjectId ?? '900'}`
+  return {
+    id: key,
+    key,
+    kind: 'BROKEN',
+    dueOn: '2026-11-20',
+    since: '2026-11-20T03:00:00Z',
+    isNew: false,
+    subjectType: 'ITEM',
+    subjectId: '900',
+    subjectName: 'Tủ lạnh',
+    subjectCode: null,
+    context: 'P301',
+    ...overrides,
+  }
+}
+
+/** Tóm tắt việc cần làm của một không gian chưa có việc gì. */
+export function emptyTodoSummary(): TodoSummary {
+  return { total: 0, byKind: { BROKEN: 0, WARRANTY: 0, SERVICE: 0, MOVE_OUT: 0, CUSTOM_DATE: 0 }, newCount: 0, latest: [] }
 }

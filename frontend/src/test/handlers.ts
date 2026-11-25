@@ -6,12 +6,13 @@ import type { PlaceSummary } from '@/features/places'
 import type { User } from '@/features/users'
 import type { Workspace } from '@/features/workspaces'
 
-import { emptyOverview, page, placeType, user, workspace } from './fixtures'
+import { emptyOverview, emptyTodoSummary, page, placeType, user, workspace } from './fixtures'
 import { server } from './server'
 
 /**
  * Đăng ký những request mà khung trang luôn gọi: người dùng hiện tại, không gian của tôi, loại
- * địa điểm, cấp cao nhất của cây, và số liệu của trang chủ (mặc định là không gian chưa có gì). Test
+ * địa điểm, cấp cao nhất của cây, số liệu của trang chủ (mặc định là không gian chưa có gì), và tóm
+ * tắt việc cần làm cho thanh bên và chuông (mặc định không có việc gì). Test
  * nào cần câu trả lời khác thì gọi `server.use(...)` sau hàm này.
  */
 export function mockShell(
@@ -30,6 +31,7 @@ export function mockShell(
     http.get('/api/registry/places', () => HttpResponse.json(page(options.places ?? []))),
     http.get('/api/registry/field-defs', () => HttpResponse.json([])),
     http.get('/api/registry/overview', () => HttpResponse.json(options.overview ?? emptyOverview())),
+    http.get('/api/registry/todos/summary', () => HttpResponse.json(emptyTodoSummary())),
   )
 }
 

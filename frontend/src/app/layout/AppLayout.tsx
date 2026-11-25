@@ -2,6 +2,7 @@ import {
   ActivityIcon,
   BedDoubleIcon,
   LayoutDashboardIcon,
+  ListChecksIcon,
   PackageIcon,
   SearchIcon,
   TagsIcon,
@@ -25,6 +26,7 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -33,6 +35,7 @@ import {
 } from '@/components/ui/sidebar'
 import { PlaceTree } from '@/features/places'
 import { SearchPalette, useSearchShortcut } from '@/features/search'
+import { useTodoSummary } from '@/features/todos'
 import { useMyWorkspaces } from '@/features/workspaces'
 
 import { useWorkspaceId } from '../session/useSession'
@@ -42,6 +45,7 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 /** `path` rỗng là trang chủ của không gian: chỉ sáng khi đang ở đúng trang đó. */
 const SECTIONS: { path: string; label: string; icon: LucideIcon }[] = [
   { path: '', label: 'Tổng quan', icon: LayoutDashboardIcon },
+  { path: 'todos', label: 'Việc cần làm', icon: ListChecksIcon },
   { path: 'people', label: 'Người', icon: UsersIcon },
   { path: 'vacancies', label: 'Chỗ trống', icon: BedDoubleIcon },
   { path: 'items', label: 'Đồ đạc', icon: PackageIcon },
@@ -63,6 +67,8 @@ export function AppLayout() {
   const [searching, setSearching] = useState(false)
   const openSearch = useCallback(() => setSearching(true), [])
   useSearchShortcut(openSearch)
+  // Số việc cần làm trên thanh bên; registry cũ chưa có việc cần làm (`null`) thì ẩn cả mục đó.
+  const todos = useTodoSummary(workspaceId)
 
   // RequireWorkspace đã chặn không gian không phải của người dùng, nên ở đây luôn tìm thấy.
   const current = workspaces.data?.find((workspace) => workspace.id === workspaceId)
@@ -81,7 +87,7 @@ export function AppLayout() {
         <SidebarContent className="gap-0 overflow-hidden">
           <SidebarGroup>
             <SidebarMenu>
-              {SECTIONS.map(({ path, label, icon: Icon }) => (
+              {SECTIONS.filter(({ path }) => path !== 'todos' || todos.data !== null).map(({ path, label, icon: Icon }) => (
                 <SidebarMenuItem key={path}>
                   {/* NavLink đặt aria-current="page" cho công cụ đọc màn hình; isActive tô dòng (data-active). */}
                   <SidebarMenuButton
@@ -91,6 +97,9 @@ export function AppLayout() {
                     <Icon aria-hidden="true" />
                     <span>{label}</span>
                   </SidebarMenuButton>
+                  {path === 'todos' && todos.data != null && todos.data.total > 0 && (
+                    <SidebarMenuBadge aria-label={`${todos.data.total} việc`}>{todos.data.total}</SidebarMenuBadge>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

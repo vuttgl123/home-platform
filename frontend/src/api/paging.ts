@@ -32,14 +32,17 @@ export function useCursorList<T extends { id: string }>(options: {
   queryKey: QueryKey
   fetchPage: (cursor?: string) => Promise<CursorPage<T>>
   enabled?: boolean
+  /** Như `meta` của `useQuery`, ví dụ `{ refreshAfterWrites: true }` cho danh sách gộp từ nhiều loại bản ghi. */
+  meta?: Record<string, unknown>
 }): CursorList<T> {
-  const { queryKey, fetchPage, enabled = true } = options
+  const { queryKey, fetchPage, enabled = true, meta } = options
   const query = useInfiniteQuery<CursorPage<T>, ApiError, InfiniteData<CursorPage<T>>, QueryKey, string | undefined>({
     queryKey,
     queryFn: ({ pageParam }) => fetchPage(pageParam),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled,
+    meta,
   })
   const pages = query.data?.pages
   const items = useMemo(() => {

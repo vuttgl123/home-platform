@@ -8,6 +8,7 @@ import { PeoplePage, PersonPage, PlaceOccupantsTab, type PersonTabSlots } from '
 import { PersonOwnershipsTab, PlaceOwnersTab } from '@/features/ownership'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
 import { PlacePrintPage } from '@/features/print'
+import { TodosPage } from '@/features/todos'
 import { VacanciesPage } from '@/features/vacancies'
 
 import { AppLayout } from './layout/AppLayout'
@@ -59,6 +60,7 @@ export const routes: RouteObject[] = [
             children: [
               { index: true, element: <WorkspaceHomePage /> },
               { path: 'places/:placeId', element: <PlacePage tabs={placeTabs} /> },
+              { path: 'todos', element: <TodosPage /> },
               { path: 'people', element: <PeoplePage /> },
               { path: 'people/:personId', element: <PersonPage tabs={personTabs} /> },
               { path: 'vacancies', element: <VacanciesPage /> },
