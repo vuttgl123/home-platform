@@ -216,6 +216,52 @@ class EntityHistoryIT extends CommonIT {
 	}
 
 	@Test
+	void valueSetAtFindsTheLastChangeOfThatValue() {
+		insertSnapshot(10, 1, "{\"status\": \"A\", \"name\": \"x\"}", "2026-01-01 00:00:00.000");
+		insertSnapshot(10, 2, "{\"status\": \"A\", \"name\": \"y\"}", "2026-01-02 00:00:00.000");
+		insertSnapshot(10, 3, "{\"status\": \"B\", \"name\": \"y\"}", "2026-01-03 00:00:00.000");
+		insertSnapshot(10, 4, "{\"status\": \"B\", \"name\": \"z\"}", "2026-01-04 00:00:00.000");
+		insertSnapshot(10, 5, "{\"status\": \"B\", \"name\": \"w\"}", "2026-01-05 00:00:00.000");
+		insertSnapshot(11, 1, "{\"status\": \"A\"}", "2026-02-01 00:00:00.000");
+		insertSnapshot(12, 1, "{\"name\": \"no status\"}", "2026-03-01 00:00:00.000");
+		insertSnapshot(12, 2, "{\"name\": \"still none\"}", "2026-03-02 00:00:00.000");
+
+		Map<Long, Instant> found = this.history.valueSetAt(WS_A, "PLACE", List.of(10L, 11L, 12L, 13L), "$.status");
+
+		assertThat(found).containsOnly(Map.entry(10L, Instant.parse("2026-01-03T00:00:00Z")),
+				Map.entry(11L, Instant.parse("2026-02-01T00:00:00Z")),
+				Map.entry(12L, Instant.parse("2026-03-01T00:00:00Z")));
+		assertThat(this.history.valueSetAt(WS_A, "PLACE", List.of(), "$.status")).isEmpty();
+	}
+
+	@Test
+	void valueSetAtReadsNestedPaths() {
+		insertSnapshot(10, 1, "{\"attributes\": {\"expiry\": \"2027-01-01\"}}", "2026-01-01 00:00:00.000");
+		insertSnapshot(10, 2, "{\"attributes\": {\"expiry\": \"2027-01-01\", \"job\": \"x\"}}",
+				"2026-01-02 00:00:00.000");
+		insertSnapshot(10, 3, "{\"attributes\": {\"expiry\": \"2028-01-01\", \"job\": \"x\"}}",
+				"2026-01-03 00:00:00.000");
+		insertSnapshot(10, 4, "{\"attributes\": {\"expiry\": \"2028-01-01\", \"job\": \"y\"}}",
+				"2026-01-04 00:00:00.000");
+
+		assertThat(this.history.valueSetAt(WS_A, "PLACE", List.of(10L), "$.attributes.expiry"))
+			.containsOnly(Map.entry(10L, Instant.parse("2026-01-03T00:00:00Z")));
+	}
+
+	private void insertSnapshot(long entityId, int versionNo, String snapshot, String changedAt) {
+		this.jdbc.sql("""
+				INSERT INTO tmp_entity_version (workspace_id, entity_type, entity_id, version_no, action, snapshot,
+				  changed_by, changed_at)
+				VALUES (:ws, 'PLACE', :id, :v, 'UPDATE', :snapshot, 1, :at)""")
+			.param("ws", WS_A)
+			.param("id", entityId)
+			.param("v", versionNo)
+			.param("snapshot", snapshot)
+			.param("at", changedAt)
+			.update();
+	}
+
+	@Test
 	void badCursorIs400() {
 		assertThatThrownBy(() -> this.history.list(WS_A, "PLACE", 10, new CursorRequest("garbage", 2)))
 			.isInstanceOf(BadRequestException.class);

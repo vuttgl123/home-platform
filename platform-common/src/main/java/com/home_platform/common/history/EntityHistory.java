@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -71,6 +72,8 @@ public class EntityHistory {
 
 	private final String listRecent;
 
+	private final String valueSetAt;
+
 	/**
 	 * @param table tên bảng version, lấy từ {@code platform.history.table}
 	 * @throws IllegalArgumentException nếu {@code table} không phải một tên bảng hợp lệ
@@ -97,6 +100,12 @@ public class EntityHistory {
 				+ " AND version_no < :cursorVersion ORDER BY version_no DESC LIMIT :limit";
 		this.listRecent = "SELECT entity_type, entity_id, " + summaryColumns + " FROM " + table
 				+ " WHERE workspace_id = :workspaceId";
+		this.valueSetAt = "SELECT entity_id, MAX(changed_at) AS set_at FROM (SELECT entity_id, changed_at, "
+				+ "ROW_NUMBER() OVER w AS rn, JSON_EXTRACT(snapshot, :path) AS v, "
+				+ "LAG(JSON_EXTRACT(snapshot, :path)) OVER w AS prev FROM " + table
+				+ " WHERE workspace_id = :workspaceId AND entity_type = :entityType AND entity_id IN (:ids) "
+				+ "WINDOW w AS (PARTITION BY entity_id ORDER BY version_no)) t "
+				+ "WHERE rn = 1 OR NOT (v <=> prev) GROUP BY entity_id";
 	}
 
 	/**
@@ -222,6 +231,31 @@ public class EntityHistory {
 			.optional()
 			.orElseThrow(() -> new NotFoundException(
 					entityType + " " + entityId + " version " + versionNo + " not found"));
+	}
+
+	/**
+	 * Lúc giá trị ở {@code jsonPath} của {@code snapshot} được đặt thành giá trị hiện có: với mỗi bản ghi,
+	 * {@code changed_at} của version mới nhất mà giá trị đó khác version liền trước (version đầu tiên luôn
+	 * tính). Đổi trường khác không làm mốc này lùi lại, nên đổi tên một món không làm "mới" lại hạn bảo hành
+	 * của nó. Một truy vấn cho cả lô, đi theo khoá chính.
+	 * @param jsonPath đường dẫn JSON của MySQL, ví dụ {@code $.status} hay {@code $.attributes.expiry}; được
+	 * truyền bằng tham số
+	 * @return bản ghi không có version nào thì không có trong kết quả
+	 */
+	public Map<Long, Instant> valueSetAt(long workspaceId, String entityType, Collection<Long> entityIds,
+			String jsonPath) {
+		Map<Long, Instant> found = new HashMap<>();
+		if (entityIds.isEmpty()) {
+			return found;
+		}
+		this.jdbc.sql(this.valueSetAt)
+			.param("workspaceId", workspaceId)
+			.param("entityType", entityType)
+			.param("ids", entityIds)
+			.param("path", jsonPath)
+			.query((rs, rowNum) -> found.put(rs.getLong("entity_id"), readInstant(rs, "set_at")))
+			.list();
+		return found;
 	}
 
 	/**
