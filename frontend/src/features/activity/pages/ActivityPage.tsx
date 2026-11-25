@@ -53,7 +53,7 @@ export function ActivityPage() {
         </p>
       </header>
       <Tabs value={filter.type ?? 'ALL'} onValueChange={(value) => update({ type: value === 'ALL' ? null : (value as ActivityType) })}>
-        <TabsList variant="line" className="w-full justify-start overflow-x-auto">
+        <TabsList variant="line" className="w-full justify-start overflow-x-auto overflow-y-hidden">
           {TABS.map((tab) => (
             <TabsTrigger key={tab} value={tab} className="flex-none">
               {tab === 'ALL' ? 'Tất cả' : ENTITY_LABEL[tab]}

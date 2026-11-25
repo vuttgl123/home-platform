@@ -84,7 +84,7 @@ export function PersonPage({ tabs = {} }: { tabs?: PersonTabSlots }) {
         value={tab}
         onValueChange={(value) => setSearchParams(value === 'info' ? {} : { tab: value as Tab }, { replace: true })}
       >
-        <TabsList variant="line" className="w-full justify-start overflow-x-auto">
+        <TabsList variant="line" className="w-full justify-start overflow-x-auto overflow-y-hidden">
           {shown.map(({ value, label }) => (
             <TabsTrigger key={value} value={value} className="flex-none">
               {label}

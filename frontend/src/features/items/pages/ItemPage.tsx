@@ -222,7 +222,7 @@ export function ItemPage({ tabs = {} }: { tabs?: ItemTabSlots }) {
         )}
       </header>
       <Tabs value={tab} onValueChange={(value) => setSearchParams(value === 'info' ? {} : { tab: String(value) }, { replace: true })}>
-        <TabsList variant="line" className="w-full justify-start overflow-x-auto">
+        <TabsList variant="line" className="w-full justify-start overflow-x-auto overflow-y-hidden">
           <TabsTrigger value="info" className="flex-none">
             Thông tin
           </TabsTrigger>

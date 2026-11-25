@@ -42,7 +42,7 @@ export function TrashPage() {
         <p className="text-muted-foreground">Những thứ đang bị xoá. Khôi phục để đưa chúng trở lại đúng chỗ cũ.</p>
       </header>
       <Tabs value={type} onValueChange={(value) => setSearchParams(value === 'PLACE' ? {} : { type: value as string }, { replace: true })}>
-        <TabsList variant="line" className="w-full justify-start overflow-x-auto">
+        <TabsList variant="line" className="w-full justify-start overflow-x-auto overflow-y-hidden">
           {TYPES.map((value) => (
             <TabsTrigger key={value} value={value} className="flex-none">
               {ENTITY_LABEL[value]}

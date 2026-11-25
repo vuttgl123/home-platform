@@ -92,7 +92,7 @@ export function PlacePage({ tabs = {} }: { tabs?: PlaceTabSlots }) {
         }
       />
       <Tabs value={tab} onValueChange={(value) => selectTab(value as Tab)}>
-        <TabsList variant="line" className="w-full justify-start overflow-x-auto">
+        <TabsList variant="line" className="w-full justify-start overflow-x-auto overflow-y-hidden">
           {TABS.map(({ value, label }) => (
             <TabsTrigger key={value} value={value} className="flex-none">
               {label}
