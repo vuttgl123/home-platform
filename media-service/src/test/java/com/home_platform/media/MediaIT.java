@@ -1,10 +1,16 @@
 package com.home_platform.media;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+
+import javax.imageio.ImageIO;
 
 import com.home_platform.common.test.AbstractRepositoryIT;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +56,24 @@ public abstract class MediaIT extends AbstractRepositoryIT {
 		}
 		catch (IOException ex) {
 			throw new UncheckedIOException(ex);
+		}
+	}
+
+	/** Ảnh một màu, mã hoá bằng ImageIO; màu khác nhau thì byte khác nhau (không bị coi là trùng). */
+	protected static byte[] image(int width, int height, String format, Color color) throws IOException {
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		var graphics = image.createGraphics();
+		graphics.setColor(color);
+		graphics.fillRect(0, 0, width, height);
+		graphics.dispose();
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ImageIO.write(image, format, out);
+		return out.toByteArray();
+	}
+
+	protected static byte[] fixture(String name) throws IOException {
+		try (InputStream in = MediaIT.class.getResourceAsStream("/images/" + name)) {
+			return in.readAllBytes();
 		}
 	}
 

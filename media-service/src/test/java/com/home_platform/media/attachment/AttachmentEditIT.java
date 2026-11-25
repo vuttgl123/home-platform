@@ -108,7 +108,7 @@ class AttachmentEditIT extends MediaIT {
 
 	/** Tải một ảnh một màu lên bản ghi; trả {@code id} của dòng gắn. */
 	private String photo(String ownerType, long ownerId, Color color) throws Exception {
-		byte[] image = AttachmentUploadIT.image(12, 12, "png", color);
+		byte[] image = image(12, 12, "png", color);
 		String body = this.mvc.perform(asA(multipart("/attachments")
 			.file(new MockMultipartFile("file", "a.png", "image/png", image)))
 			.param("ownerType", ownerType)
