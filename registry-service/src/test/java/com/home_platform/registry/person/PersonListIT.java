@@ -34,6 +34,18 @@ class PersonListIT extends PersonTestData {
 	}
 
 	@Test
+	void listCarriesTheAvatar() throws Exception {
+		person("""
+				{"fullName": "Có ảnh", "avatarFileId": "424242"}""");
+		named("Không ảnh");
+
+		this.mvc.perform(asA(get("/people")))
+			.andExpect(jsonPath("$.items[*].fullName", contains("Có ảnh", "Không ảnh")))
+			.andExpect(jsonPath("$.items[0].avatarFileId").value("424242"))
+			.andExpect(jsonPath("$.items[1].avatarFileId").doesNotExist());
+	}
+
+	@Test
 	void searchByNamePrefixIgnoresCaseAndAccents() throws Exception {
 		named("Nguyễn Văn A");
 		named("nguyen thi B");
