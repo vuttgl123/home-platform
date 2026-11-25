@@ -12,6 +12,7 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { RecentActivity } from '@/features/activity'
 import { ExportButton } from '@/features/exports'
 import { ITEM_STATUS_LABEL, ITEM_STATUS_TONE, type ItemStatus } from '@/features/items'
+import { todayInBusinessZone } from '@/lib/dates'
 import { formatNumber } from '@/lib/format'
 
 import type { DayActivity, Overview } from '../types'
@@ -86,7 +87,15 @@ export function OverviewPage({ ws, overview }: { ws: string; overview: Overview 
         </Section>
       )}
       <div className="grid gap-6 xl:grid-cols-3">
-        <Section title="Chỗ ở theo loại" className="xl:col-span-2">
+        <Section
+          title="Chỗ ở theo loại"
+          className="xl:col-span-2"
+          actions={
+            <Link to={`/w/${ws}/vacancies`} className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+              Xem chỗ trống
+            </Link>
+          }
+        >
           <Card className="gap-3 p-4">
             <OccupancyChart types={overview.placeTypes} />
             <ul className="grid gap-x-6 text-sm sm:grid-cols-2">
@@ -96,24 +105,27 @@ export function OverviewPage({ ws, overview }: { ws: string; overview: Overview 
             </ul>
           </Card>
         </Section>
-        <Section title="Đồ đạc theo trạng thái">
-          <Card className="gap-3 p-4">
-            <ItemsDonut counts={overview.itemsByStatus} />
-            <ul className="grid gap-1 text-sm sm:grid-cols-2">
-              {STATUSES.map((status) => (
-                <li key={status}>
-                  <Link to={itemsWith(status)} className="flex items-center justify-between gap-4 rounded-md px-2 py-1.5 hover:bg-muted">
-                    <span className="inline-flex items-center gap-2">
-                      <span aria-hidden="true" className={cn('size-2 rounded-full', TONE_CHIP[ITEM_STATUS_TONE[status]], 'bg-current')} />
-                      {ITEM_STATUS_LABEL[status]}
-                    </span>{' '}
-                    <span className="font-medium tabular-nums">{formatNumber(overview.itemsByStatus[status])}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </Section>
+        <div className="flex flex-col gap-6">
+          <Section title="Đồ đạc theo trạng thái">
+            <Card className="gap-3 p-4">
+              <ItemsDonut counts={overview.itemsByStatus} />
+              <ul className="grid gap-1 text-sm sm:grid-cols-2">
+                {STATUSES.map((status) => (
+                  <li key={status}>
+                    <Link to={itemsWith(status)} className="flex items-center justify-between gap-4 rounded-md px-2 py-1.5 hover:bg-muted">
+                      <span className="inline-flex items-center gap-2">
+                        <span aria-hidden="true" className={cn('size-2 rounded-full', TONE_CHIP[ITEM_STATUS_TONE[status]], 'bg-current')} />
+                        {ITEM_STATUS_LABEL[status]}
+                      </span>{' '}
+                      <span className="font-medium tabular-nums">{formatNumber(overview.itemsByStatus[status])}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </Section>
+          {overview.endingSoon && <EndingSoon ws={ws} endingSoon={overview.endingSoon} />}
+        </div>
         <Section title="Hoạt động 14 ngày qua" className="xl:col-span-2">
           <Card className="gap-3 p-4">
             <ActivityChart days={overview.activityByDay} />
@@ -248,14 +260,74 @@ function ActivityChart({ days }: { days: DayActivity[] | undefined }) {
   )
 }
 
-function Section({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+function Section({
+  title,
+  actions,
+  children,
+  className,
+}: {
+  title: string
+  actions?: ReactNode
+  children: ReactNode
+  className?: string
+}) {
   const headingId = useId()
   return (
     <section aria-labelledby={headingId} className={cn('flex flex-col gap-2', className)}>
-      <h2 id={headingId} className="font-semibold">
-        {title}
-      </h2>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id={headingId} className="font-semibold">
+          {title}
+        </h2>
+        {actions}
+      </div>
       {children}
     </section>
+  )
+}
+
+/** Số ngày từ hôm nay (giờ nghiệp vụ) tới `date`, theo lịch. */
+function daysUntil(date: string): number {
+  const toDay = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number)
+    return Date.UTC(year, month - 1, day) / 86_400_000
+  }
+  return toDay(date) - toDay(todayInBusinessZone())
+}
+
+/** Người sắp chuyển đi trong 30 ngày tới, gần nhất trước; quá 10 người thì ghi tổng ở cuối. */
+function EndingSoon({ ws, endingSoon }: { ws: string; endingSoon: NonNullable<Overview['endingSoon']> }) {
+  return (
+    <Section title="Sắp chuyển đi">
+      <Card className="gap-2 p-4 text-sm">
+        {endingSoon.rows.length === 0 ? (
+          <p className="text-muted-foreground">Không ai chuyển đi trong 30 ngày tới</p>
+        ) : (
+          <ul className="flex flex-col divide-y">
+            {endingSoon.rows.map((row) => {
+              const days = daysUntil(row.endDate)
+              return (
+                <li key={row.occupancyId} className="flex items-center justify-between gap-3 py-1.5">
+                  <span className="min-w-0 truncate">
+                    <Link to={`/w/${ws}/people/${row.personId}`} className="font-medium hover:underline">
+                      {row.personName}
+                    </Link>
+                    <span className="text-muted-foreground"> · </span>
+                    <Link to={`/w/${ws}/places/${row.placeId}`} className="text-muted-foreground hover:underline">
+                      {row.placeName}
+                    </Link>
+                  </span>
+                  <span className={cn('shrink-0 tabular-nums', days <= 3 ? 'font-medium text-warning-foreground' : 'text-muted-foreground')}>
+                    {days <= 0 ? 'hôm nay' : `còn ${formatNumber(days)} ngày`}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        {endingSoon.total > endingSoon.rows.length && (
+          <p className="text-xs text-muted-foreground">{`Hiện ${formatNumber(endingSoon.rows.length)} trong ${formatNumber(endingSoon.total)} người`}</p>
+        )}
+      </Card>
+    </Section>
   )
 }

@@ -32,6 +32,7 @@ export function overview(overrides: Partial<Overview> = {}): Overview {
     itemsByStatus: { IN_USE: 230, BROKEN: 3, STORED: 12, REMOVED: 40 },
     missingCodes: { places: 4, items: 2 },
     activityByDay: activityDays(),
+    endingSoon: { total: 0, rows: [] },
     ...overrides,
   }
 }

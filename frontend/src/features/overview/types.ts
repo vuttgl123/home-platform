@@ -7,6 +7,12 @@ export type PlaceTypeCount = Present<RegistrySchemas['PlaceTypeCount'], 'typeId'
 /** Số thay đổi của một ngày (giờ Việt Nam) theo hành động. */
 export type DayActivity = Present<RegistrySchemas['DayActivity'], 'date' | 'created' | 'updated' | 'deleted' | 'restored'>
 
+/** Một người sắp chuyển đi: đang ở, ngày kết thúc trong 30 ngày tới (spec Đợt 6, L5). */
+export type EndingSoonRow = Present<
+  RegistrySchemas['EndingSoonRow'],
+  'occupancyId' | 'personId' | 'personName' | 'placeId' | 'placeName' | 'endDate'
+>
+
 /** Số liệu của trang tổng quan; mọi con số chỉ tính bản ghi chưa xoá. */
 export type Overview = {
   places: number
@@ -24,4 +30,6 @@ export type Overview = {
    * này: trang vẫn hiện, chỉ thiếu biểu đồ hoạt động.
    */
   activityByDay?: DayActivity[]
+  /** Người sắp chuyển đi: tổng số và tối đa 10 dòng gần nhất. Thiếu khi registry chạy bản cũ: thẻ ẩn đi. */
+  endingSoon?: { total: number; rows: EndingSoonRow[] }
 }

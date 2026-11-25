@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
+import { todayInBusinessZone } from '@/lib/dates'
 import { mockDownloads } from '@/test/downloads'
 import { activityDays, overview, page, placeDetail, problem } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
@@ -257,3 +258,65 @@ test('olderRegistryWithoutActivityStillShowsTheOverview', async () => {
   expect(activity.getByText('Chưa có số liệu hoạt động theo ngày.')).toBeInTheDocument()
 })
 
+
+/** Ngày `days` ngày sau `date` (YYYY-MM-DD), tính theo lịch. */
+function plusDays(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number)
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10)
+}
+
+function leaving(id: string, personName: string, placeName: string, endDate: string) {
+  return { occupancyId: id, personId: `5${id}`, personName, placeId: `30${id}`, placeName, endDate }
+}
+
+test('endingSoonListsWhoIsLeaving', async () => {
+  const today = todayInBusinessZone()
+  setUp({
+    endingSoon: {
+      total: 2,
+      rows: [leaving('1', 'Nguyễn An', 'P301', today), leaving('2', 'Trần Bình', 'P302', plusDays(today, 5))],
+    },
+  })
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const soon = within((await main()).getByRole('region', { name: 'Sắp chuyển đi' }))
+  expect(soon.getByRole('link', { name: 'Nguyễn An' })).toHaveAttribute('href', '/w/7/people/51')
+  expect(soon.getByRole('link', { name: 'P301' })).toHaveAttribute('href', '/w/7/places/301')
+  expect(soon.getByText('hôm nay')).toBeInTheDocument()
+  expect(soon.getByText('còn 5 ngày')).toBeInTheDocument()
+})
+
+test('endingSoonShowsTotalAboveTen', async () => {
+  const today = todayInBusinessZone()
+  const rows = Array.from({ length: 10 }, (_, index) => leaving(String(index), `Người ${index}`, 'P301', plusDays(today, index + 1)))
+  setUp({ endingSoon: { total: 12, rows } })
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const soon = within((await main()).getByRole('region', { name: 'Sắp chuyển đi' }))
+  expect(soon.getAllByRole('listitem')).toHaveLength(10)
+  expect(soon.getByText('Hiện 10 trong 12 người')).toBeInTheDocument()
+})
+
+test('endingSoonEmpty', async () => {
+  setUp({ endingSoon: { total: 0, rows: [] } })
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const soon = within((await main()).getByRole('region', { name: 'Sắp chuyển đi' }))
+  expect(soon.getByText('Không ai chuyển đi trong 30 ngày tới')).toBeInTheDocument()
+})
+
+test('olderRegistryHidesEndingSoon', async () => {
+  setUp({ endingSoon: undefined })
+  renderApp({ route: '/w/7', userId: '42' })
+
+  const view = await main()
+  expect(view.getByRole('region', { name: 'Chỗ ở theo loại' })).toBeInTheDocument()
+  expect(view.queryByRole('region', { name: 'Sắp chuyển đi' })).toBeNull()
+})
+
+test('linksToVacancies', async () => {
+  setUp()
+  renderApp({ route: '/w/7', userId: '42' })
+
+  expect((await main()).getByRole('link', { name: 'Xem chỗ trống' })).toHaveAttribute('href', '/w/7/vacancies')
+})
