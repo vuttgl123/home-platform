@@ -1,13 +1,13 @@
 import type { ChangeAction } from '@/features/history'
 
-import type { ActivityFilter, EntityType } from './types'
+import type { ActivityFilter, ActivityType } from './types'
 
-const TYPES: EntityType[] = ['PLACE', 'PERSON', 'ITEM']
+const TYPES: ActivityType[] = ['PLACE', 'PERSON', 'ITEM', 'MAINTENANCE']
 const ACTIONS: ChangeAction[] = ['CREATE', 'UPDATE', 'DELETE', 'RESTORE']
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
 /** Tham số `GET /activity` của một bộ lọc; khoá không lọc thì vắng. */
-export type ActivityQuery = { entityType?: EntityType; action?: ChangeAction; changedBy?: string; from?: string; to?: string }
+export type ActivityQuery = { entityType?: ActivityType; action?: ChangeAction; changedBy?: string; from?: string; to?: string }
 
 /** 00:00 theo giờ máy của ngày `yyyy-MM-dd`, cộng thêm `days` ngày; `null` nếu không có ngày đó. */
 function localMidnight(value: string, days = 0): Date | null {
@@ -33,7 +33,7 @@ export function readFilter(params: URLSearchParams): ActivityFilter {
   const type = params.get('type')
   const action = params.get('action')
   return {
-    type: TYPES.includes(type as EntityType) ? (type as EntityType) : null,
+    type: TYPES.includes(type as ActivityType) ? (type as ActivityType) : null,
     action: ACTIONS.includes(action as ChangeAction) ? (action as ChangeAction) : null,
     mine: params.get('mine') === '1',
     from: dateOrNull(params.get('from')),

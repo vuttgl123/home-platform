@@ -1,6 +1,6 @@
-import type { EntityType } from './types'
+import type { ActivityType, EntityType } from './types'
 
-export const ENTITY_LABEL: Record<EntityType, string> = { PLACE: 'Địa điểm', PERSON: 'Người', ITEM: 'Đồ đạc' }
+export const ENTITY_LABEL: Record<ActivityType, string> = { PLACE: 'Địa điểm', PERSON: 'Người', ITEM: 'Đồ đạc', MAINTENANCE: 'Bảo trì' }
 
 /** Đoạn đường dẫn trang của từng loại bản ghi. */
 export const ENTITY_PATH: Record<EntityType, string> = { PLACE: 'places', PERSON: 'people', ITEM: 'items' }

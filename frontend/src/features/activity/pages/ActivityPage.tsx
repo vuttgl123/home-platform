@@ -16,9 +16,9 @@ import { ActivityRow } from '../components/ActivityRow'
 import { hasFilters, rangeIsValid, readFilter, writeFilter } from '../filters'
 import { ENTITY_LABEL } from '../labels'
 import { useActivity } from '../queries'
-import type { ActivityFilter, EntityType } from '../types'
+import type { ActivityFilter, ActivityType } from '../types'
 
-const TABS: (EntityType | 'ALL')[] = ['ALL', 'PLACE', 'PERSON', 'ITEM']
+const TABS: (ActivityType | 'ALL')[] = ['ALL', 'PLACE', 'PERSON', 'ITEM', 'MAINTENANCE']
 const ACTIONS: ChangeAction[] = ['CREATE', 'UPDATE', 'DELETE', 'RESTORE']
 
 /**
@@ -52,7 +52,7 @@ export function ActivityPage() {
           .
         </p>
       </header>
-      <Tabs value={filter.type ?? 'ALL'} onValueChange={(value) => update({ type: value === 'ALL' ? null : (value as EntityType) })}>
+      <Tabs value={filter.type ?? 'ALL'} onValueChange={(value) => update({ type: value === 'ALL' ? null : (value as ActivityType) })}>
         <TabsList variant="line" className="w-full justify-start overflow-x-auto">
           {TABS.map((tab) => (
             <TabsTrigger key={tab} value={tab} className="flex-none">

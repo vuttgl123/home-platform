@@ -320,3 +320,30 @@ test('pickingADayOnTheCalendarFillsTheField', async () => {
   await waitFor(() => expect(router.state.location.search).toBe('?from=2026-11-18'))
   expect(view.getByLabelText('Từ ngày')).toHaveValue('2026-11-18')
 })
+
+test('maintenanceRowLinksToTheItemTab', async () => {
+  mockShell()
+  mockActivity([
+    entry({ entityType: 'MAINTENANCE', entityId: '7001', entityName: 'Tủ lạnh: Thay ron cửa', parentId: '900' }),
+    entry({ entityType: 'MAINTENANCE', entityId: '7002', action: 'DELETE', versionNo: 2, entityName: 'Tủ lạnh: Vệ sinh', parentId: '900' }),
+  ])
+
+  renderApp({ route: '/w/7/activity', userId: '42' })
+
+  const [logged, deleted] = await rows()
+  expect(within(logged).getByText('Bảo trì')).toBeInTheDocument()
+  expect(within(logged).getByRole('link', { name: 'Tủ lạnh: Thay ron cửa' })).toHaveAttribute('href', '/w/7/items/900?tab=maintenance')
+  // Dòng bảo trì đã xoá vẫn mở được món đồ; lấy lại dòng đó bằng Hoàn tác, không có nút Khôi phục ở đây.
+  expect(within(deleted).getByRole('link', { name: 'Tủ lạnh: Vệ sinh' })).toHaveAttribute('href', '/w/7/items/900?tab=maintenance')
+  expect(within(deleted).queryByRole('button', { name: /Khôi phục/ })).not.toBeInTheDocument()
+})
+
+test('maintenanceTabFiltersByType', async () => {
+  mockShell()
+  const asked = mockActivity([entry({ entityType: 'MAINTENANCE', entityId: '7001', entityName: 'Tủ lạnh: Thay ron', parentId: '900' })])
+
+  const { user } = renderApp({ route: '/w/7/activity', userId: '42' })
+  await user.click(await (await main()).findByRole('tab', { name: 'Bảo trì' }))
+
+  await waitFor(() => expect(asked.at(-1)).toMatchObject({ entityType: 'MAINTENANCE' }))
+})
