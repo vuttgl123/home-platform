@@ -36,6 +36,7 @@ public abstract class CommittedDataIT extends RegistryIT {
 	/** Theo thứ tự khoá ngoại: bảng trỏ tới bảng khác được xoá trước. */
 	private static final List<String> WIPE = List.of(
 			"UPDATE reg_item SET replaced_by_item_id = NULL WHERE workspace_id = :ws",
+			"DELETE FROM reg_maintenance WHERE workspace_id = :ws", "DELETE FROM reg_todo_seen WHERE workspace_id = :ws",
 			"DELETE FROM reg_item WHERE workspace_id = :ws", "DELETE FROM reg_occupancy WHERE workspace_id = :ws",
 			"DELETE FROM reg_ownership WHERE workspace_id = :ws",
 			"DELETE FROM reg_place_address WHERE workspace_id = :ws",
