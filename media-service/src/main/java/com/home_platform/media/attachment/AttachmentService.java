@@ -1,13 +1,16 @@
 package com.home_platform.media.attachment;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.ConflictException;
+import com.home_platform.common.web.NotFoundException;
 import com.home_platform.media.file.MediaFile;
 import com.home_platform.media.file.MediaFileRepository;
 import com.home_platform.media.file.UploadService;
@@ -63,6 +66,62 @@ public class AttachmentService {
 	/** Ảnh đang hiện của một bản ghi, theo thứ tự. */
 	public List<AttachmentResponse> list(long workspaceId, OwnerType ownerType, long ownerId) {
 		return withFiles(workspaceId, this.attachments.visible(workspaceId, ownerType, ownerId));
+	}
+
+	/**
+	 * Đổi chú thích của một ảnh đang hiện.
+	 * @throws NotFoundException nếu ảnh không có, đã gỡ, hay thuộc không gian khác
+	 */
+	public AttachmentResponse editCaption(WorkspaceContext ctx, long id, String caption) {
+		String text = caption(caption);
+		Attachment edited = this.transactions.execute((status) -> {
+			Attachment current = visible(ctx.workspaceId(), id);
+			this.attachments.updateCaption(ctx.workspaceId(), id, text);
+			return current.withCaption(text);
+		});
+		return withFiles(ctx.workspaceId(), List.of(edited)).get(0);
+	}
+
+	/**
+	 * Sắp lại mọi ảnh đang hiện của một bản ghi theo {@code request.attachmentIds()}.
+	 * @throws ConflictException nếu danh sách thiếu, thừa, trùng hay sai id: đó là danh sách cũ
+	 */
+	public List<AttachmentResponse> reorder(WorkspaceContext ctx, OrderRequest request) {
+		List<Long> ids = request.attachmentIds();
+		List<Attachment> reordered = this.transactions.execute((status) -> {
+			List<Attachment> current = this.attachments.lockVisible(ctx.workspaceId(), request.ownerType(),
+					request.ownerId());
+			HashSet<Long> wanted = new HashSet<>(ids);
+			boolean same = wanted.size() == ids.size() && ids.size() == current.size()
+					&& current.stream().allMatch((row) -> wanted.contains(row.id()));
+			if (!same) {
+				throw new ConflictException("The photos of this record have changed; reload and try again");
+			}
+			Map<Long, Attachment> byId = current.stream().collect(Collectors.toMap(Attachment::id, Function.identity()));
+			for (int position = 0; position < ids.size(); position++) {
+				this.attachments.updateSortOrder(ctx.workspaceId(), ids.get(position), position);
+			}
+			return IntStream.range(0, ids.size())
+				.mapToObj((position) -> byId.get(ids.get(position)).withSortOrder(position))
+				.toList();
+		});
+		return withFiles(ctx.workspaceId(), reordered);
+	}
+
+	/**
+	 * Gỡ một ảnh (M6): ghi người gỡ và lúc gỡ; dòng và file đều còn.
+	 * @throws NotFoundException nếu ảnh không có, đã gỡ, hay thuộc không gian khác
+	 */
+	public void remove(WorkspaceContext ctx, long id) {
+		this.transactions.executeWithoutResult((status) -> {
+			visible(ctx.workspaceId(), id);
+			this.attachments.markRemoved(ctx, id);
+		});
+	}
+
+	private Attachment visible(long workspaceId, long id) {
+		return this.attachments.findVisibleForUpdate(workspaceId, id)
+			.orElseThrow(() -> NotFoundException.of("Attachment", id));
 	}
 
 	List<AttachmentResponse> withFiles(long workspaceId, List<Attachment> rows) {
