@@ -94,7 +94,7 @@ export function FieldDefSection({ ws }: { ws: string }) {
       ) : rows.length === 0 && defs.isSuccess ? (
         <p className="text-sm text-muted-foreground">Chưa có mục tuỳ biến nào.</p>
       ) : (
-        <CatalogTable headers={['Nhãn', 'Khoá', 'Kiểu', 'Áp dụng cho', 'Bắt buộc', 'Trạng thái']}>
+        <CatalogTable headers={['Nhãn', 'Khoá', 'Kiểu', 'Áp dụng cho', 'Bắt buộc', 'Nhắc', 'Trạng thái']}>
           {rows.map((def) => (
             <tr key={def.id} className={def.status === 'ARCHIVED' ? 'text-muted-foreground' : undefined}>
               <td className="px-3 py-2 font-medium">{def.label}</td>
@@ -102,6 +102,7 @@ export function FieldDefSection({ ws }: { ws: string }) {
               <td className="px-3 py-2">{DATA_TYPES.find((type) => type.value === def.dataType)?.label}</td>
               <td className="px-3 py-2">{scopeName(def)}</td>
               <td className="px-3 py-2">{def.required ? 'Có' : 'Không'}</td>
+              <td className="px-3 py-2">{def.remindDays != null ? `trước ${def.remindDays} ngày` : '—'}</td>
               <td className="px-3 py-2">
                 <StatusBadge archived={def.status === 'ARCHIVED'} />
               </td>
@@ -131,6 +132,9 @@ export function FieldDefSection({ ws }: { ws: string }) {
     </CatalogSection>
   )
 }
+
+/** Số ngày nhắc trước khi bật nhắc cho một mục kiểu ngày. */
+const DEFAULT_REMIND_DAYS = 30
 
 /** Lỗi của danh sách lựa chọn (mỗi dòng một lựa chọn), hoặc `null` nếu hợp lệ. */
 function optionsError(options: string[]): string | null {
@@ -165,11 +169,15 @@ function FieldDefDialog({
   const [dataType, setDataType] = useState<FieldDef['dataType']>(def?.dataType ?? 'TEXT')
   const [optionsText, setOptionsText] = useState((def?.options ?? []).join('\n'))
   const [required, setRequired] = useState(def?.required ?? false)
+  // Mục kiểu ngày có thể nhắc trong Việc cần làm (spec Đợt 8, L4); bật lên thì mặc định trước 30 ngày.
+  const [remind, setRemind] = useState(def?.remindDays != null)
+  const [remindDays, setRemindDays] = useState(String(def?.remindDays ?? DEFAULT_REMIND_DAYS))
   const [sortOrder, setSortOrder] = useState(def ? String(def.sortOrder) : '')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const scopeId = useId()
   const typeId = useId()
   const optionsId = useId()
+  const reminding = dataType === 'DATE' && remind
   const options = optionsText
     .split('\n')
     .map((option) => option.trim())
@@ -186,6 +194,9 @@ function FieldDefDialog({
       if (problem) next.options = problem
     }
     if (sortOrder !== '' && !/^-?\d+$/.test(sortOrder)) next.sortOrder = 'Một số nguyên'
+    if (reminding && !(/^\d+$/.test(remindDays.trim()) && Number(remindDays) >= 1 && Number(remindDays) <= 365)) {
+      next.remindDays = 'Số nguyên từ 1 tới 365'
+    }
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -196,6 +207,7 @@ function FieldDefDialog({
       options: dataType === 'SELECT' ? options : undefined,
       required,
       sortOrder: sortOrder === '' ? undefined : Number(sortOrder),
+      remindDays: reminding ? Number(remindDays) : undefined,
     }
     return def
       ? fieldDefApi.update(ws, def.id, common)
@@ -294,6 +306,22 @@ function FieldDefDialog({
         <Switch checked={required} onCheckedChange={setRequired} aria-label="Bắt buộc" />
         Bắt buộc
       </label>
+      {dataType === 'DATE' && (
+        <label className="flex items-center gap-2 text-sm">
+          <Switch checked={remind} onCheckedChange={setRemind} aria-label="Nhắc trong Việc cần làm" />
+          Nhắc trong Việc cần làm
+        </label>
+      )}
+      {reminding && (
+        <TextField
+          label="Nhắc trước (ngày)"
+          inputMode="numeric"
+          description="Giá trị ngày của mục này vào Việc cần làm từ bấy nhiêu ngày trước."
+          value={remindDays}
+          onChange={(event) => setRemindDays(event.target.value)}
+          error={errors.remindDays}
+        />
+      )}
       <TextField
         label="Thứ tự"
         inputMode="numeric"

@@ -326,3 +326,81 @@ test('backfillStopsWhenARoundAssignsNothing', async () => {
   expect(await screen.findByText('Đã cấp mã cho 0 bản ghi')).toBeInTheDocument()
   expect(backend.writes.filter((write) => write.path === '/codes/backfill')).toHaveLength(1)
 })
+
+test('dateFieldCanRemind', async () => {
+  const backend = setUp()
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  await user.click(await (await section('Mục tuỳ biến')).findByRole('button', { name: 'Thêm mục' }))
+  const dialog = within(await screen.findByRole('dialog', { name: 'Thêm mục tuỳ biến' }))
+
+  await user.type(dialog.getByRole('textbox', { name: 'Nhãn' }), 'Hạn kiểm định PCCC')
+  await user.selectOptions(dialog.getByRole('combobox', { name: 'Kiểu' }), 'Ngày')
+  expect(dialog.queryByRole('textbox', { name: 'Nhắc trước (ngày)' })).not.toBeInTheDocument()
+  await user.click(dialog.getByRole('switch', { name: 'Nhắc trong Việc cần làm' }))
+  expect(dialog.getByRole('textbox', { name: 'Nhắc trước (ngày)' })).toHaveValue('30')
+  await user.click(dialog.getByRole('button', { name: 'Thêm' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).toMatchObject({ dataType: 'DATE', remindDays: 30 })
+})
+
+test('reminderOffSendsNoRemindDays', async () => {
+  const backend = setUp({
+    fieldDefs: [{ id: '501', target: 'PLACE', typeId: '0', fieldKey: 'fire_check', label: 'Kiểm định', dataType: 'DATE', remindDays: 30 }],
+  })
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+
+  await rowAction(await section('Mục tuỳ biến'), 'Kiểm định', 'Sửa', user)
+  const dialog = within(await screen.findByRole('dialog', { name: 'Sửa mục tuỳ biến' }))
+  expect(dialog.getByRole('switch', { name: 'Nhắc trong Việc cần làm' })).toBeChecked()
+  await user.click(dialog.getByRole('switch', { name: 'Nhắc trong Việc cần làm' }))
+  await user.click(dialog.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).not.toHaveProperty('remindDays')
+})
+
+test('otherTypesHaveNoReminder', async () => {
+  setUp()
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  await user.click(await (await section('Mục tuỳ biến')).findByRole('button', { name: 'Thêm mục' }))
+  const dialog = within(await screen.findByRole('dialog', { name: 'Thêm mục tuỳ biến' }))
+
+  expect(dialog.queryByRole('switch', { name: 'Nhắc trong Việc cần làm' })).not.toBeInTheDocument()
+})
+
+test('remindRange', async () => {
+  const backend = setUp()
+  const { user } = renderApp({ route: '/w/7/catalog', userId: '42' })
+  await user.click(await (await section('Mục tuỳ biến')).findByRole('button', { name: 'Thêm mục' }))
+  const dialog = within(await screen.findByRole('dialog', { name: 'Thêm mục tuỳ biến' }))
+  await user.type(dialog.getByRole('textbox', { name: 'Nhãn' }), 'Hạn')
+  await user.selectOptions(dialog.getByRole('combobox', { name: 'Kiểu' }), 'Ngày')
+  await user.click(dialog.getByRole('switch', { name: 'Nhắc trong Việc cần làm' }))
+  const days = dialog.getByRole('textbox', { name: 'Nhắc trước (ngày)' })
+
+  for (const value of ['0', '366', 'x']) {
+    await user.clear(days)
+    await user.type(days, value)
+    await user.click(dialog.getByRole('button', { name: 'Thêm' }))
+    expect(await dialog.findByText('Số nguyên từ 1 tới 365')).toBeInTheDocument()
+  }
+  expect(backend.writes).toEqual([])
+})
+
+test('tableShowsTheReminder', async () => {
+  setUp({
+    fieldDefs: [
+      { id: '501', target: 'PLACE', typeId: '0', fieldKey: 'fire_check', label: 'Kiểm định', dataType: 'DATE', remindDays: 45 },
+      { id: '502', target: 'PLACE', typeId: '0', fieldKey: 'built', label: 'Năm xây', dataType: 'NUMBER' },
+    ],
+  })
+  renderApp({ route: '/w/7/catalog', userId: '42' })
+
+  const region = await section('Mục tuỳ biến')
+  await region.findByText('Kiểm định')
+  const rows = region.getAllByRole('row')
+  expect(within(rows.find((row) => row.textContent?.includes('Kiểm định'))!).getByText('trước 45 ngày')).toBeInTheDocument()
+  expect(within(rows.find((row) => row.textContent?.includes('Năm xây'))!).getByText('—')).toBeInTheDocument()
+  expect(within(rows[0]).getByText('Nhắc')).toBeInTheDocument()
+})
