@@ -170,7 +170,7 @@ export function fieldDef(overrides: Partial<FieldDef> = {}): FieldDef {
 }
 
 export function person(overrides: Partial<PersonSummary> = {}): PersonSummary {
-  return { id: '55', fullName: 'Nguyễn An', phone: null, idType: null, idNumber: null, gender: null, version: 1, ...overrides }
+  return { id: '55', fullName: 'Nguyễn An', phone: null, idType: null, idNumber: null, gender: null, avatarFileId: null, version: 1, ...overrides }
 }
 
 export function personDetail(overrides: Partial<PersonDetail> = {}): PersonDetail {

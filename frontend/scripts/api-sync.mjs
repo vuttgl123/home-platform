@@ -1,7 +1,7 @@
 // Tải tài liệu OpenAPI của từng service về src/api/schema/<service>.json rồi sinh kiểu
 // TypeScript cạnh nó (<service>.d.ts). Cả hai file được commit, nên build không cần backend.
 //
-//   npm run api:sync    cần identity-service (8081) và registry-service (8082) đang chạy
+//   npm run api:sync    cần identity-service (8081), registry-service (8082), media-service (8083) đang chạy
 //   npm run api:types   chỉ sinh lại kiểu từ JSON đã có
 //   --only=registry     chỉ một service; HP_REGISTRY_PORT=18082 (HP_<SERVICE>_PORT) đổi cổng
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -12,7 +12,7 @@ import openapiTS, { astToString } from 'openapi-typescript'
 const port = (name, fallback) => Number(process.env[`HP_${name.toUpperCase()}_PORT`] ?? fallback)
 const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice('--only='.length)
 const services = Object.fromEntries(
-  Object.entries({ identity: port('identity', 8081), registry: port('registry', 8082) }).filter(([name]) => !only || name === only),
+  Object.entries({ identity: port('identity', 8081), registry: port('registry', 8082), media: port('media', 8083) }).filter(([name]) => !only || name === only),
 )
 const schemaDir = path.resolve(import.meta.dirname, '../src/api/schema')
 const typesOnly = process.argv.includes('--types-only')

@@ -60,7 +60,7 @@ export function mockPeopleBackend(options: {
 
   function summary(p: PersonDetail): PersonSummary {
     const { id, fullName, phone, idType, idNumber, gender, version } = p
-    return { id, fullName, phone, idType, idNumber, gender, version }
+    return { id, fullName, phone, idType, idNumber, gender, avatarFileId: p.avatarFileId ?? null, version }
   }
 
   const notFound = (kind: string, id: string) =>

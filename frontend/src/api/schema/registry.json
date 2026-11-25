@@ -8096,6 +8096,9 @@
               "OTHER"
             ]
           },
+          "avatarFileId": {
+            "type": "string"
+          },
           "version": {
             "type": "integer",
             "format": "int32"

@@ -1685,6 +1685,7 @@ export interface components {
             idNumber?: string;
             /** @enum {string} */
             gender?: "MALE" | "FEMALE" | "OTHER";
+            avatarFileId?: string;
             /** Format: int32 */
             version?: number;
         };

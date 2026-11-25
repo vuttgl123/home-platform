@@ -2,10 +2,12 @@ import createClient from 'openapi-fetch'
 
 import { ApiError } from './errors'
 import type { components as IdentityComponents, paths as IdentityPaths } from './schema/identity'
+import type { components as MediaComponents, paths as MediaPaths } from './schema/media'
 import type { components as RegistryComponents, paths as RegistryPaths } from './schema/registry'
 
 export type IdentitySchemas = IdentityComponents['schemas']
 export type RegistrySchemas = RegistryComponents['schemas']
+export type MediaSchemas = MediaComponents['schemas']
 
 // URL tuyệt đối: openapi-fetch tự tạo Request, và Request của Node (dùng khi chạy test) không
 // nhận URL tương đối. Trên trình duyệt kết quả vẫn là cùng origin với trang.
@@ -20,6 +22,9 @@ export const identity = createClient<IdentityPaths>({ baseUrl: `${origin}/api/id
 
 /** Client có kiểu của registry-service. */
 export const registry = createClient<RegistryPaths>({ baseUrl: `${origin}/api/registry`, fetch: lateBoundFetch })
+
+/** Client có kiểu của media-service (ảnh). Nội dung ảnh đọc thẳng bằng `<img src>`, không qua client này. */
+export const media = createClient<MediaPaths>({ baseUrl: `${origin}/api/media`, fetch: lateBoundFetch })
 
 /**
  * Đổi kết quả của một lời gọi openapi-fetch thành dữ liệu, hoặc ném {@link ApiError}.
