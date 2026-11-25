@@ -10,7 +10,7 @@ Kho hồ sơ về các địa điểm, tổ chức theo microservice. Thiết k�
 | `platform-common` | | Phần nền dùng chung: người gọi, quy ước JSON, lỗi API, phân trang, repository tổng quát, lịch sử version, Swagger, cấu hình MapStruct, sinh `id`, log, cache Caffeine. Test-jar có khung test repository và bộ luật kiến trúc |
 | `identity-service` | 8081 | Người dùng, không gian, thành viên (bảng `idn_`) |
 | `registry-service` | 8082 | Địa điểm, địa chỉ, người, đồ đạc, version (bảng `reg_`) |
-| `media-service` | 8083 | Thông tin file và việc gắn file vào bản ghi (bảng `med_`) |
+| `media-service` | 8083 | Ảnh: tải lên, ảnh thu nhỏ, gắn vào địa điểm, người, món đồ (bảng `med_`, kho file trên đĩa) |
 | `frontend` | 5173 | Giao diện web (React, Vite); cách chạy và cấu trúc ở `frontend/README.md` |
 
 Ba service dùng chung một database MySQL. Giữa các service không có join và không có khoá
@@ -94,8 +94,19 @@ là `id` vừa nhận.
 Mọi lệnh ghi lên địa điểm cần `version` đã đọc (trong body, hoặc tham số URL với `DELETE`); `version` đã
 đổi thì nhận 409 và phải đọc lại. Có thể gửi kèm `note` (tối đa 255 ký tự) để ghi vào version.
 
-**Media** (cổng 8083): chưa làm. Đã có sẵn record của hai bảng, luật tải lên và interface kho file;
-việc còn lại và các quyết định cần có nằm ở `docs/superpowers/todo/media.md`.
+**Media** (cổng 8083): ảnh của địa điểm, người, món đồ. Thiết kế: `docs/superpowers/specs/2026-11-25-photos-design.md`.
+
+| Đường dẫn | Việc |
+|---|---|
+| `/attachments` | `POST` multipart (`file`, `ownerType` PLACE\|PERSON\|ITEM, `ownerId`, `caption`): tải lên và gắn, ảnh mới đứng cuối. Chỉ JPEG, PNG, WebP, tối đa 10 MB (quá thì 413), nội dung được giải mã thật (sai thì 400). Cùng nội dung đã có trong không gian thì dùng lại file cũ. Tối đa 100 ảnh mỗi bản ghi (409). `GET ?ownerType=&ownerId=`: ảnh đang hiện theo thứ tự, kèm `file` (`width`, `height` theo chiều hiển thị sau EXIF) |
+| `/attachments/{id}` | `PUT` `{caption}` (rỗng là bỏ); `DELETE` gỡ ảnh: ghi `removed_by`, `removed_at`, dòng và file còn |
+| `/attachments/order` | `PUT` `{ownerType, ownerId, attachmentIds}`: đủ mọi ảnh đang hiện theo thứ tự mới; danh sách cũ thì 409 |
+| `/workspaces/{ws}/files/{id}` | Nội dung ảnh gốc; `/thumbnail` là ảnh thu nhỏ JPEG cạnh dài tối đa 480 px, đã xoay đúng chiều. Không gian nằm trên đường dẫn vì `<img>` không gửi được header; `Cache-Control: private, max-age=31536000, immutable`. File khác không gian hay chưa xong là 404 |
+
+Kho file là thư mục `media.storage.root` (mặc định `data/media`, tính từ thư mục chạy service; git bỏ qua
+`data/`): ảnh gốc `workspaces/<ws>/files/<id>.bin`, ảnh thu nhỏ `…/<id>/thumb.bin`. File tải lên dở
+(PENDING quá 1 giờ) được dọn mỗi giờ. Chưa kiểm tra quyền: media tin header không gian như registry, tới
+khi có đăng nhập (Đợt 10).
 
 Service của địa điểm, người, đồ đạc kiểm tra cột `attributes` bằng
 `AttributeValidation.validate(workspaceId, target, typeId, attributes)` trước khi ghi, rồi lưu

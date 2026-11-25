@@ -1,5 +1,9 @@
 # Việc còn lại: media (ảnh)
 
+**Đã làm ở Đợt 7 (2026-11-25)**: xem `docs/superpowers/specs/2026-11-25-photos-design.md` và mục Media của README. Ba quyết định bên dưới đã chốt: kho là thư mục trên đĩa; service trả thẳng nội dung với id không gian trên đường dẫn; một ảnh thu nhỏ 480 px JPEG. Còn để sau: kho S3/MinIO (một bản cài đặt `FileStorage` mới, chạy qua `FileStorageContract`), trang xem và khôi phục ảnh đã gỡ, kiểm tra quyền (Đợt 10).
+
+Phần dưới là ghi chú lúc lập kế hoạch, giữ lại để tra cứu.
+
 Ngày ghi: 2026-11-13. Luật nghiệp vụ đã chốt: `docs/superpowers/specs/2026-11-13-business-rules-design.md` mục 6.
 
 ## Đã có sẵn trong `media-service`
