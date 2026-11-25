@@ -103,7 +103,7 @@ test('sidebarShowsTheTodoCount', async () => {
   mockShell()
   server.use(http.get('/api/registry/todos/summary', () => HttpResponse.json({ ...emptyTodoSummary(), total: 4 })))
 
-  renderApp({ route: '/w/7/people', userId: '42' })
+  renderApp({ route: '/w/7', userId: '42' })
 
   const link = await screen.findByRole('link', { name: /Việc cần làm/ })
   expect(link).toHaveAttribute('href', '/w/7/todos')
@@ -113,7 +113,7 @@ test('sidebarShowsTheTodoCount', async () => {
 test('sidebarHidesAZeroCount', async () => {
   mockShell()
 
-  renderApp({ route: '/w/7/people', userId: '42' })
+  renderApp({ route: '/w/7', userId: '42' })
 
   const link = await screen.findByRole('link', { name: /Việc cần làm/ })
   expect(link.closest('li')).toHaveTextContent(/^Việc cần làm$/)
@@ -123,7 +123,7 @@ test('olderRegistryHidesTheSidebarEntry', async () => {
   mockShell()
   server.use(http.get('/api/registry/todos/summary', () => HttpResponse.json({ status: 404, detail: 'Not found' }, { status: 404 })))
 
-  renderApp({ route: '/w/7/people', userId: '42' })
+  renderApp({ route: '/w/7', userId: '42' })
 
   expect(await screen.findByRole('link', { name: 'Người' })).toBeInTheDocument()
   await waitFor(() => expect(screen.queryByRole('link', { name: /Việc cần làm/ })).not.toBeInTheDocument())

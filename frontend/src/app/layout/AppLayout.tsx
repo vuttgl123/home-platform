@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/sidebar'
 import { PlaceTree } from '@/features/places'
 import { SearchPalette, useSearchShortcut } from '@/features/search'
-import { useTodoSummary } from '@/features/todos'
+import { TodoBell, useTodoSummary } from '@/features/todos'
 import { useMyWorkspaces } from '@/features/workspaces'
 
 import { useWorkspaceId } from '../session/useSession'
@@ -134,6 +134,9 @@ export function AppLayout() {
             Tìm…
             <Kbd className="ml-auto hidden sm:inline-flex">Ctrl K</Kbd>
           </Button>
+          <div className="ml-auto flex items-center">
+            <TodoBell ws={current.id} />
+          </div>
         </header>
         {/* `key`: đổi không gian thì ô tìm bắt đầu lại. */}
         <SearchPalette key={current.id} ws={current.id} open={searching} onOpenChange={setSearching} />
