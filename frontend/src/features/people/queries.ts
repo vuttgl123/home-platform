@@ -236,12 +236,15 @@ export function usePersonQuickFind(ws: string, term: string) {
  * điểm và ngày bắt đầu, và ngày kết thúc (nếu có) không đứng trước ngày bắt đầu.
  */
 export function useCapacityCheck(ws: string, placeId: string | null, range: CapacityRange) {
-  const debounced = useDebouncedValue(range, 300)
-  const { startDate, endDate, excludeOccupancyId } = debounced
+  // Debounce từng giá trị, không debounce cả object: form tạo object mới mỗi lần render, và một
+  // object mới sau mỗi 300 ms sẽ làm form render lại mãi.
+  const startDate = useDebouncedValue(range.startDate, 300)
+  const endDate = useDebouncedValue(range.endDate, 300)
+  const excludeOccupancyId = range.excludeOccupancyId
   const valid = placeId != null && startDate !== '' && (endDate == null || endDate >= startDate)
   return useQuery({
     queryKey: ['places', ws, 'capacity-check', placeId, startDate, endDate ?? '', excludeOccupancyId ?? ''],
-    queryFn: () => checkCapacity(ws, placeId!, debounced),
+    queryFn: () => checkCapacity(ws, placeId!, { startDate, endDate, excludeOccupancyId }),
     enabled: valid,
   })
 }
