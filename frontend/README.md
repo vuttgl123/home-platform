@@ -72,6 +72,8 @@ src/
 │   ├── overview/       trang tổng quan của không gian (trang chủ `/w/:ws` khi đã có địa điểm)
 │   ├── media/          tab Ảnh dùng chung (lưới, tải nhiều ảnh, xem lớn, chú thích, sắp xếp, gỡ, ảnh bìa/đại diện)
 │   ├── vacancies/      trang Chỗ trống (`/w/:ws/vacancies`): chỗ còn xếp người, lọc theo loại và toà, nút Xếp người
+│   ├── maintenance/    tab Bảo trì của món đồ: nhật ký sửa chữa, bảo trì; ghi, sửa, xoá có Hoàn tác
+│   ├── todos/          trang Việc cần làm (`/w/:ws/todos`), số trên thanh bên, chuông ở đầu trang
 │   ├── exports/        nút tải file Excel (`ExportButton`) và tên file
 │   ├── print/          trang in hồ sơ một địa điểm (`/w/:ws/places/:id/print`, ngoài khung trang)
 │   └── search/         ô tìm chung (Ctrl+K): địa điểm, người, đồ đạc theo tên và theo mã
@@ -107,6 +109,9 @@ Luật phụ thuộc:
   `useSetPersonAvatar`), trang món đồ tự gắn `ItemPhotosTab`.
 - `vacancies` đứng trên `places`, `people`, `catalog`; không feature nào nhập nó. Ghi cư trú hay địa điểm làm
   mới khoá `['vacancies', ws]` bằng chữ (không nhập `vacancies`) để không có vòng phụ thuộc.
+- `maintenance` nhập `items` (kiểu `ItemDetail`, `itemKeys`, `useFetchFreshItem`); trang món đồ không nhập nó,
+  tab Bảo trì là slot `ItemTabSlots` ghép ở `app/router.tsx`.
+- `todos` không nhập feature nào; `app/layout/AppLayout.tsx` gắn chuông và số trên thanh bên.
 - `exports` chỉ nhập `workspaces` (tên không gian cho tên file); trang Đồ đạc và trang Người nhập `ExportButton`.
 - `components/ui` không biết gì về nghiệp vụ.
 
@@ -235,6 +240,24 @@ Thiết kế: `docs/superpowers/specs/2026-11-25-photos-design.md`.
   thì `CoverImage` ẩn đi, `PersonAvatar` quay về chữ cái đầu.
 - **Test**: jsdom không giữ nguyên `File` khi `FormData` đi qua `Request` của undici, nên test tải lên chỉ kiểm
   multipart, query và có phần `file`; tải ảnh thật được kiểm bằng Chrome trong bộ preview.
+
+## Bảo trì và nhắc việc
+
+Thiết kế: `docs/superpowers/specs/2026-11-25-maintenance-and-reminders-design.md`.
+
+- **Món đồ** có thêm "Hết bảo hành" và "Bảo trì mỗi (tháng)" (1 tới 120). Thẻ Thông tin hiện "Bảo hành tới …"
+  (`warrantyLine`: còn ≤ 30 ngày hay hết hôm nay thì warning) và "Bảo trì mỗi N tháng · lần tới …" (`nextServiceOn`
+  của backend; tới hạn thì warning).
+- **Tab Bảo trì** (`MaintenanceTab`): loại Sửa chữa hay Bảo trì; món đang Hỏng thì mặc định Sửa chữa và đánh sẵn
+  "Đã sửa xong, chuyển về Đang dùng" (gửi `markFixed` cùng `itemVersion`). 409 vì món vừa đổi thì hiện
+  `VersionConflictAlert`, "Tải bản mới" lấy `version` mới và giữ chữ đã gõ. Xoá không hỏi lại; Hoàn tác 8 giây.
+- **Mục tuỳ biến kiểu Ngày** có công tắc "Nhắc trong Việc cần làm" và "Nhắc trước (ngày)" (mặc định 30).
+- **Việc cần làm** (`features/todos`): danh sách do backend tính, gấp nhất trước; lọc theo loại trên URL
+  (`?kind=`). `dueLabel` cho nhãn hạn (quá hạn danger, trong 7 ngày warning). Danh sách và tóm tắt dùng
+  `refreshAfterWrites`; tóm tắt còn tải lại mỗi 5 phút và khi quay lại tab. Registry cũ (404) thì ẩn mục trên
+  thanh bên và chuông.
+- **Chuông** (`TodoBell`): chấm số là `newCount` (tối đa "9+"). Mở chuông gọi `POST /todos/seen`, đặt số về 0
+  ngay; danh sách trong popover giữ nguyên lúc mở để chấm "mới" còn tới khi đóng.
 
 ## Giao diện
 

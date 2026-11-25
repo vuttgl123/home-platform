@@ -1,6 +1,6 @@
 # Bảo trì và nhắc việc (Đợt 8)
 
-Ngày: 2026-11-25 · Trạng thái: **đã duyệt hướng làm** (bạn: "Được tôi đồng ý", với đề xuất 5 điểm ngày 2026-11-25)
+Ngày: 2026-11-25 · Trạng thái: **đã xây** (2026-11-25), **đã duyệt** (bạn: "Được tôi đồng ý" với đề xuất 5 điểm; "Được làm cho tôi nhé" với bản thiết kế)
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 
