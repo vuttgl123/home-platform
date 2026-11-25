@@ -23,7 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
 /** Hàm phụ dùng chung cho các test đồ đạc. Mỗi test có sẵn một phòng {@link #room}. */
-abstract class ItemTestData extends RegistryIT {
+public abstract class ItemTestData extends RegistryIT {
 
 	@Autowired
 	protected PlaceService places;

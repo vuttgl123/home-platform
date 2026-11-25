@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import com.home_platform.common.context.WorkspaceContext;
 import com.home_platform.common.history.ChangeAction;
@@ -39,6 +40,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ItemService {
 
 	public static final String ENTITY_TYPE = "ITEM";
+
+	/** Đầu ghi chú của version khi một lần sửa chữa đưa món hỏng về dùng lại. */
+	static final String FIXED_NOTE = "Đã sửa: ";
+
+	/** Độ dài của cột {@code note} trong bảng version. */
+	private static final int NOTE_LENGTH = 255;
 
 	private final ItemRepository repository;
 
@@ -76,6 +83,32 @@ public class ItemService {
 
 	public ItemView view(long workspaceId, long id) {
 		return views(workspaceId, List.of(get(workspaceId, id))).get(0);
+	}
+
+	/** Giữ riêng dòng của món cho tới hết transaction; rỗng khi không có hoặc đã xoá. */
+	public Optional<Item> findForUpdate(long workspaceId, long id) {
+		return this.repository.findByIdForUpdate(workspaceId, id);
+	}
+
+	/**
+	 * Món hỏng đã sửa xong (spec Đợt 8, L2): chuyển về {@code IN_USE}, ghi version có ghi chú
+	 * "Đã sửa: {@code work}" (cắt còn 255 ký tự).
+	 * @throws BadRequestException nếu món không đang {@code BROKEN}
+	 * @throws ConflictException nếu {@code version} lệch
+	 */
+	@Transactional
+	public Item markFixed(WorkspaceContext ctx, long id, int version, String work) {
+		Item current = get(ctx.workspaceId(), id);
+		if (current.status() != ItemStatus.BROKEN) {
+			throw new BadRequestException("Item " + id + " is not broken");
+		}
+		if (current.version() != version) {
+			throw ConflictException.versionConflict("Item", id);
+		}
+		Item stored = this.repository.update(ctx, current.withStatus(ItemStatus.IN_USE));
+		String note = FIXED_NOTE + work;
+		record(ctx, stored, ChangeAction.UPDATE, (note.length() > NOTE_LENGTH) ? note.substring(0, NOTE_LENGTH) : note);
+		return stored;
 	}
 
 	@Transactional
