@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router'
 
+import { CoverImage } from '@/components/common/CoverImage'
 import { ToneBadge } from '@/components/common/ToneBadge'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -12,13 +13,14 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { usePlaceTypes } from '@/features/catalog'
+import { thumbnailUrl } from '@/features/media'
 
 import { PLACE_STATUS_LABEL, PLACE_STATUS_TONE } from '../labels'
 import { placeUrl } from '../routes'
 import type { PlaceDetail } from '../types'
 
 /**
- * Đầu trang của một địa điểm: chuỗi tổ tiên, tên, loại, trạng thái, mã, version.
+ * Đầu trang của một địa điểm: chuỗi tổ tiên, ảnh bìa (nếu có), tên, loại, trạng thái, mã, version.
  * @param actions các nút thao tác, đặt bên phải tên
  */
 export function PlaceHeader({ ws, place, actions }: { ws: string; place: PlaceDetail; actions?: React.ReactNode }) {
@@ -42,7 +44,11 @@ export function PlaceHeader({ ws, place, actions }: { ws: string; place: PlaceDe
         </BreadcrumbList>
       </Breadcrumb>
       <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-        <h1 className="min-w-0 flex-1 text-2xl font-semibold tracking-tight break-words">{place.name}</h1>
+        <CoverImage
+          src={place.coverFileId ? thumbnailUrl(ws, place.coverFileId) : null}
+          alt={`Ảnh bìa của ${place.name}`}
+        />
+        <h1 className="min-w-0 flex-1 self-center text-2xl font-semibold tracking-tight break-words">{place.name}</h1>
         {actions && <div className="flex shrink-0 gap-2">{actions}</div>}
       </div>
       <dl className="flex flex-wrap items-center gap-2 text-sm">

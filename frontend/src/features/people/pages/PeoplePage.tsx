@@ -13,6 +13,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ExportButton } from '@/features/exports'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { thumbnailUrl } from '@/features/media'
 
 import { PersonFormDialog } from '../components/PersonFormDialog'
 import { usePeople, usePeopleSearch } from '../queries'
@@ -116,7 +117,7 @@ function PeopleList({ ws, list, empty }: { ws: string; list: CursorList<PersonSu
               to={`/w/${ws}/people/${person.id}`}
               className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2.5 outline-none hover:bg-muted focus-visible:bg-muted"
             >
-              <PersonAvatar name={person.fullName} />
+              <PersonAvatar name={person.fullName} photoUrl={person.avatarFileId ? thumbnailUrl(ws, person.avatarFileId) : null} />
               <span className="min-w-0 flex-1 truncate font-medium">{person.fullName}</span>
               {person.phone && <span className="text-sm text-muted-foreground">{person.phone}</span>}
               {person.idNumber && (

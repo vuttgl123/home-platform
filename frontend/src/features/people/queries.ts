@@ -254,3 +254,25 @@ export function useOccupancyTimeline(ws: string, owner: { placeId: string } | { 
   const key = 'placeId' in owner ? occupancyKeys.timeline(ws, 'place', owner.placeId) : occupancyKeys.timeline(ws, 'person', owner.personId)
   return useQuery({ queryKey: key, queryFn: () => getOccupancyTimeline(ws, owner) })
 }
+
+/** Đặt hay bỏ (`null`) ảnh đại diện; gửi lại đủ các trường đang có vì lệnh sửa ghi đè cả bản ghi. */
+export function useSetPersonAvatar(ws: string) {
+  const update = useUpdatePerson(ws)
+  return (person: PersonDetail, fileId: string | null) =>
+    update.mutateAsync({
+      id: person.id,
+      body: {
+        version: person.version,
+        fullName: person.fullName,
+        phone: person.phone ?? undefined,
+        email: person.email ?? undefined,
+        idType: person.idType ?? undefined,
+        idNumber: person.idNumber ?? undefined,
+        dateOfBirth: person.dateOfBirth ?? undefined,
+        gender: person.gender ?? undefined,
+        note: person.note ?? undefined,
+        attributes: (person.attributes ?? undefined) as PersonUpdateBody['attributes'],
+        avatarFileId: fileId ?? undefined,
+      },
+    })
+}

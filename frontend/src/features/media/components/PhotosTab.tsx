@@ -38,10 +38,23 @@ export function PhotosTab({ ws, owner, highlight }: { ws: string; owner: PhotoOw
     })
   }
 
+  // Đặt ảnh bìa có thể hỏng (ai đó vừa sửa bản ghi): báo ở đây thay vì để lỗi trôi mất.
+  const guarded: PhotoHighlight | undefined = highlight && {
+    ...highlight,
+    onSet: async (fileId) => {
+      setNotice(null)
+      try {
+        await highlight.onSet(fileId)
+      } catch (error) {
+        setNotice(`Không lưu được ${highlight.label.toLowerCase()}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    },
+  }
+
   async function removed(fileId: string, id: string) {
     // Gỡ ảnh đang là bìa thì bỏ ảnh bìa, trừ khi một ảnh khác còn lại cùng nội dung (cùng file).
-    if (highlight?.fileId === fileId && !list.some((other) => other.id !== id && other.fileId === fileId)) {
-      await highlight.onSet(null)
+    if (guarded && guarded.fileId === fileId && !list.some((other) => other.id !== id && other.fileId === fileId)) {
+      await guarded.onSet(null)
     }
   }
   const busy = queue.some((item) => item.state === 'waiting' || item.state === 'uploading')
@@ -102,7 +115,7 @@ export function PhotosTab({ ws, owner, highlight }: { ws: string; owner: PhotoOw
               photo={photo}
               index={index}
               count={list.length}
-              highlight={highlight}
+              highlight={guarded}
               onMove={(delta) => move(index, delta)}
               onRemoved={() => removed(photo.fileId, photo.id)}
             />

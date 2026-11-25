@@ -204,3 +204,24 @@ export function useItemQuickFind(ws: string, term: string) {
     enabled: term !== '',
   })
 }
+
+/** Đặt hay bỏ (`null`) ảnh bìa của một món chưa gỡ; gửi lại đủ các trường vì lệnh sửa ghi đè cả bản ghi. */
+export function useSetItemCover(ws: string) {
+  const update = useUpdateItem(ws)
+  return (item: ItemDetail, fileId: string | null) =>
+    update.mutateAsync({
+      id: item.id,
+      body: {
+        version: item.version,
+        categoryId: item.categoryId ?? undefined,
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit ?? undefined,
+        status: item.status,
+        placedAt: item.placedAt ?? undefined,
+        description: item.description ?? undefined,
+        attributes: (item.attributes ?? undefined) as ItemUpdateBody['attributes'],
+        coverFileId: fileId ?? undefined,
+      },
+    })
+}

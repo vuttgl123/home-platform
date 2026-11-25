@@ -10,6 +10,8 @@ import { PlacePrintPage } from '@/features/print'
 import { VacanciesPage } from '@/features/vacancies'
 
 import { AppLayout } from './layout/AppLayout'
+import { PersonPhotosTab } from './photos/PersonPhotosTab'
+import { PlacePhotosTab } from './photos/PlacePhotosTab'
 import { NotFoundPage } from './layout/NotFoundPage'
 import { StartPage } from './layout/StartPage'
 import { WorkspaceHomePage } from './layout/WorkspaceHomePage'
@@ -21,12 +23,14 @@ const placeTabs: PlaceTabSlots = {
   owners: (ws, place) => <PlaceOwnersTab ws={ws} place={place} />,
   people: (ws, place) => <PlaceOccupantsTab ws={ws} place={place} />,
   items: (ws, place) => <PlaceItemsTab ws={ws} place={place} />,
+  photos: (ws, place) => <PlacePhotosTab ws={ws} place={place} />,
 }
 
 /** Các tab của trang một người thuộc nghiệp vụ khác; trang người không nhập các feature đó. */
 const personTabs: PersonTabSlots = {
   ownerships: (ws, person) => <PersonOwnershipsTab ws={ws} person={person} />,
   items: (ws, person) => <PersonItemsTab ws={ws} person={person} />,
+  photos: (ws, person) => <PersonPhotosTab ws={ws} person={person} />,
 }
 
 /**

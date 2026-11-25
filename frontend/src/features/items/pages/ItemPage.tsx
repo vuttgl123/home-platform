@@ -3,6 +3,7 @@ import { Fragment, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
+import { CoverImage } from '@/components/common/CoverImage'
 import { PersonAvatar } from '@/components/common/PersonAvatar'
 import { InfoCard, InfoList } from '@/components/common/InfoCard'
 import { WithTooltip } from '@/components/common/WithTooltip'
@@ -22,6 +23,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AttributeView, useFieldDefs } from '@/features/catalog'
+import { thumbnailUrl } from '@/features/media'
 import { usePlace } from '@/features/places'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { isId } from '@/lib/ids'
@@ -30,6 +32,7 @@ import { ChangeOwnerDialog } from '../components/ChangeOwnerDialog'
 import { DeleteItemDialog } from '../components/DeleteItemDialog'
 import { ItemFormDialog } from '../components/ItemFormDialog'
 import { ItemHistoryTab } from '../components/ItemHistoryTab'
+import { ItemPhotosTab } from '../components/ItemPhotosTab'
 import { MoveItemDialog } from '../components/MoveItemDialog'
 import { PutBackItemDialog } from '../components/PutBackItemDialog'
 import { ReissueItemCodeDialog } from '../components/ReissueItemCodeDialog'
@@ -45,7 +48,8 @@ type Dialog = 'edit' | 'move' | 'remove' | 'replace' | 'owner' | 'reissueCode' |
 export function ItemPage() {
   const { workspaceId = '', itemId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
-  const tab = searchParams.get('tab') === 'history' ? 'history' : 'info'
+  const requestedTab = searchParams.get('tab')
+  const tab = requestedTab === 'history' || requestedTab === 'photos' ? requestedTab : 'info'
   const item = useItem(workspaceId, itemId)
   const [dialog, setDialog] = useState<Dialog | null>(null)
   // Món đã bị thay: đọc món thay nó để biết có đưa lại được không.
@@ -103,7 +107,11 @@ export function ItemPage() {
           </BreadcrumbList>
         </Breadcrumb>
         <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-          <h1 className="min-w-0 flex-1 text-2xl font-semibold tracking-tight break-words">{detail.name}</h1>
+          <CoverImage
+            src={detail.coverFileId ? thumbnailUrl(workspaceId, detail.coverFileId) : null}
+            alt={`Ảnh bìa của ${detail.name}`}
+          />
+          <h1 className="min-w-0 flex-1 self-center text-2xl font-semibold tracking-tight break-words">{detail.name}</h1>
           <div className="flex shrink-0 gap-2">
             {removed ? (
               <Button variant="outline" disabled={replacementAlive} onClick={open('putBack')}>
@@ -206,10 +214,13 @@ export function ItemPage() {
           </Alert>
         )}
       </header>
-      <Tabs value={tab} onValueChange={(value) => setSearchParams(value === 'info' ? {} : { tab: 'history' }, { replace: true })}>
+      <Tabs value={tab} onValueChange={(value) => setSearchParams(value === 'info' ? {} : { tab: String(value) }, { replace: true })}>
         <TabsList variant="line" className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="info" className="flex-none">
             Thông tin
+          </TabsTrigger>
+          <TabsTrigger value="photos" className="flex-none">
+            Ảnh
           </TabsTrigger>
           <TabsTrigger value="history" className="flex-none">
             Lịch sử
@@ -217,6 +228,9 @@ export function ItemPage() {
         </TabsList>
         <TabsContent value="info" className="pt-4">
           <ItemInfo ws={workspaceId} item={detail} />
+        </TabsContent>
+        <TabsContent value="photos" className="pt-4">
+          <ItemPhotosTab ws={workspaceId} item={detail} />
         </TabsContent>
         <TabsContent value="history" className="pt-4">
           <ItemHistoryTab ws={workspaceId} item={detail} />

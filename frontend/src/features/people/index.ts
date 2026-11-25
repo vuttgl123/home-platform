@@ -10,5 +10,13 @@ export { GENDER_LABEL, OCCUPANCY_STATUS_TONE, RELATION_LABEL, STATUS_LABEL } fro
 export { PeoplePage } from './pages/PeoplePage'
 export { PersonPage } from './pages/PersonPage'
 export type { PersonTabSlots } from './pages/PersonPage'
-export { occupancyKeys, personKeys, useOccupanciesAtPlace, usePerson, usePersonQuickFind, useRestorePerson } from './queries'
+export {
+  occupancyKeys,
+  personKeys,
+  useOccupanciesAtPlace,
+  usePerson,
+  usePersonQuickFind,
+  useRestorePerson,
+  useSetPersonAvatar,
+} from './queries'
 export type { Occupancy, OccupancyStatus, PersonDetail, PersonSummary, Relation } from './types'

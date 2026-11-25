@@ -29,6 +29,7 @@ const TABS = [
   { value: 'owners', label: 'Sở hữu' },
   { value: 'people', label: 'Người ở' },
   { value: 'items', label: 'Đồ đạc' },
+  { value: 'photos', label: 'Ảnh' },
   { value: 'history', label: 'Lịch sử' },
 ] as const
 
@@ -38,7 +39,7 @@ type Tab = (typeof TABS)[number]['value']
  * Nội dung của những tab thuộc nghiệp vụ dựa trên địa điểm (sở hữu, người ở, đồ đạc). Trang địa điểm không
  * nhập các feature đó; `app/` ghép chúng vào. Tab chưa có nội dung hiện "Sắp có".
  */
-export type PlaceTabSlots = Partial<Record<'owners' | 'people' | 'items', (ws: string, place: PlaceDetail) => ReactNode>>
+export type PlaceTabSlots = Partial<Record<'owners' | 'people' | 'items' | 'photos', (ws: string, place: PlaceDetail) => ReactNode>>
 
 function isTab(value: string | null): value is Tab {
   return TABS.some((tab) => tab.value === value)
@@ -121,7 +122,7 @@ export function PlacePage({ tabs = {} }: { tabs?: PlaceTabSlots }) {
             }
           />
         </TabsContent>
-        {(['owners', 'people', 'items'] as const).map((value) => (
+        {(['owners', 'people', 'items', 'photos'] as const).map((value) => (
           <TabsContent key={value} value={value} className="pt-4">
             {tabs[value]?.(workspaceId, detail) ?? <ComingSoonState />}
           </TabsContent>

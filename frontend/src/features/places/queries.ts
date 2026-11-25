@@ -227,3 +227,25 @@ export function usePlaceQuickFind(ws: string, term: string) {
     enabled: term !== '',
   })
 }
+
+/**
+ * Đặt hay bỏ (`null`) ảnh bìa: một lần sửa bình thường, có version. Lệnh sửa ghi đè cả bản ghi nên
+ * gửi lại đủ các trường đang có.
+ */
+export function useSetPlaceCover(ws: string) {
+  const update = useUpdatePlace(ws)
+  return (place: PlaceDetail, fileId: string | null) =>
+    update.mutateAsync({
+      id: place.id,
+      body: {
+        version: place.version,
+        placeTypeId: place.placeTypeId,
+        name: place.name,
+        status: place.status,
+        capacity: place.capacity ?? undefined,
+        description: place.description ?? undefined,
+        attributes: (place.attributes ?? undefined) as PlaceUpdateBody['attributes'],
+        coverFileId: fileId ?? undefined,
+      },
+    })
+}

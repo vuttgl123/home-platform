@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { thumbnailUrl } from '@/features/media'
 import { formatDate } from '@/lib/format'
 import { isId } from '@/lib/ids'
 
@@ -31,6 +32,7 @@ const TABS = [
   { value: 'places', label: 'Nơi ở' },
   { value: 'ownerships', label: 'Sở hữu' },
   { value: 'items', label: 'Đồ đạc' },
+  { value: 'photos', label: 'Ảnh' },
   { value: 'history', label: 'Lịch sử' },
 ] as const
 
@@ -40,11 +42,12 @@ type Tab = (typeof TABS)[number]['value']
  * Nội dung của những tab thuộc nghiệp vụ khác (chỗ người này sở hữu, đồ của người này). Trang người không nhập các
  * feature đó; `app/` ghép chúng vào. Tab không có nội dung thì không hiện.
  */
-export type PersonTabSlots = Partial<Record<'ownerships' | 'items', (ws: string, person: PersonDetail) => ReactNode>>
+export type PersonTabSlots = Partial<Record<'ownerships' | 'items' | 'photos', (ws: string, person: PersonDetail) => ReactNode>>
 
 /** Trang `/w/:workspaceId/people/:personId`: hồ sơ một người, những nơi họ đã, đang ở, và đồ của họ. */
 export function PersonPage({ tabs = {} }: { tabs?: PersonTabSlots }) {
-  const shown = TABS.filter((entry) => (entry.value !== 'items' && entry.value !== 'ownerships') || tabs[entry.value] != null)
+  const slotted = (value: Tab): value is 'ownerships' | 'items' | 'photos' => value === 'ownerships' || value === 'items' || value === 'photos'
+  const shown = TABS.filter((entry) => !slotted(entry.value) || tabs[entry.value] != null)
   const isTab = (value: string | null): value is Tab => shown.some((entry) => entry.value === value)
   const { workspaceId = '', personId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -94,7 +97,7 @@ export function PersonPage({ tabs = {} }: { tabs?: PersonTabSlots }) {
         <TabsContent value="places" className="pt-4">
           <PersonPlacesTab ws={workspaceId} person={detail} />
         </TabsContent>
-        {(['ownerships', 'items'] as const).map(
+        {(['ownerships', 'items', 'photos'] as const).map(
           (value) =>
             tabs[value] && (
               <TabsContent key={value} value={value} className="pt-4">
@@ -141,7 +144,12 @@ function PersonHeader({
       </Link>
       <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <PersonAvatar name={person.fullName} size="lg" className="size-12" />
+          <PersonAvatar
+            name={person.fullName}
+            photoUrl={person.avatarFileId ? thumbnailUrl(ws, person.avatarFileId) : null}
+            size="lg"
+            className="size-12"
+          />
           <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words">{person.fullName}</h1>
         </div>
         <div className="flex shrink-0 gap-2">

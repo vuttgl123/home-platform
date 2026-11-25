@@ -9,7 +9,7 @@ export type { PlaceChoice } from './components/PlacePicker'
 export { PlaceTree } from './components/PlaceTree'
 export { PlacePage } from './pages/PlacePage'
 export type { PlaceTabSlots } from './pages/PlacePage'
-export { placeKeys, useChildren, usePlace, usePlaceQuickFind, usePlaceSearch, useRestorePlace } from './queries'
+export { placeKeys, useChildren, usePlace, usePlaceQuickFind, usePlaceSearch, useRestorePlace, useSetPlaceCover } from './queries'
 export { placeUrl } from './routes'
 export type {
   Address,
