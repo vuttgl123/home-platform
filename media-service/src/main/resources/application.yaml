@@ -1,6 +1,11 @@
 spring:
   application:
     name: media-service
+  servlet:
+    multipart:
+      # Ảnh tối đa 10 MB (UploadPolicy); request có thêm vài trường nhỏ.
+      max-file-size: 10MB
+      max-request-size: 11MB
   profiles:
     default: uat
   flyway:
