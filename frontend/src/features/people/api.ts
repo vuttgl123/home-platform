@@ -5,6 +5,7 @@ import type {
   CapacityRange,
   Occupancy,
   OccupancyBody,
+  OccupancyTimelineData,
   OccupancyStatus,
   OccupancyUpdateBody,
   PersonBody,
@@ -61,6 +62,15 @@ export async function deletePerson(ws: string, id: string, version: number): Pro
 }
 
 // Cư trú
+
+/** Mọi lần ở (mọi trạng thái, tối đa 200, mới nhất trước) của một địa điểm hay một người. */
+export async function getOccupancyTimeline(
+  ws: string,
+  owner: { placeId: string } | { personId: string },
+): Promise<OccupancyTimelineData> {
+  const call = registry.GET('/occupancies/timeline', { params: { header: workspaceHeaders(ws), query: owner } })
+  return (await unwrap(call)) as OccupancyTimelineData
+}
 
 /** Sức chứa của một địa điểm và số người nhiều nhất đã có cùng một ngày trong khoảng ngày. */
 export async function checkCapacity(ws: string, placeId: string, range: CapacityRange): Promise<CapacityCheck> {

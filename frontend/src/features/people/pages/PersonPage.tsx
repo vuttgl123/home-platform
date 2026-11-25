@@ -18,6 +18,7 @@ import { DeletePersonDialog } from '../components/DeletePersonDialog'
 import { OccupancyActions } from '../components/OccupancyActions'
 import { OccupancyFormDialog } from '../components/OccupancyFormDialog'
 import { OccupancyList } from '../components/OccupancyList'
+import { OccupancyTimelineCard } from '../components/OccupancyTimeline'
 import { PersonFormDialog } from '../components/PersonFormDialog'
 import { PersonHistoryTab } from '../components/PersonHistoryTab'
 import { PersonInfoTab } from '../components/PersonInfoTab'
@@ -199,6 +200,7 @@ function PersonPlacesTab({ ws, person }: { ws: string; person: PersonDetail }) {
           Thêm nơi ở
         </Button>
       </div>
+      <OccupancyTimelineCard ws={ws} owner={{ personId: person.id }} />
       <OccupancyList
         ws={ws}
         list={stays}

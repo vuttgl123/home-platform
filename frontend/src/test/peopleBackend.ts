@@ -159,6 +159,17 @@ export function mockPeopleBackend(options: {
       people.set(id, { ...gone, version: gone.version + 1 })
       return HttpResponse.json(detail(id))
     }),
+    // Mọi lần ở của một địa điểm hay một người, mới nhất trước, như GET /occupancies/timeline.
+    http.get('/api/registry/occupancies/timeline', ({ request }) => {
+      const query = new URL(request.url).searchParams
+      const placeId = query.get('placeId')
+      const personId = query.get('personId')
+      const rows = [...stays.values()]
+        .map(row)
+        .filter((o) => (placeId != null ? o.placeId === placeId : o.personId === personId))
+        .sort((a, b) => b.startDate.localeCompare(a.startDate))
+      return HttpResponse.json({ rows, truncated: false })
+    }),
     http.get('/api/registry/occupancies', ({ request }) => {
       const query = new URL(request.url).searchParams
       const placeId = query.get('placeId')

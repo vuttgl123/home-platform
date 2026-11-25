@@ -11,6 +11,7 @@ import type { Occupancy } from '../types'
 import { OccupancyActions } from './OccupancyActions'
 import { OccupancyFormDialog } from './OccupancyFormDialog'
 import { OccupancyList } from './OccupancyList'
+import { OccupancyTimelineCard } from './OccupancyTimeline'
 
 /**
  * Tab "Người ở" của một địa điểm: đang ở, sắp đến, đã rời (chỉ tải khi mở). Địa điểm có chỗ con
@@ -45,6 +46,7 @@ export function PlaceOccupantsTab({ ws, place }: { ws: string; place: PlaceDetai
           Thêm người ở
         </Button>
       </div>
+      {!whole && <OccupancyTimelineCard ws={ws} owner={{ placeId: place.id }} />}
       {whole ? (
         <Group title="Đang ở bên trong">
           <OccupancyList ws={ws} list={inside} show="person" showBoth empty="Không ai đang ở bên trong." actions={actions} />

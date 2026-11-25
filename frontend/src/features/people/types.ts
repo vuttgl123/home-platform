@@ -29,5 +29,8 @@ export type CapacityRange = { startDate: string; endDate?: string; excludeOccupa
 
 export type PersonBody = S['PersonRequest']
 export type PersonUpdateBody = S['PersonUpdateRequest']
+/** Mọi lần ở của một địa điểm hay một người, cho dòng thời gian. */
+export type OccupancyTimelineData = { rows: Occupancy[]; truncated: boolean }
+
 export type OccupancyBody = S['OccupancyCreateRequest']
 export type OccupancyUpdateBody = S['OccupancyUpdateRequest']

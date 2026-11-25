@@ -12,6 +12,7 @@ import {
   deleteOccupancy,
   deletePerson,
   endOccupancy,
+  getOccupancyTimeline,
   getPerson,
   listOccupanciesAtPlace,
   listOccupanciesInSubtree,
@@ -50,6 +51,7 @@ export const occupancyKeys = {
   atPlace: (ws: string, placeId: string, status: OccupancyStatus) => ['occupancies', ws, 'place', placeId, status] as const,
   inSubtree: (ws: string, placeId: string) => ['occupancies', ws, 'subtree', placeId] as const,
   ofPerson: (ws: string, personId: string) => ['occupancies', ws, 'person', personId] as const,
+  timeline: (ws: string, kind: 'place' | 'person', id: string) => ['occupancies', ws, 'timeline', kind, id] as const,
 }
 
 // Người
@@ -242,4 +244,10 @@ export function useCapacityCheck(ws: string, placeId: string | null, range: Capa
     queryFn: () => checkCapacity(ws, placeId!, debounced),
     enabled: valid,
   })
+}
+
+/** Dòng thời gian của một địa điểm hay một người; nằm dưới `occupancyKeys.all` nên ghi cư trú là tải lại. */
+export function useOccupancyTimeline(ws: string, owner: { placeId: string } | { personId: string }) {
+  const key = 'placeId' in owner ? occupancyKeys.timeline(ws, 'place', owner.placeId) : occupancyKeys.timeline(ws, 'person', owner.personId)
+  return useQuery({ queryKey: key, queryFn: () => getOccupancyTimeline(ws, owner) })
 }
