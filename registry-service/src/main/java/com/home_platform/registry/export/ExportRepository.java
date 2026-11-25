@@ -67,7 +67,7 @@ public class ExportRepository {
 	 */
 	public List<ExportPlaceRow> places(long workspaceId, String afterPath, int limit) {
 		Map<String, Object> params = params(workspaceId, limit);
-		StringBuilder sql = new StringBuilder("SELECT id, path, place_type_id, code, name, status, description, "
+		StringBuilder sql = new StringBuilder("SELECT id, path, place_type_id, code, name, status, capacity, description, "
 				+ "attributes FROM reg_place WHERE workspace_id = :workspaceId AND deleted_at IS NULL");
 		if (afterPath != null) {
 			sql.append(" AND path > :afterPath");
@@ -78,7 +78,8 @@ public class ExportRepository {
 			.params(params)
 			.query((rs, rowNum) -> new ExportPlaceRow(rs.getLong("id"), rs.getString("path"),
 					rs.getLong("place_type_id"), rs.getString("code"), rs.getString("name"),
-					PlaceStatus.valueOf(rs.getString("status")), rs.getString("description"), attributes(rs)))
+					PlaceStatus.valueOf(rs.getString("status")), rs.getObject("capacity", Integer.class),
+					rs.getString("description"), attributes(rs)))
 			.list();
 	}
 

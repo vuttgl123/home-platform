@@ -14,7 +14,7 @@ import lombok.With;
  */
 @With
 public record Place(long workspaceId, long id, Long parentId, long placeTypeId, String path, int depth, String code,
-		String name, String description, PlaceStatus status, @JsonColumn Map<String, Object> attributes,
+		String name, String description, PlaceStatus status, Integer capacity, @JsonColumn Map<String, Object> attributes,
 		Long coverFileId, Instant createdAt, long createdBy, Instant updatedAt, long updatedBy, int version,
 		Instant deletedAt) {
 

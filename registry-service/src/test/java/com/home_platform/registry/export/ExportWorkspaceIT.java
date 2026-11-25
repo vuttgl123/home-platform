@@ -95,8 +95,8 @@ class ExportWorkspaceIT extends RegistryIT {
 
 		assertThat(sheets).extracting(XlsxSheet::name)
 			.containsExactly("Địa điểm", "Người", "Cư trú", "Sở hữu", "Đồ đạc");
-		assertThat(sheets.get(PLACES).headers()).containsExactly("Mã", "Tên", "Loại", "Nằm trong", "Trạng thái",
-				"Mô tả");
+		assertThat(sheets.get(PLACES).headers()).containsExactly("Mã", "Tên", "Loại", "Sức chứa", "Nằm trong",
+				"Trạng thái", "Mô tả");
 		assertThat(sheets.get(PEOPLE).headers()).containsExactly("Họ tên", "Điện thoại", "Email", "Loại giấy tờ",
 				"Số giấy tờ", "Ngày sinh", "Giới tính", "Đang ở", "Ghi chú");
 		assertThat(sheets.get(STAYS).headers()).containsExactly("Địa điểm", "Mã địa điểm", "Người", "Quan hệ",
@@ -115,13 +115,13 @@ class ExportWorkspaceIT extends RegistryIT {
 		long a = place(this.building, null, "Toà A").id();
 		long floor = place(this.building, a, "Tầng 3").id();
 		Place p301 = this.places.create(CTX_A, new PlaceCreateRequest(floor, this.room, "P301", "Hướng nam",
-				PlaceStatus.INACTIVE, Map.of("area", 25), null, null, null));
+				PlaceStatus.INACTIVE, 2, Map.of("area", 25), null, null, null));
 		place(this.building, null, "Toà B");
 
 		XlsxSheet sheet = workspace().get(PLACES);
 
-		assertThat(sheet.headers()).containsExactly("Mã", "Tên", "Loại", "Nằm trong", "Trạng thái", "Mô tả",
-				"Diện tích");
+		assertThat(sheet.headers()).containsExactly("Mã", "Tên", "Loại", "Sức chứa", "Nằm trong", "Trạng thái",
+				"Mô tả", "Diện tích");
 		assertThat(sheet.column("Tên")).containsExactly("Toà A", "Tầng 3", "P301", "Toà B");
 		assertThat(sheet.column("Nằm trong")).containsExactly("", "Toà A", "Toà A / Tầng 3", "");
 		assertThat(sheet.column("Loại")).containsExactly("Toà", "Toà", "Phòng", "Toà");
@@ -131,6 +131,8 @@ class ExportWorkspaceIT extends RegistryIT {
 		assertThat(sheet.cell(2, "Diện tích").isNumber()).isTrue();
 		assertThat(sheet.cell(2, "Diện tích").number()).isEqualByComparingTo("25");
 		assertThat(sheet.cell(0, "Diện tích").isBlank()).isTrue();
+		assertThat(sheet.cell(2, "Sức chứa").number()).isEqualByComparingTo("2");
+		assertThat(sheet.cell(0, "Sức chứa").isBlank()).isTrue();
 		assertThat(sheet.cell(0, "Mô tả").isBlank()).isTrue();
 	}
 
@@ -399,7 +401,7 @@ class ExportWorkspaceIT extends RegistryIT {
 
 	private Place place(long type, Long parentId, String name) {
 		return this.places.create(CTX_A,
-				new PlaceCreateRequest(parentId, type, name, null, null, null, null, null, null));
+				new PlaceCreateRequest(parentId, type, name, null, null, null, null, null, null, null));
 	}
 
 	private long person(String fullName) {

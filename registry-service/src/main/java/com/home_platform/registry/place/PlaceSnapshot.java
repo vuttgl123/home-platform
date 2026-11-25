@@ -12,12 +12,12 @@ import tools.jackson.databind.annotation.JsonSerialize;
  * chúng trong danh sách trường đã đổi. Địa chỉ là một phần của địa điểm nên nằm trong snapshot.
  */
 public record PlaceSnapshot(long id, Long parentId, long placeTypeId, String path, int depth, String code,
-		String name, String description, PlaceStatus status, @JsonSerialize(contentUsing = PlainNumbers.class) Map<String, Object> attributes, Long coverFileId,
+		String name, String description, PlaceStatus status, Integer capacity, @JsonSerialize(contentUsing = PlainNumbers.class) Map<String, Object> attributes, Long coverFileId,
 		Instant deletedAt, AddressSnapshot address) {
 
 	public static PlaceSnapshot of(Place place, PlaceAddress address) {
 		return new PlaceSnapshot(place.id(), place.parentId(), place.placeTypeId(), place.path(), place.depth(),
-				place.code(), place.name(), place.description(), place.status(), place.attributes(),
+				place.code(), place.name(), place.description(), place.status(), place.capacity(), place.attributes(),
 				place.coverFileId(), place.deletedAt(), AddressSnapshot.of(address));
 	}
 

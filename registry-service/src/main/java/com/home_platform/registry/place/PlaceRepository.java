@@ -25,6 +25,18 @@ public class PlaceRepository extends WorkspaceRepository<Place> {
 	static final String PARENTS_WITH_CHILDREN = "SELECT DISTINCT parent_id FROM reg_place "
 			+ "WHERE workspace_id = :workspaceId AND parent_id IN (:ids) AND deleted_at IS NULL";
 
+	/**
+	 * Số người đang ở trực tiếp tại dòng {@code reg_place} đang xét, ngày {@code :today}: người khác nhau,
+	 * chưa xoá, có dòng cư trú chưa xoá với {@code start_date <= :today <= end_date} (ngày kết thúc vẫn
+	 * là ngày còn ở), quan hệ nào cũng tính (spec Đợt 6, L2). Là một subquery tương quan theo tên bảng,
+	 * không theo alias, để dùng được cả trong {@link #keyset()}.
+	 */
+	public static final String PEOPLE_LIVING_HERE = "(SELECT COUNT(DISTINCT o.person_id) FROM reg_occupancy o "
+			+ "JOIN reg_person pe ON pe.workspace_id = o.workspace_id AND pe.id = o.person_id "
+			+ "WHERE o.workspace_id = reg_place.workspace_id AND o.place_id = reg_place.id "
+			+ "AND o.deleted_at IS NULL AND pe.deleted_at IS NULL AND o.start_date <= :today "
+			+ "AND (o.end_date IS NULL OR o.end_date >= :today))";
+
 	PlaceRepository(RepositorySupport support) {
 		super(support, "reg_place", Place.class);
 	}
@@ -157,6 +169,12 @@ public class PlaceRepository extends WorkspaceRepository<Place> {
 		catch (IllegalArgumentException ex) {
 			throw new BadRequestException("Invalid cursor");
 		}
+	}
+
+	/** Số người đang ở trực tiếp tại một địa điểm ngày {@code today}, theo {@link #PEOPLE_LIVING_HERE}. */
+	public int countPeopleLiving(long workspaceId, long placeId, LocalDate today) {
+		return count("SELECT " + PEOPLE_LIVING_HERE + " FROM reg_place WHERE workspace_id = :workspaceId "
+				+ "AND id = :placeId", workspaceId, placeId, today);
 	}
 
 	/** Số địa điểm con chưa xoá. */

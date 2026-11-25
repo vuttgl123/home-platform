@@ -10,12 +10,14 @@ import tools.jackson.databind.annotation.JsonSerialize;
 /**
  * Một địa điểm đầy đủ.
  *
+ * @param occupantCount số người đang ở trực tiếp tại đây hôm nay, mọi quan hệ
  * @param ancestors tổ tiên từ gốc tới cha, để hiện "Toà A › Tầng 3 › P301"
  * @param address địa chỉ của chính nó
  * @param effectiveAddress địa chỉ của nó hoặc của tổ tiên gần nhất có địa chỉ
  */
 public record PlaceDetailResponse(long id, Long parentId, long placeTypeId, String path, int depth, String code,
-		String name, String description, PlaceStatus status, @JsonSerialize(contentUsing = PlainNumbers.class) Map<String, Object> attributes, Long coverFileId,
+		String name, String description, PlaceStatus status, Integer capacity, int occupantCount,
+		@JsonSerialize(contentUsing = PlainNumbers.class) Map<String, Object> attributes, Long coverFileId,
 		Instant createdAt, long createdBy, Instant updatedAt, long updatedBy, int version, Instant deletedAt,
 		List<PlaceRef> ancestors, AddressResponse address, EffectiveAddressResponse effectiveAddress) {
 }

@@ -349,7 +349,7 @@ class ConcurrentWritesIT extends CommittedDataIT {
 	}
 
 	private PlaceCreateRequest newPlace(Long parentId, String name) {
-		return new PlaceCreateRequest(parentId, this.type, name, null, null, null, null, null, null);
+		return new PlaceCreateRequest(parentId, this.type, name, null, null, null, null, null, null, null);
 	}
 
 	private long person(String fullName) {

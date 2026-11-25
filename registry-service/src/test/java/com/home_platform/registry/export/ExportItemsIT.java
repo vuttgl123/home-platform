@@ -252,7 +252,7 @@ class ExportItemsIT extends RegistryIT {
 
 	private long place(Long parentId, String name) {
 		return this.places
-			.create(CTX_A, new PlaceCreateRequest(parentId, this.type, name, null, null, null, null, null, null))
+			.create(CTX_A, new PlaceCreateRequest(parentId, this.type, name, null, null, null, null, null, null, null))
 			.id();
 	}
 

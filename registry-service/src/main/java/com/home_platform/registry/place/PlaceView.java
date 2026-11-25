@@ -8,7 +8,8 @@ import java.util.List;
  * @param address địa chỉ của chính nó, có thể null
  * @param effectiveAddress địa chỉ của chính nó hoặc của tổ tiên gần nhất có địa chỉ, có thể null
  * @param effectiveAddressFrom địa điểm sở hữu {@code effectiveAddress}
+ * @param occupantCount số người đang ở trực tiếp tại đây hôm nay
  */
 public record PlaceView(Place place, List<PlaceRef> ancestors, PlaceAddress address, PlaceAddress effectiveAddress,
-		Long effectiveAddressFrom) {
+		Long effectiveAddressFrom, int occupantCount) {
 }

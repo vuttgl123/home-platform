@@ -11,7 +11,8 @@ final class PlaceSheet {
 
 	static final String NAME = "Địa điểm";
 
-	private static final List<String> HEADERS = List.of("Mã", "Tên", "Loại", "Nằm trong", "Trạng thái", "Mô tả");
+	private static final List<String> HEADERS = List.of("Mã", "Tên", "Loại", "Sức chứa", "Nằm trong", "Trạng thái",
+			"Mô tả");
 
 	private final SheetWriter writer;
 
@@ -34,6 +35,7 @@ final class PlaceSheet {
 		this.writer.text(place.code());
 		this.writer.text(place.name());
 		this.writer.text(this.typeNames.get(place.placeTypeId()));
+		this.writer.number(place.capacity());
 		this.writer.text(this.paths.parentPathOf(place.id()));
 		this.writer.text(ExportLabels.placeStatus(place.status()));
 		this.writer.text(place.description());

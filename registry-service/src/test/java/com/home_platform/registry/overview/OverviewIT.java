@@ -285,7 +285,7 @@ class OverviewIT extends RegistryIT {
 
 	private long place(long type, Long parentId, String name) {
 		return this.places
-			.create(CTX_A, new PlaceCreateRequest(parentId, type, name, null, null, null, null, null, null))
+			.create(CTX_A, new PlaceCreateRequest(parentId, type, name, null, null, null, null, null, null, null))
 			.id();
 	}
 

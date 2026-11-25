@@ -89,7 +89,7 @@ class CodeConcurrencyIT extends CommittedDataIT {
 	}
 
 	private PlaceCreateRequest newPlace(String name, AddressRequest address) {
-		return new PlaceCreateRequest(null, this.type, name, null, null, null, null, address, null);
+		return new PlaceCreateRequest(null, this.type, name, null, null, null, null, null, address, null);
 	}
 
 }

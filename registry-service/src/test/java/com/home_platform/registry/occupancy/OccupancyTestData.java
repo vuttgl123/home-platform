@@ -20,7 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
 /** Hàm phụ dùng chung cho các test cư trú. */
-abstract class OccupancyTestData extends RegistryIT {
+public abstract class OccupancyTestData extends RegistryIT {
 
 	@Autowired
 	protected PlaceService places;
@@ -46,7 +46,7 @@ abstract class OccupancyTestData extends RegistryIT {
 
 	protected long place(Long parentId, String name) {
 		return this.places
-			.create(CTX_A, new PlaceCreateRequest(parentId, this.type, name, null, null, null, null, null, null))
+			.create(CTX_A, new PlaceCreateRequest(parentId, this.type, name, null, null, null, null, null, null, null))
 			.id();
 	}
 

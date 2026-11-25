@@ -140,7 +140,8 @@ public class PlaceService {
 			from = byPlace.containsKey(ids.get(i)) ? ids.get(i) : null;
 		}
 		return new PlaceView(place, this.repository.refs(workspaceId, ids.subList(0, ids.size() - 1)),
-				byPlace.get(id), (from != null) ? byPlace.get(from) : null, from);
+				byPlace.get(id), (from != null) ? byPlace.get(from) : null, from,
+				this.repository.countPeopleLiving(workspaceId, id, this.businessDate.today()));
 	}
 
 	/**
@@ -325,7 +326,7 @@ public class PlaceService {
 		PlaceSnapshot old = snapshotOf(version(workspaceId, id, versionNo));
 		String note = EntityHistory.restoredNote(versionNo, request.note());
 		Place stored = applyContent(ctx, current, new PlaceUpdateRequest(request.version(), old.placeTypeId(),
-				old.name(), old.description(), old.status(), old.attributes(), old.coverFileId(), note));
+				old.name(), old.description(), old.status(), old.capacity(), old.attributes(), old.coverFileId(), note));
 		PlaceAddress address = (old.address() != null) ? fromSnapshot(id, old.address()) : null;
 		if (address != null) {
 			this.addresses.upsert(workspaceId, address);
@@ -387,7 +388,8 @@ public class PlaceService {
 		String path = ((parent != null) ? parent.path() : "/") + id + "/";
 		String code = issueCode(ctx, request.placeTypeId());
 		Place place = new Place(0, id, request.parentId(), request.placeTypeId(), path, depth, code, request.name(),
-				request.description(), request.status(), attributes, request.coverFileId(), null, 0, null, 0, 0, null);
+				request.description(), request.status(), request.capacity(), attributes, request.coverFileId(), null, 0, null,
+				0, 0, null);
 		Place stored = insertWithCode(ctx, place);
 		PlaceAddress address = (request.address() != null) ? toAddress(id, request.address()) : null;
 		if (address != null) {
@@ -475,6 +477,7 @@ public class PlaceService {
 			.withName(request.name())
 			.withDescription(request.description())
 			.withStatus(request.status())
+			.withCapacity(request.capacity())
 			.withAttributes(attributes)
 			.withCoverFileId(request.coverFileId()));
 	}
