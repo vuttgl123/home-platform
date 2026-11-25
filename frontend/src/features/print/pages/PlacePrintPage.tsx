@@ -13,7 +13,7 @@ import { AttributeView, useFieldDefs, usePlaceTypes } from '@/features/catalog'
 import { ITEM_STATUS_LABEL, useItemsAtPlace, useItemsInSubtree } from '@/features/items'
 import { useOwnershipsAtPlace } from '@/features/ownership'
 import { RELATION_LABEL, useOccupanciesAtPlace } from '@/features/people'
-import { PLACE_STATUS_LABEL, usePlace } from '@/features/places'
+import { capacityText, PLACE_STATUS_LABEL, usePlace } from '@/features/places'
 import { formatDate, formatDateTime, formatNumber } from '@/lib/format'
 import { isId } from '@/lib/ids'
 
@@ -97,6 +97,7 @@ export function PlacePrintPage() {
           <Field label="Loại" value={typeName} />
           <Field label="Đường dẫn" value={path} />
           <Field label="Trạng thái" value={PLACE_STATUS_LABEL[detail.status]} />
+          <Field label="Sức chứa" value={capacityText(detail.capacity, detail.occupantCount)} />
           <Field label="Mô tả" value={detail.description} />
         </dl>
         <AttributeView defs={defs} values={detail.attributes} />

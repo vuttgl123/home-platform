@@ -6,6 +6,7 @@ import { formatDateTime } from '@/lib/format'
 
 import { placeUrl } from '../routes'
 import type { PlaceDetail } from '../types'
+import { CapacityLine } from './CapacityLine'
 
 /** Tab "Tổng quan": nằm trong đâu, mô tả, địa chỉ, mục tuỳ biến theo loại. */
 export function PlaceOverviewTab({
@@ -36,6 +37,7 @@ export function PlaceOverviewTab({
                 'Cấp cao nhất'
               ),
             },
+            { label: 'Sức chứa', value: <CapacityLine capacity={place.capacity} occupants={place.occupantCount} /> },
             { label: 'Mô tả', value: place.description ? <span className="whitespace-pre-line">{place.description}</span> : null },
           ]}
         />

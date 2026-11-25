@@ -20,13 +20,13 @@ import { AttributeFields, attributePayload, useFieldDefs, usePlaceTypes, type Fi
 import { useCreatePlace, useFetchFreshPlace, useUpdatePlace } from '../queries'
 import { placeUrl } from '../routes'
 import type { PlaceDetail } from '../types'
-import { placeFormSchema, placeFormValues, suggestedTypeId, type PlaceFormValues } from './placeForm'
+import { capacityValue, placeFormSchema, placeFormValues, suggestedTypeId, type PlaceFormValues } from './placeForm'
 
 type Mode = { mode: 'create'; parent: PlaceDetail | null } | { mode: 'edit'; place: PlaceDetail }
 
 const NO_DEFS: FieldDef[] = []
 
-const FIXED_FIELDS = new Set(['placeTypeId', 'name', 'status', 'description'])
+const FIXED_FIELDS = new Set(['placeTypeId', 'name', 'status', 'capacity', 'description'])
 
 /**
  * Hộp thoại thêm hoặc sửa một địa điểm.
@@ -72,6 +72,7 @@ function PlaceForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } &
           placeTypeId: suggestedTypeId(types, mode.mode === 'create' ? (mode.parent?.placeTypeId ?? null) : null),
           name: '',
           status: 'ACTIVE',
+          capacity: '',
           description: '',
           attributes: {},
         },
@@ -128,6 +129,7 @@ function PlaceForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } &
       placeTypeId: values.placeTypeId,
       name: values.name,
       status: values.status,
+      capacity: capacityValue(values.capacity),
       description: values.description || undefined,
       attributes: attributePayload(defs, values.attributes, base?.attributes ?? null) ?? undefined,
     }
@@ -193,6 +195,17 @@ function PlaceForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void } &
             <NativeSelectOption value="INACTIVE">Tạm ngưng</NativeSelectOption>
           </NativeSelect>
         </Field>
+        <TextField
+          label="Sức chứa (người)"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={9999}
+          step={1}
+          description="Bỏ trống nếu không giới hạn"
+          error={errors.capacity?.message}
+          {...form.register('capacity')}
+        />
         <Field data-invalid={errors.description ? true : undefined}>
           <FieldLabel htmlFor={descriptionId}>Mô tả</FieldLabel>
           <Textarea id={descriptionId} rows={3} {...form.register('description')} />

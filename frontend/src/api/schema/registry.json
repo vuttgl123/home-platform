@@ -2923,6 +2923,72 @@
         }
       }
     },
+    "/occupancies/timeline": {
+      "get": {
+        "tags": [
+          "occupancy-controller"
+        ],
+        "operationId": "timeline",
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "personId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OccupancyTimelineResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/overview": {
       "get": {
         "tags": [
@@ -5033,6 +5099,90 @@
         }
       }
     },
+    "/places/{id}/capacity-check": {
+      "get": {
+        "tags": [
+          "capacity-controller"
+        ],
+        "operationId": "check",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "excludeOccupancyId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapacityCheckResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/places/{id}/children": {
       "get": {
         "tags": [
@@ -5877,6 +6027,94 @@
         }
       }
     },
+    "/places/vacancies": {
+      "get": {
+        "tags": [
+          "capacity-controller"
+        ],
+        "operationId": "vacancies",
+        "parameters": [
+          {
+            "name": "placeTypeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rootId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "nextCursor of the previous page; omit for the first page",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of items in the page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPageVacancyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/setup": {
       "post": {
         "tags": [
@@ -6202,6 +6440,23 @@
           }
         }
       },
+      "CapacityCheckResponse": {
+        "type": "object",
+        "properties": {
+          "capacity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "peak": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "peakDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "CodeBackfillResponse": {
         "type": "object",
         "properties": {
@@ -6458,6 +6713,20 @@
           }
         }
       },
+      "CursorPageVacancyResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VacancyResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        }
+      },
       "DayActivity": {
         "type": "object",
         "properties": {
@@ -6491,6 +6760,45 @@
           },
           "address": {
             "$ref": "#/components/schemas/AddressResponse"
+          }
+        }
+      },
+      "EndingSoon": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndingSoonRow"
+            }
+          }
+        }
+      },
+      "EndingSoonRow": {
+        "type": "object",
+        "properties": {
+          "occupancyId": {
+            "type": "string"
+          },
+          "personId": {
+            "type": "string"
+          },
+          "personName": {
+            "type": "string"
+          },
+          "placeId": {
+            "type": "string"
+          },
+          "placeName": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
@@ -7338,6 +7646,20 @@
           }
         }
       },
+      "OccupancyTimelineResponse": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OccupancyResponse"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      },
       "OccupancyUpdateRequest": {
         "type": "object",
         "properties": {
@@ -7411,6 +7733,9 @@
             "items": {
               "$ref": "#/components/schemas/DayActivity"
             }
+          },
+          "endingSoon": {
+            "$ref": "#/components/schemas/EndingSoon"
           }
         }
       },
@@ -8046,6 +8371,12 @@
               "INACTIVE"
             ]
           },
+          "capacity": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 9999,
+            "minimum": 0
+          },
           "attributes": {
             "type": "object",
             "additionalProperties": {}
@@ -8101,6 +8432,14 @@
               "ACTIVE",
               "INACTIVE"
             ]
+          },
+          "capacity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "occupantCount": {
+            "type": "integer",
+            "format": "int32"
           },
           "attributes": {
             "type": "object",
@@ -8316,6 +8655,10 @@
               "INACTIVE"
             ]
           },
+          "capacity": {
+            "type": "integer",
+            "format": "int32"
+          },
           "attributes": {
             "type": "object",
             "additionalProperties": {}
@@ -8464,6 +8807,12 @@
               "ACTIVE",
               "INACTIVE"
             ]
+          },
+          "capacity": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 9999,
+            "minimum": 0
           },
           "attributes": {
             "type": "object",
@@ -8640,6 +8989,51 @@
             "type": "string"
           },
           "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "VacancyResponse": {
+        "type": "object",
+        "properties": {
+          "placeId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "placeTypeId": {
+            "type": "string"
+          },
+          "placeTypeName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          },
+          "ancestors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceRef"
+            }
+          },
+          "capacity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "occupantCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "free": {
             "type": "integer",
             "format": "int32"
           }

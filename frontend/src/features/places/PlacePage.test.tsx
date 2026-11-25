@@ -213,3 +213,13 @@ test('placeOverviewShowsTheInformationCard', async () => {
   expect(info.getByRole('link', { name: 'Tầng 3' })).toHaveAttribute('href', '/w/7/places/13')
   expect(info.getByText('Phòng góc, hai cửa sổ.')).toBeInTheDocument()
 })
+
+test('overCapacityIsShownInDanger', async () => {
+  mockP301({ ...p301, capacity: 2, occupantCount: 4 })
+
+  renderApp({ route: '/w/7/places/301', userId: '42' })
+
+  const info = within(await (await main()).findByRole('region', { name: 'Thông tin' }))
+  expect(info.getByText('Sức chứa')).toBeInTheDocument()
+  expect(info.getByText('4/2 · vượt 2')).toHaveAttribute('data-tone', 'danger')
+})

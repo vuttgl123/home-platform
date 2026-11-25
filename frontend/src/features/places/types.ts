@@ -37,6 +37,7 @@ export type PlaceDetail = Omit<
     | 'updatedAt'
     | 'updatedBy'
     | 'version'
+    | 'occupantCount'
   >,
   'ancestors' | 'address' | 'effectiveAddress'
 > & {

@@ -8,6 +8,8 @@ import { mockPlaceBackend } from '@/test/placeBackend'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
 
+import type { PlaceDetail } from './types'
+
 const types = [
   placeType({ id: '100', code: 'BUILDING', name: 'Toà nhà', sortOrder: 10 }),
   placeType({ id: '101', code: 'FLOOR', name: 'Tầng', sortOrder: 20 }),
@@ -18,12 +20,12 @@ const types = [
 const areaDef = fieldDef({ id: '500', typeId: '102', fieldKey: 'area_m2', label: 'Diện tích (m²)', dataType: 'NUMBER' })
 
 /** Một toà nhà, một tầng, một phòng; phòng có mục "Diện tích". */
-function setUp() {
+function setUp(p301: Partial<PlaceDetail> = {}) {
   mockShell({ placeTypes: types })
   const backend = mockPlaceBackend([
     { id: '1', name: 'Toà A', placeTypeId: '100' },
     { id: '13', parentId: '1', name: 'Tầng 3', placeTypeId: '101' },
-    { id: '301', parentId: '13', name: 'P301', placeTypeId: '102', version: 4, code: 'R-301', coverFileId: '900' },
+    { id: '301', parentId: '13', name: 'P301', placeTypeId: '102', version: 4, code: 'R-301', coverFileId: '900', ...p301 },
   ])
   server.use(
     http.get('/api/registry/field-defs', ({ request }) =>
@@ -175,6 +177,46 @@ test('editOfARecordWithoutCodeShowsNoCodeLine', async () => {
   await waitFor(() => expect(form.getByRole('button', { name: 'Lưu' })).toBeEnabled())
 
   expect(form.queryByText(/do hệ thống cấp/)).not.toBeInTheDocument()
+})
+
+test('capacityIsSentAsANumber', async () => {
+  const backend = setUp()
+  const { user, form } = await editP301()
+
+  expect(form.getByText('Bỏ trống nếu không giới hạn')).toBeInTheDocument()
+  await user.type(form.getByRole('spinbutton', { name: 'Sức chứa (người)' }), '4')
+  await user.click(form.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).toMatchObject({ capacity: 4 })
+})
+
+test('emptyCapacityMeansNone', async () => {
+  // PUT ghi đè cả bản ghi: không gửi `capacity` là bỏ sức chứa.
+  const backend = setUp({ capacity: 3 })
+  const { user, form } = await editP301()
+
+  const capacity = form.getByRole('spinbutton', { name: 'Sức chứa (người)' })
+  expect(capacity).toHaveValue(3)
+  await user.clear(capacity)
+  await user.click(form.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).not.toHaveProperty('capacity')
+})
+
+test('capacityMustBeAWholeNumberInRange', async () => {
+  const backend = setUp()
+  const { user, form } = await editP301()
+  const capacity = form.getByRole('spinbutton', { name: 'Sức chứa (người)' })
+
+  for (const typed of ['-1', '1.5', '10000']) {
+    await user.clear(capacity)
+    await user.type(capacity, typed)
+    await user.click(form.getByRole('button', { name: 'Lưu' }))
+    expect(await form.findByText('Nhập số nguyên từ 0 đến 9999')).toBeInTheDocument()
+  }
+  expect(backend.writes).toHaveLength(0)
 })
 
 test('numberAttributeIsSentAsNumber', async () => {

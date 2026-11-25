@@ -513,6 +513,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/occupancies/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["timeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/overview": {
         parameters: {
             query?: never;
@@ -817,6 +833,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/places/{id}/capacity-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["check"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/places/{id}/children": {
         parameters: {
             query?: never;
@@ -993,6 +1025,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/places/vacancies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["vacancies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/setup": {
         parameters: {
             query?: never;
@@ -1084,6 +1132,14 @@ export interface components {
             longitude?: number;
             geohash?: string;
         };
+        CapacityCheckResponse: {
+            /** Format: int32 */
+            capacity?: number;
+            /** Format: int32 */
+            peak?: number;
+            /** Format: date */
+            peakDate?: string;
+        };
         CodeBackfillResponse: {
             /** Format: int32 */
             placesAssigned?: number;
@@ -1165,6 +1221,10 @@ export interface components {
             items?: components["schemas"]["TrashResponse"][];
             nextCursor?: string;
         };
+        CursorPageVacancyResponse: {
+            items?: components["schemas"]["VacancyResponse"][];
+            nextCursor?: string;
+        };
         DayActivity: {
             /** Format: date */
             date?: string;
@@ -1180,6 +1240,20 @@ export interface components {
         EffectiveAddressResponse: {
             fromPlaceId?: string;
             address?: components["schemas"]["AddressResponse"];
+        };
+        EndingSoon: {
+            /** Format: int32 */
+            total?: number;
+            rows?: components["schemas"]["EndingSoonRow"][];
+        };
+        EndingSoonRow: {
+            occupancyId?: string;
+            personId?: string;
+            personName?: string;
+            placeId?: string;
+            placeName?: string;
+            /** Format: date */
+            endDate?: string;
         };
         FieldDefCreateRequest: {
             /** @enum {string} */
@@ -1462,6 +1536,10 @@ export interface components {
             /** Format: int32 */
             version?: number;
         };
+        OccupancyTimelineResponse: {
+            rows?: components["schemas"]["OccupancyResponse"][];
+            truncated?: boolean;
+        };
         OccupancyUpdateRequest: {
             /** Format: int32 */
             version: number;
@@ -1486,6 +1564,7 @@ export interface components {
             };
             missingCodes?: components["schemas"]["MissingCodes"];
             activityByDay?: components["schemas"]["DayActivity"][];
+            endingSoon?: components["schemas"]["EndingSoon"];
         };
         OwnershipCreateRequest: {
             placeId: string;
@@ -1694,6 +1773,8 @@ export interface components {
             description?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
+            /** Format: int32 */
+            capacity?: number;
             attributes?: {
                 [key: string]: unknown;
             };
@@ -1713,6 +1794,10 @@ export interface components {
             description?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
+            /** Format: int32 */
+            capacity?: number;
+            /** Format: int32 */
+            occupantCount?: number;
             attributes?: {
                 [key: string]: unknown;
             };
@@ -1789,6 +1874,8 @@ export interface components {
             description?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
+            /** Format: int32 */
+            capacity?: number;
             attributes?: {
                 [key: string]: unknown;
             };
@@ -1840,6 +1927,8 @@ export interface components {
             description?: string;
             /** @enum {string} */
             status: "ACTIVE" | "INACTIVE";
+            /** Format: int32 */
+            capacity?: number;
             attributes?: {
                 [key: string]: unknown;
             };
@@ -1902,6 +1991,22 @@ export interface components {
             deletedBy?: string;
             /** Format: int32 */
             version?: number;
+        };
+        VacancyResponse: {
+            placeId?: string;
+            code?: string;
+            name?: string;
+            placeTypeId?: string;
+            placeTypeName?: string;
+            /** @enum {string} */
+            status?: "ACTIVE" | "INACTIVE";
+            ancestors?: components["schemas"]["PlaceRef"][];
+            /** Format: int32 */
+            capacity?: number;
+            /** Format: int32 */
+            occupantCount?: number;
+            /** Format: int32 */
+            free?: number;
         };
     };
     responses: never;
@@ -3579,6 +3684,43 @@ export interface operations {
             };
         };
     };
+    timeline: {
+        parameters: {
+            query?: {
+                placeId?: string;
+                personId?: string;
+            };
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OccupancyTimelineResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     get_8: {
         parameters: {
             query?: never;
@@ -4800,6 +4942,46 @@ export interface operations {
             };
         };
     };
+    check: {
+        parameters: {
+            query: {
+                startDate: string;
+                endDate?: string;
+                excludeOccupancyId?: string;
+            };
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CapacityCheckResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     children: {
         parameters: {
             query?: {
@@ -5231,6 +5413,47 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CursorPagePlaceSearchResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    vacancies: {
+        parameters: {
+            query?: {
+                placeTypeId?: string;
+                rootId?: string;
+                /** @description nextCursor of the previous page; omit for the first page */
+                cursor?: string;
+                /** @description Maximum number of items in the page */
+                limit?: number;
+            };
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CursorPageVacancyResponse"];
                 };
             };
             /** @description Error, described as Problem Details */

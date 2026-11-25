@@ -1,4 +1,6 @@
 export { AncestorTrail } from './components/AncestorTrail'
+export { capacityText } from './capacity'
+export { CapacityLine } from './components/CapacityLine'
 export { PlaceFormDialog } from './components/PlaceFormDialog'
 export { PLACE_STATUS_LABEL, PLACE_STATUS_TONE } from './labels'
 export { PlaceName } from './components/PlaceName'

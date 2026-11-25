@@ -8,8 +8,18 @@ export type PlaceFormValues = {
   placeTypeId: string
   name: string
   status: PlaceStatus
+  /** Sức chứa như người dùng gõ; chuỗi rỗng là chưa đặt. */
+  capacity: string
   description: string
   attributes: AttributeFormValues
+}
+
+/** Sức chứa hợp lệ: bỏ trống, hoặc số nguyên từ 0 đến 9999 (spec Đợt 6, L1). */
+export const CAPACITY_ERROR = 'Nhập số nguyên từ 0 đến 9999'
+
+/** Sức chứa sẽ gửi: `undefined` khi bỏ trống (PUT không có trường này là bỏ sức chứa). */
+export function capacityValue(typed: string): number | undefined {
+  return typed.trim() === '' ? undefined : Number(typed)
 }
 
 /** Kiểm tra form trước khi gửi: các trường cố định, và mục tuỳ biến theo `defs` của loại đang chọn. */
@@ -19,6 +29,10 @@ export function placeFormSchema(defs: FieldDef[]) {
       placeTypeId: z.string().min(1, 'Chọn loại'),
       name: z.string().trim().min(1, 'Nhập tên').max(255, 'Tối đa 255 ký tự'),
       status: z.enum(['ACTIVE', 'INACTIVE']),
+      capacity: z
+        .string()
+        .trim()
+        .refine((typed) => typed === '' || (/^\d+$/.test(typed) && Number(typed) <= 9999), CAPACITY_ERROR),
       description: z.string().trim().max(10000, 'Tối đa 10000 ký tự'),
       attributes: z.record(z.string(), z.union([z.string(), z.boolean()])),
     })
@@ -35,6 +49,7 @@ export function placeFormValues(place: PlaceDetail, defs: FieldDef[]): PlaceForm
     placeTypeId: place.placeTypeId,
     name: place.name,
     status: place.status,
+    capacity: place.capacity != null ? String(place.capacity) : '',
     description: place.description ?? '',
     attributes: attributeDefaults(defs, place.attributes),
   }

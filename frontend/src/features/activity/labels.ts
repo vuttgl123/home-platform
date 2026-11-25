@@ -11,6 +11,7 @@ export const FIELD_LABEL: Record<string, string> = {
   fullName: 'Họ tên',
   code: 'Mã',
   description: 'Mô tả',
+  capacity: 'Sức chứa',
   status: 'Trạng thái',
   placeTypeId: 'Loại',
   address: 'Địa chỉ',

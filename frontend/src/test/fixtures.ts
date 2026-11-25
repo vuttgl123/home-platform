@@ -133,6 +133,8 @@ export function placeDetail(overrides: Partial<PlaceDetail> = {}): PlaceDetail {
     name: 'Toà A',
     description: null,
     status: 'ACTIVE',
+    capacity: null,
+    occupantCount: 0,
     attributes: null,
     coverFileId: null,
     createdAt: AT,
