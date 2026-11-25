@@ -1,5 +1,7 @@
 package com.home_platform.registry.item;
 
+import java.time.LocalDate;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,24 @@ public class ItemRepository extends WorkspaceRepository<Item> {
 			.query((rs, rowNum) -> names.put(rs.getLong("id"), rs.getString("name")))
 			.list();
 		return names;
+	}
+
+	/**
+	 * Ngày của lần bảo trì định kỳ ({@code SERVICE}) chưa xoá muộn nhất của từng món; món chưa có lần nào thì
+	 * không có trong kết quả. Đi theo index {@code (workspace_id, item_id, done_on)} của {@code reg_maintenance}.
+	 */
+	public Map<Long, LocalDate> lastServiceOn(long workspaceId, Collection<Long> itemIds) {
+		Map<Long, LocalDate> found = new HashMap<>();
+		if (itemIds.isEmpty()) {
+			return found;
+		}
+		jdbc().sql("SELECT item_id, MAX(done_on) AS done_on FROM reg_maintenance WHERE workspace_id = :workspaceId "
+				+ "AND item_id IN (:ids) AND kind = 'SERVICE' AND deleted_at IS NULL GROUP BY item_id")
+			.param("workspaceId", workspaceId)
+			.param("ids", itemIds)
+			.query((rs, rowNum) -> found.put(rs.getLong("item_id"), rs.getObject("done_on", LocalDate.class)))
+			.list();
+		return found;
 	}
 
 	/**

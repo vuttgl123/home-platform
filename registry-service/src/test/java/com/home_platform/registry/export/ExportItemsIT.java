@@ -94,7 +94,7 @@ class ExportItemsIT extends RegistryIT {
 		XlsxSheet sheet = sheets.get(0);
 		assertThat(sheet.name()).isEqualTo("Đồ đạc");
 		assertThat(sheet.headers()).containsExactly("Mã", "Tên", "Nhóm", "Ở đâu", "Số lượng", "Đơn vị", "Trạng thái",
-				"Ngày đặt", "Ngày gỡ", "Chủ", "Mô tả", "Hãng", "Công suất");
+				"Ngày đặt", "Ngày gỡ", "Hết bảo hành", "Bảo trì (tháng)", "Chủ", "Mô tả", "Hãng", "Công suất");
 		assertThat(sheet.column("Tên")).containsExactly("Ấm", "Bàn", "Tủ lạnh");
 		assertThat(sheet.column("Ở đâu")).containsExactly("Toà A", "Toà A / Tầng 3 / P301", "Toà A / Tầng 3 / P301");
 		assertThat(sheet.cell(2, "Mã").text()).isEqualTo(JsonPath.<String>read(fridge, "$.code")).isNotEmpty();

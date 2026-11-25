@@ -373,11 +373,11 @@ class ConcurrentWritesIT extends CommittedDataIT {
 	}
 
 	private static ItemRequest owned(long placeId, long ownerId, String name) {
-		return new ItemRequest(placeId, ownerId, null, name, null, null, null, null, null, null, null, null);
+		return new ItemRequest(placeId, ownerId, null, name, null, null, null, null, null, null, null, null, null, null);
 	}
 
 	private static ItemRequest item(long placeId, String name) {
-		return new ItemRequest(placeId, null, null, name, null, null, null, null, null, null, null, null);
+		return new ItemRequest(placeId, null, null, name, null, null, null, null, null, null, null, null, null, null);
 	}
 
 }

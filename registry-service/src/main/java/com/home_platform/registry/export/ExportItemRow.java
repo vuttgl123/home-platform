@@ -13,8 +13,9 @@ import com.home_platform.registry.item.ItemStatus;
  * @param ownerName tên người chủ, kể cả khi người đó đã xoá; {@code null} là món của địa điểm
  */
 public record ExportItemRow(long id, long placeId, String placePath, Long categoryId, String code, String name,
-		int quantity, String unit, ItemStatus status, LocalDate placedAt, LocalDate removedAt, String ownerName,
-		String description, Map<String, Object> attributes) {
+		int quantity, String unit, ItemStatus status, LocalDate placedAt, LocalDate removedAt,
+		LocalDate warrantyUntil, Integer serviceEveryMonths, String ownerName, String description,
+		Map<String, Object> attributes) {
 
 	/** Mốc để đọc các dòng đứng sau dòng này. */
 	ItemCursor cursor() {

@@ -12,7 +12,7 @@ final class ItemSheet {
 	static final String NAME = "Đồ đạc";
 
 	private static final List<String> HEADERS = List.of("Mã", "Tên", "Nhóm", "Ở đâu", "Số lượng", "Đơn vị",
-			"Trạng thái", "Ngày đặt", "Ngày gỡ", "Chủ", "Mô tả");
+			"Trạng thái", "Ngày đặt", "Ngày gỡ", "Hết bảo hành", "Bảo trì (tháng)", "Chủ", "Mô tả");
 
 	private final SheetWriter writer;
 
@@ -41,6 +41,8 @@ final class ItemSheet {
 		this.writer.text(ExportLabels.itemStatus(item.status()));
 		this.writer.date(item.placedAt());
 		this.writer.date(item.removedAt());
+		this.writer.date(item.warrantyUntil());
+		this.writer.number(item.serviceEveryMonths());
 		this.writer.text(item.ownerName());
 		this.writer.text(item.description());
 		this.attributes.write(this.writer, item.categoryId(), item.attributes());

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Map;
 
 import com.home_platform.registry.support.Text;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +13,8 @@ import jakarta.validation.constraints.Size;
 /** Toàn bộ phần sửa được của một món; chỗ đặt, trạng thái gỡ và mã có thao tác riêng. */
 public record ItemUpdateRequest(@NotNull Integer version, Long categoryId,
 		@NotBlank @Size(max = 255) String name, @Min(1) Integer quantity, @Size(max = 20) String unit,
-		@NotNull ItemStatus status, LocalDate placedAt, @Size(max = 10000) String description,
+		@NotNull ItemStatus status, LocalDate placedAt, LocalDate warrantyUntil,
+		@Min(1) @Max(120) Integer serviceEveryMonths, @Size(max = 10000) String description,
 		Map<String, Object> attributes, Long coverFileId, @Size(max = 255) String note) {
 
 	public ItemUpdateRequest {

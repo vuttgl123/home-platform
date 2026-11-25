@@ -104,7 +104,7 @@ class ExportWorkspaceIT extends RegistryIT {
 		assertThat(sheets.get(OWNERSHIPS).headers()).containsExactly("Địa điểm", "Mã địa điểm", "Người", "Tỷ lệ (%)",
 				"Từ ngày", "Đến ngày", "Số giấy tờ", "Ghi chú");
 		assertThat(sheets.get(ITEMS).headers()).containsExactly("Mã", "Tên", "Nhóm", "Ở đâu", "Số lượng", "Đơn vị",
-				"Trạng thái", "Ngày đặt", "Ngày gỡ", "Chủ", "Mô tả");
+				"Trạng thái", "Ngày đặt", "Ngày gỡ", "Hết bảo hành", "Bảo trì (tháng)", "Chủ", "Mô tả");
 		assertThat(sheets).allSatisfy(sheet -> assertThat(sheet.dataRowCount()).isZero());
 	}
 
@@ -291,6 +291,23 @@ class ExportWorkspaceIT extends RegistryIT {
 		assertThat(sheet.column("Tên")).containsExactly("Bàn", "Ghế");
 		assertThat(sheet.column("Trạng thái")).containsExactly("Đang dùng", "Đã gỡ");
 		assertThat(sheet.cell(1, "Ngày gỡ").isDate()).isTrue();
+	}
+
+	@Test
+	void itemsSheetHasWarrantyAndServiceInterval() throws Exception {
+		long a = place(this.building, null, "Toà A").id();
+		this.mvc.perform(asA(post("/items")).contentType(MediaType.APPLICATION_JSON).content("""
+				{"placeId": "%d", "name": "Máy lạnh", "warrantyUntil": "2027-03-12", "serviceEveryMonths": 6}"""
+			.formatted(a))).andExpect(status().isCreated());
+		item(a, "Bàn");
+
+		XlsxSheet sheet = workspace().get(ITEMS);
+
+		assertThat(sheet.column("Tên")).containsExactly("Bàn", "Máy lạnh");
+		assertThat(sheet.cell(0, "Hết bảo hành").isBlank()).isTrue();
+		assertThat(sheet.cell(1, "Hết bảo hành").date()).isEqualTo(LocalDate.of(2027, 3, 12));
+		assertThat(sheet.cell(1, "Bảo trì (tháng)").isNumber()).isTrue();
+		assertThat(sheet.cell(1, "Bảo trì (tháng)").number()).isEqualByComparingTo("6");
 	}
 
 	@Test

@@ -17,8 +17,8 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 	@Test
 	void registryTablesExist() {
 		assertThat(tables("reg_")).containsExactly("reg_code_counter", "reg_code_rule", "reg_entity_version", "reg_field_def", "reg_item",
-				"reg_item_category", "reg_occupancy", "reg_ownership", "reg_person", "reg_place", "reg_place_address",
-				"reg_place_type");
+				"reg_item_category", "reg_maintenance", "reg_occupancy", "reg_ownership", "reg_person", "reg_place",
+				"reg_place_address", "reg_place_type", "reg_todo_seen");
 	}
 
 	@Test
@@ -65,7 +65,9 @@ class RegistrySchemaIT extends AbstractSchemaIT {
 				entry("reg_place.idx_reg_place_deleted", List.of("workspace_id", "deleted_at")),
 				entry("reg_person.idx_reg_person_deleted", List.of("workspace_id", "deleted_at")),
 				entry("reg_item.idx_reg_item_owner", List.of("workspace_id", "owner_person_id", "removed_at", "name")),
-				entry("reg_entity_version.idx_reg_version_changed_at", List.of("workspace_id", "changed_at")));
+				entry("reg_entity_version.idx_reg_version_changed_at", List.of("workspace_id", "changed_at")),
+				entry("reg_item.idx_reg_item_warranty", List.of("workspace_id", "warranty_until")),
+				entry("reg_maintenance.idx_reg_maintenance_item", List.of("workspace_id", "item_id", "done_on")));
 		expected.forEach((key, columns) -> {
 			String[] parts = key.split("\\.");
 			assertThat(index(parts[0], parts[1])).as(key).isEqualTo(columns);

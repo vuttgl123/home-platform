@@ -85,7 +85,7 @@ class TrashIT extends RegistryIT {
 	@Test
 	void deletedItemShowsItsPlace() throws Exception {
 		long room = place(null, "P101");
-		long tv = this.items.create(CTX_A, new ItemRequest(room, null, null, "Tivi", null, null, null, null, null, null, null, null)).id();
+		long tv = this.items.create(CTX_A, new ItemRequest(room, null, null, "Tivi", null, null, null, null, null, null, null, null, null, null)).id();
 		this.items.delete(CTX_A, tv, 1, null);
 
 		trash("ITEM").andExpect(jsonPath("$.items[0].name").value("Tivi"))

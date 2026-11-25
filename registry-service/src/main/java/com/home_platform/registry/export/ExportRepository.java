@@ -168,7 +168,8 @@ public class ExportRepository {
 	public List<ExportItemRow> items(long workspaceId, ItemFilter filter, ItemCursor after, int limit) {
 		Map<String, Object> params = params(workspaceId, limit);
 		StringBuilder sql = new StringBuilder("SELECT i.id, i.place_id, p.path, i.category_id, i.code, i.name, "
-				+ "i.quantity, i.unit, i.status, i.placed_at, i.removed_at, i.description, i.attributes, "
+				+ "i.quantity, i.unit, i.status, i.placed_at, i.removed_at, i.warranty_until, i.service_every_months, "
+				+ "i.description, i.attributes, "
 				+ "o.full_name AS owner_name FROM reg_item i "
 				+ "JOIN reg_place p ON p.workspace_id = i.workspace_id AND p.id = i.place_id "
 				+ "LEFT JOIN reg_person o ON o.workspace_id = i.workspace_id AND o.id = i.owner_person_id "
@@ -225,6 +226,7 @@ public class ExportRepository {
 				nullableLong(rs, "category_id"), rs.getString("code"), rs.getString("name"), rs.getInt("quantity"),
 				rs.getString("unit"), ItemStatus.valueOf(rs.getString("status")),
 				rs.getObject("placed_at", LocalDate.class), rs.getObject("removed_at", LocalDate.class),
+				rs.getObject("warranty_until", LocalDate.class), rs.getObject("service_every_months", Integer.class),
 				rs.getString("owner_name"), rs.getString("description"), attributes(rs));
 	}
 

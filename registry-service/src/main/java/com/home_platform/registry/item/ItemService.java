@@ -94,7 +94,8 @@ public class ItemService {
 		Map<String, Object> attributes = validAttributes(ctx, request.categoryId(), request.attributes());
 		String code = issueCode(ctx, request.categoryId());
 		Item item = new Item(0, 0, request.placeId(), request.categoryId(), code, request.name(), request.quantity(),
-				request.unit(), request.status(), request.placedAt(), null, null, request.ownerPersonId(),
+				request.unit(), request.status(), request.placedAt(), request.warrantyUntil(),
+				request.serviceEveryMonths(), null, null, request.ownerPersonId(),
 				request.description(), attributes, request.coverFileId(), null, 0, null, 0, 0, null);
 		Item stored = insertWithCode(ctx, item);
 		record(ctx, stored, ChangeAction.CREATE, request.note());
@@ -181,6 +182,8 @@ public class ItemService {
 			.withUnit(request.unit())
 			.withStatus(request.status())
 			.withPlacedAt(request.placedAt())
+			.withWarrantyUntil(request.warrantyUntil())
+			.withServiceEveryMonths(request.serviceEveryMonths())
 			.withDescription(request.description())
 			.withAttributes(validAttributes(ctx, request.categoryId(), request.attributes()))
 			.withCoverFileId(request.coverFileId()));
@@ -338,8 +341,8 @@ public class ItemService {
 		String note = EntityHistory.restoredNote(versionNo, request.note());
 		Item stored = applyContent(ctx, current,
 				new ItemUpdateRequest(request.version(), old.categoryId(), old.name(), old.quantity(),
-						old.unit(), status, old.placedAt(), old.description(), old.attributes(), old.coverFileId(),
-						note));
+						old.unit(), status, old.placedAt(), old.warrantyUntil(), old.serviceEveryMonths(),
+						old.description(), old.attributes(), old.coverFileId(), note));
 		record(ctx, stored, ChangeAction.UPDATE, note);
 		return stored;
 	}
@@ -429,10 +432,15 @@ public class ItemService {
 		}
 		List<Long> ownerIds = items.stream().map(Item::ownerPersonId).filter(Objects::nonNull).distinct().toList();
 		Map<Long, String> ownerNames = ownerIds.isEmpty() ? Map.of() : this.people.names(workspaceId, ownerIds);
+		List<Long> scheduled = items.stream().filter(item -> item.serviceEveryMonths() != null).map(Item::id).toList();
+		Map<Long, LocalDate> lastService = scheduled.isEmpty() ? Map.of()
+				: this.repository.lastServiceOn(workspaceId, scheduled);
 		return items.stream()
 			.map(item -> new ItemView(item, placeNames.get(item.placeId()),
 					(item.categoryId() != null) ? categoryNames.get(item.categoryId()) : null,
-					(item.ownerPersonId() != null) ? ownerNames.get(item.ownerPersonId()) : null))
+					(item.ownerPersonId() != null) ? ownerNames.get(item.ownerPersonId()) : null,
+					ServiceSchedule.nextServiceOn(lastService.get(item.id()), item.placedAt(),
+							LocalDate.ofInstant(item.createdAt(), this.businessDate.zone()), item.serviceEveryMonths())))
 			.toList();
 	}
 

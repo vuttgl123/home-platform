@@ -10,7 +10,7 @@ import tools.jackson.databind.annotation.JsonSerialize;
 public record ItemDetailResponse(long id, long placeId, String placeName, Long categoryId, String categoryName,
 		Long ownerPersonId, String ownerName,
 		String code, String name, int quantity, String unit, ItemStatus status, LocalDate placedAt,
-		LocalDate removedAt, Long replacedByItemId, String description,
+		LocalDate warrantyUntil, Integer serviceEveryMonths, LocalDate nextServiceOn, LocalDate removedAt, Long replacedByItemId, String description,
 		@JsonSerialize(contentUsing = PlainNumbers.class) Map<String, Object> attributes, Long coverFileId,
 		Instant createdAt, long createdBy, Instant updatedAt, long updatedBy, int version, Instant deletedAt) {
 }

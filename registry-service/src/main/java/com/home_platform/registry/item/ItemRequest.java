@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Map;
 
 import com.home_platform.registry.support.Text;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -18,15 +19,16 @@ import jakarta.validation.constraints.Size;
  */
 public record ItemRequest(Long placeId, Long ownerPersonId, Long categoryId,
 		@NotBlank @Size(max = 255) String name, @Min(1) Integer quantity, @Size(max = 20) String unit,
-		ItemStatus status, LocalDate placedAt, @Size(max = 10000) String description, Map<String, Object> attributes,
-		Long coverFileId, @Size(max = 255) String note) {
+		ItemStatus status, LocalDate placedAt, LocalDate warrantyUntil,
+		@Min(1) @Max(120) Integer serviceEveryMonths, @Size(max = 10000) String description,
+		Map<String, Object> attributes, Long coverFileId, @Size(max = 255) String note) {
 
 	/** Món thay cho {@code old}: chỗ đặt và chủ trống thì lấy của món cũ. */
 	ItemRequest inheriting(Item old) {
 		return new ItemRequest((this.placeId != null) ? this.placeId : old.placeId(),
 				(this.ownerPersonId != null) ? this.ownerPersonId : old.ownerPersonId(), this.categoryId, this.name,
-				this.quantity, this.unit, this.status, this.placedAt, this.description, this.attributes, this.coverFileId,
-				this.note);
+				this.quantity, this.unit, this.status, this.placedAt, this.warrantyUntil, this.serviceEveryMonths,
+				this.description, this.attributes, this.coverFileId, this.note);
 	}
 
 	public ItemRequest {
