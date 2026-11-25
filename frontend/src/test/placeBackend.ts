@@ -105,6 +105,10 @@ export function mockPlaceBackend(initial: Partial<PlaceDetail>[]) {
         .map(({ p }) => summary(p))
       return HttpResponse.json(page(descendants))
     }),
+    // Sức chứa như đã lưu; không có ai ở (đỉnh 0). Test cần số khác thì tự đăng ký handler.
+    http.get('/api/registry/places/:id/capacity-check', ({ params }) =>
+      HttpResponse.json({ capacity: places.get(String(params.id))?.capacity ?? undefined, peak: 0 }),
+    ),
     http.get('/api/registry/places/:id/children', ({ params }) =>
       HttpResponse.json(page(childrenOf(params.id as string))),
     ),

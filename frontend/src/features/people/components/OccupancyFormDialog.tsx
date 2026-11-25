@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import { useId, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 
 import type { ApiError } from '@/api'
 import { FormError } from '@/components/common/FormError'
@@ -16,8 +16,9 @@ import { PlacePicker, type PlaceChoice } from '@/features/places'
 import { todayInBusinessZone } from '@/lib/dates'
 
 import { RELATION_LABEL } from '../labels'
-import { refreshOccupancies, useCreateOccupancy, useUpdateOccupancy } from '../queries'
+import { refreshOccupancies, useCapacityCheck, useCreateOccupancy, useUpdateOccupancy } from '../queries'
 import type { Occupancy, Relation } from '../types'
+import { CapacityWarning } from './CapacityWarning'
 import { occupancyFormSchema, STALE_ROW, type OccupancyFormValues } from './occupancyForm'
 import { PersonChoiceField } from './PersonChoiceField'
 import { usePersonChoice } from './personChoice'
@@ -69,6 +70,16 @@ function OccupancyForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void
   })
   const create = useCreateOccupancy(ws)
   const update = useUpdateOccupancy(ws)
+  // Địa điểm của dòng: đã cho sẵn, vừa chọn, hoặc của dòng đang sửa.
+  const target = editing
+    ? { id: editing.placeId, name: editing.placeName }
+    : (fixedPlace ?? (place?.kind === 'place' ? { id: place.place.id, name: place.place.name } : null))
+  const [startDate, endDate] = useWatch({ control: form.control, name: ['startDate', 'endDate'] })
+  const capacity = useCapacityCheck(ws, target?.id ?? null, {
+    startDate,
+    endDate: endDate || undefined,
+    excludeOccupancyId: editing?.id,
+  })
   const relationId = useId()
   const noteId = useId()
   const pending = person.isCreating || create.isPending || update.isPending
@@ -166,6 +177,7 @@ function OccupancyForm({ ws, onDone, ...mode }: { ws: string; onDone: () => void
         <Textarea id={noteId} rows={2} {...form.register('note')} />
         {errors.note && <FieldError>{errors.note.message}</FieldError>}
       </Field>
+      {target && <CapacityWarning placeName={target.name} check={capacity.data} />}
       <FormError messages={formErrors} />
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>

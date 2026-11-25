@@ -1,6 +1,8 @@
 import { registry, unwrap, workspaceHeaders, type CursorPage } from '@/api'
 
 import type {
+  CapacityCheck,
+  CapacityRange,
   Occupancy,
   OccupancyBody,
   OccupancyStatus,
@@ -59,6 +61,14 @@ export async function deletePerson(ws: string, id: string, version: number): Pro
 }
 
 // Cư trú
+
+/** Sức chứa của một địa điểm và số người nhiều nhất đã có cùng một ngày trong khoảng ngày. */
+export async function checkCapacity(ws: string, placeId: string, range: CapacityRange): Promise<CapacityCheck> {
+  const call = registry.GET('/places/{id}/capacity-check', {
+    params: { header: workspaceHeaders(ws), path: { id: placeId }, query: range },
+  })
+  return (await unwrap(call)) as CapacityCheck
+}
 
 /** Cư trú tại đúng một địa điểm, theo trạng thái. */
 export async function listOccupanciesAtPlace(

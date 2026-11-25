@@ -2,9 +2,11 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { useCallback } from 'react'
 
 import { useCursorList, type ApiError, type CursorList } from '@/api'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { isId } from '@/lib/ids'
 
 import {
+  checkCapacity,
   createOccupancy,
   createPerson,
   deleteOccupancy,
@@ -22,6 +24,7 @@ import {
   updatePerson,
 } from './api'
 import type {
+  CapacityRange,
   Occupancy,
   OccupancyBody,
   OccupancyStatus,
@@ -221,5 +224,20 @@ export function usePersonQuickFind(ws: string, term: string) {
     queryKey: [...personKeys.lists(ws), 'quick', term],
     queryFn: () => quickFindPeople(ws, term),
     enabled: term !== '',
+  })
+}
+
+/**
+ * Kiểm tra sức chứa cho khoảng ngày đang nhập, 300 ms sau lần đổi cuối. Chỉ chạy khi đã có địa
+ * điểm và ngày bắt đầu, và ngày kết thúc (nếu có) không đứng trước ngày bắt đầu.
+ */
+export function useCapacityCheck(ws: string, placeId: string | null, range: CapacityRange) {
+  const debounced = useDebouncedValue(range, 300)
+  const { startDate, endDate, excludeOccupancyId } = debounced
+  const valid = placeId != null && startDate !== '' && (endDate == null || endDate >= startDate)
+  return useQuery({
+    queryKey: ['places', ws, 'capacity-check', placeId, startDate, endDate ?? '', excludeOccupancyId ?? ''],
+    queryFn: () => checkCapacity(ws, placeId!, debounced),
+    enabled: valid,
   })
 }
