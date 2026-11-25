@@ -1,3 +1,4 @@
+export { OccupancyFormDialog } from './components/OccupancyFormDialog'
 export { PersonFormDialog } from './components/PersonFormDialog'
 export { PersonChoiceField } from './components/PersonChoiceField'
 export { PersonHoverCard } from './components/PersonHoverCard'

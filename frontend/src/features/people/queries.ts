@@ -168,6 +168,8 @@ export function useOccupanciesOfPerson(ws: string, personId: string): CursorList
 export function refreshOccupancies(queryClient: QueryClient, ws: string, personId: string): void {
   void queryClient.invalidateQueries({ queryKey: occupancyKeys.all(ws) })
   void queryClient.invalidateQueries({ queryKey: personKeys.detail(ws, personId) })
+  // Trang Chỗ trống (features/vacancies) đếm người đang ở; khoá viết thẳng để không import vòng.
+  void queryClient.invalidateQueries({ queryKey: ['vacancies', ws] })
 }
 
 export function useCreateOccupancy(ws: string) {

@@ -110,6 +110,8 @@ export function refreshAfterWrite(
   scope: 'self' | 'descendants' | 'tree',
 ): void {
   queryClient.setQueryData(placeKeys.detail(ws, place.id), place)
+  // Trang Chỗ trống (features/vacancies) phụ thuộc sức chứa và cây; khoá viết thẳng để không import vòng.
+  void queryClient.invalidateQueries({ queryKey: ['vacancies', ws] })
   const isOwnDetail = (key: readonly unknown[]) => key[2] === 'detail' && key[3] === place.id
   if (scope === 'tree') {
     void queryClient.invalidateQueries({ queryKey: placeKeys.all(ws), predicate: (query) => !isOwnDetail(query.queryKey) })
