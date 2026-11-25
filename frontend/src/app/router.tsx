@@ -2,7 +2,8 @@ import type { RouteObject } from 'react-router'
 
 import { ActivityPage, TrashPage } from '@/features/activity'
 import { CatalogPage } from '@/features/catalog'
-import { ItemPage, ItemsPage, PersonItemsTab, PlaceItemsTab } from '@/features/items'
+import { ItemPage, ItemsPage, PersonItemsTab, PlaceItemsTab, type ItemTabSlots } from '@/features/items'
+import { MaintenanceTab } from '@/features/maintenance'
 import { PeoplePage, PersonPage, PlaceOccupantsTab, type PersonTabSlots } from '@/features/people'
 import { PersonOwnershipsTab, PlaceOwnersTab } from '@/features/ownership'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
@@ -33,6 +34,11 @@ const personTabs: PersonTabSlots = {
   photos: (ws, person) => <PersonPhotosTab ws={ws} person={person} />,
 }
 
+/** Các tab của trang món đồ thuộc nghiệp vụ khác. */
+const itemTabs: ItemTabSlots = {
+  maintenance: (ws, item) => <MaintenanceTab ws={ws} item={item} />,
+}
+
 /**
  * Cây route của ứng dụng (spec mục 6). Không gian đang chọn nằm trên URL, nên chép đường dẫn
  * gửi người khác vẫn mở đúng chỗ.
@@ -57,7 +63,7 @@ export const routes: RouteObject[] = [
               { path: 'people/:personId', element: <PersonPage tabs={personTabs} /> },
               { path: 'vacancies', element: <VacanciesPage /> },
               { path: 'items', element: <ItemsPage /> },
-              { path: 'items/:itemId', element: <ItemPage /> },
+              { path: 'items/:itemId', element: <ItemPage tabs={itemTabs} /> },
               { path: 'catalog', element: <CatalogPage /> },
               { path: 'activity', element: <ActivityPage /> },
               { path: 'trash', element: <TrashPage /> },

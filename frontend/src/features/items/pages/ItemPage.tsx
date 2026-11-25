@@ -1,5 +1,5 @@
 import { ArrowRightLeftIcon, FolderInputIcon, HashIcon, MoreHorizontalIcon, UserRoundIcon, PackageMinusIcon, PencilIcon, Trash2Icon, Undo2Icon } from 'lucide-react'
-import { Fragment, useState } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
@@ -45,12 +45,18 @@ import type { ItemDetail } from '../types'
 
 type Dialog = 'edit' | 'move' | 'remove' | 'replace' | 'owner' | 'reissueCode' | 'putBack' | 'delete'
 
+/** Các tab của trang món đồ thuộc nghiệp vụ khác; trang món đồ không nhập các feature đó. */
+export type ItemTabSlots = { maintenance?: (ws: string, item: ItemDetail) => ReactNode }
+
 /** Trang `/w/:workspaceId/items/:itemId`: một món đồ và vòng đời của nó. Món đã gỡ chỉ đọc, trừ đưa lại và xoá. */
-export function ItemPage() {
+export function ItemPage({ tabs = {} }: { tabs?: ItemTabSlots }) {
   const { workspaceId = '', itemId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedTab = searchParams.get('tab')
-  const tab = requestedTab === 'history' || requestedTab === 'photos' ? requestedTab : 'info'
+  const tab =
+    requestedTab === 'history' || requestedTab === 'photos' || (requestedTab === 'maintenance' && tabs.maintenance)
+      ? requestedTab
+      : 'info'
   const item = useItem(workspaceId, itemId)
   const [dialog, setDialog] = useState<Dialog | null>(null)
   // Món đã bị thay: đọc món thay nó để biết có đưa lại được không.
@@ -223,6 +229,11 @@ export function ItemPage() {
           <TabsTrigger value="photos" className="flex-none">
             Ảnh
           </TabsTrigger>
+          {tabs.maintenance && (
+            <TabsTrigger value="maintenance" className="flex-none">
+              Bảo trì
+            </TabsTrigger>
+          )}
           <TabsTrigger value="history" className="flex-none">
             Lịch sử
           </TabsTrigger>
@@ -233,6 +244,11 @@ export function ItemPage() {
         <TabsContent value="photos" className="pt-4">
           <ItemPhotosTab ws={workspaceId} item={detail} />
         </TabsContent>
+        {tabs.maintenance && (
+          <TabsContent value="maintenance" className="pt-4">
+            {tabs.maintenance(workspaceId, detail)}
+          </TabsContent>
+        )}
         <TabsContent value="history" className="pt-4">
           <ItemHistoryTab ws={workspaceId} item={detail} />
         </TabsContent>
