@@ -1,24 +1,49 @@
 import { useState } from 'react'
 
 import { ErrorState } from '@/components/common/ErrorState'
+import { ToneBadge } from '@/components/common/ToneBadge'
 import { Skeleton } from '@/components/ui/skeleton'
 
-import { usePhotos, useUploadPhoto } from '../queries'
+import { usePhotos, useReorderPhotos, useUploadPhoto } from '../queries'
 import type { PhotoOwner } from '../types'
 import { uploadErrorMessage } from '../uploadErrors'
 import { checkPhotoFile } from '../urls'
+import { PhotoActions, type PhotoHighlight } from './PhotoActions'
 import { PhotoGrid } from './PhotoGrid'
+import { PhotoViewer } from './PhotoViewer'
 import { UploadButton } from './UploadButton'
 import { UploadQueue, type QueuedUpload } from './UploadQueue'
 
 /**
  * Tab "Ảnh" của một địa điểm, người hay món đồ: lưới ảnh thu nhỏ và nút tải nhiều ảnh. Các file được
- * kiểm tra kiểu và cỡ trước, rồi gửi lần lượt, mỗi lần một ảnh; ảnh lỗi không chặn ảnh khác.
+ * kiểm tra kiểu và cỡ trước, rồi gửi lần lượt, mỗi lần một ảnh; ảnh lỗi không chặn ảnh khác. Bấm
+ * một ảnh để xem lớn; menu của ảnh sửa chú thích, đổi chỗ, gỡ, và (khi có `highlight`) đặt làm ảnh
+ * bìa hay ảnh đại diện. Gỡ đúng ảnh đang là bìa thì bỏ luôn ảnh bìa.
  */
-export function PhotosTab({ ws, owner }: { ws: string; owner: PhotoOwner }) {
+export function PhotosTab({ ws, owner, highlight }: { ws: string; owner: PhotoOwner; highlight?: PhotoHighlight }) {
   const photos = usePhotos(ws, owner)
   const upload = useUploadPhoto(ws, owner)
+  const reorder = useReorderPhotos(ws, owner)
   const [queue, setQueue] = useState<QueuedUpload[]>([])
+  const [viewing, setViewing] = useState<number | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const list = photos.data ?? []
+
+  function move(index: number, delta: -1 | 1) {
+    const ids = list.map((photo) => photo.id)
+    ;[ids[index], ids[index + delta]] = [ids[index + delta], ids[index]]
+    setNotice(null)
+    reorder.mutate(ids, {
+      onError: (error) => setNotice(error.status === 409 ? 'Danh sách ảnh vừa đổi, đã tải lại' : error.detail),
+    })
+  }
+
+  async function removed(fileId: string, id: string) {
+    // Gỡ ảnh đang là bìa thì bỏ ảnh bìa, trừ khi một ảnh khác còn lại cùng nội dung (cùng file).
+    if (highlight?.fileId === fileId && !list.some((other) => other.id !== id && other.fileId === fileId)) {
+      await highlight.onSet(null)
+    }
+  }
   const busy = queue.some((item) => item.state === 'waiting' || item.state === 'uploading')
 
   async function send(files: File[]) {
@@ -48,6 +73,11 @@ export function PhotosTab({ ws, owner }: { ws: string; owner: PhotoOwner }) {
         <UploadButton onFiles={(files) => void send(files)} disabled={busy} />
       </div>
       <UploadQueue items={queue} />
+      {notice && (
+        <p role="status" className="text-sm text-warning-foreground">
+          {notice}
+        </p>
+      )}
       {photos.isLoading ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="Đang tải">
           <Skeleton className="aspect-square" />
@@ -55,11 +85,31 @@ export function PhotosTab({ ws, owner }: { ws: string; owner: PhotoOwner }) {
         </div>
       ) : photos.error ? (
         <ErrorState error={photos.error} onRetry={() => void photos.refetch()} />
-      ) : (photos.data ?? []).length === 0 ? (
+      ) : list.length === 0 ? (
         <p className="py-2 text-sm text-muted-foreground">Chưa có ảnh nào.</p>
       ) : (
-        <PhotoGrid ws={ws} photos={photos.data ?? []} />
+        <PhotoGrid
+          ws={ws}
+          photos={list}
+          onOpen={setViewing}
+          badge={(photo) =>
+            highlight && highlight.fileId === photo.fileId ? <ToneBadge tone="primary">{highlight.label}</ToneBadge> : null
+          }
+          actions={(photo, index) => (
+            <PhotoActions
+              ws={ws}
+              owner={owner}
+              photo={photo}
+              index={index}
+              count={list.length}
+              highlight={highlight}
+              onMove={(delta) => move(index, delta)}
+              onRemoved={() => removed(photo.fileId, photo.id)}
+            />
+          )}
+        />
       )}
+      <PhotoViewer ws={ws} photos={list} index={viewing} onIndexChange={setViewing} />
     </div>
   )
 }
