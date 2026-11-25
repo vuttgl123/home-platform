@@ -74,6 +74,36 @@ public class OccupancyService {
 				this.repository.currentOfPerson(workspaceId, personId, this.businessDate.today()));
 	}
 
+	/** Các lần ở mới nhất cho dòng thời gian; {@code truncated} là còn lần ở cũ hơn chưa trả về. */
+	public record Timeline(List<OccupancyView> rows, boolean truncated) {
+	}
+
+	/** Số lần ở nhiều nhất một dòng thời gian trả về. */
+	static final int TIMELINE_LIMIT = 200;
+
+	/** @throws com.home_platform.common.web.NotFoundException nếu địa điểm không có hoặc đã xoá */
+	public Timeline timelineAtPlace(long workspaceId, long placeId) {
+		this.places.get(workspaceId, placeId);
+		return timelineAtPlace(workspaceId, placeId, TIMELINE_LIMIT);
+	}
+
+	Timeline timelineAtPlace(long workspaceId, long placeId, int limit) {
+		return timeline(workspaceId, this.repository.latestAtPlace(workspaceId, placeId, limit + 1), limit);
+	}
+
+	/** @throws com.home_platform.common.web.NotFoundException nếu người không có hoặc đã xoá */
+	public Timeline timelineOfPerson(long workspaceId, long personId) {
+		this.people.get(workspaceId, personId);
+		return timeline(workspaceId, this.repository.latestOfPerson(workspaceId, personId, TIMELINE_LIMIT + 1),
+				TIMELINE_LIMIT);
+	}
+
+	/** {@code rows} lấy dư một dòng: có dòng thứ {@code limit + 1} là còn lần ở cũ hơn. */
+	private Timeline timeline(long workspaceId, List<Occupancy> rows, int limit) {
+		boolean truncated = rows.size() > limit;
+		return new Timeline(views(workspaceId, truncated ? rows.subList(0, limit) : rows), truncated);
+	}
+
 	private CursorPage<OccupancyView> withViews(long workspaceId, CursorPage<Occupancy> page) {
 		return new CursorPage<>(views(workspaceId, page.items()), page.nextCursor());
 	}

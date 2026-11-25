@@ -49,6 +49,20 @@ class OccupancyController {
 		return found.map(this.mapper::toResponse);
 	}
 
+	/** Đúng một trong hai: mọi lần ở tại một địa điểm, hoặc của một người, cho dòng thời gian. */
+	@GetMapping("/timeline")
+	OccupancyTimelineResponse timeline(WorkspaceContext ctx, @RequestParam(required = false) Long placeId,
+			@RequestParam(required = false) Long personId) {
+		if ((placeId == null) == (personId == null)) {
+			throw new BadRequestException("Give exactly one of placeId or personId");
+		}
+		OccupancyService.Timeline timeline = (placeId != null)
+				? this.service.timelineAtPlace(ctx.workspaceId(), placeId)
+				: this.service.timelineOfPerson(ctx.workspaceId(), personId);
+		return new OccupancyTimelineResponse(timeline.rows().stream().map(this.mapper::toResponse).toList(),
+				timeline.truncated());
+	}
+
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	OccupancyResponse create(WorkspaceContext ctx, @Valid @RequestBody OccupancyCreateRequest request) {

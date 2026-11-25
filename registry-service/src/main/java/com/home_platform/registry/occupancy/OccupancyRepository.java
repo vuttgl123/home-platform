@@ -60,6 +60,36 @@ public class OccupancyRepository extends WorkspaceRepository<Occupancy> {
 			.fetch(workspaceId, page);
 	}
 
+	/**
+	 * Tối đa {@code limit} lần ở chưa xoá của người chưa xoá tại một địa điểm, mọi trạng thái, ngày bắt
+	 * đầu mới nhất trước. Index (workspace_id, place_id, end_date, start_date).
+	 */
+	public List<Occupancy> latestAtPlace(long workspaceId, long placeId, int limit) {
+		return latest("place_id = :ownerId AND EXISTS (SELECT 1 FROM reg_person pe WHERE pe.workspace_id = "
+				+ "reg_occupancy.workspace_id AND pe.id = reg_occupancy.person_id AND pe.deleted_at IS NULL)",
+				workspaceId, placeId, limit);
+	}
+
+	/**
+	 * Tối đa {@code limit} lần ở chưa xoá của một người tại địa điểm chưa xoá, mọi trạng thái, ngày bắt
+	 * đầu mới nhất trước. Index (workspace_id, person_id, start_date).
+	 */
+	public List<Occupancy> latestOfPerson(long workspaceId, long personId, int limit) {
+		return latest("person_id = :ownerId AND EXISTS (SELECT 1 FROM reg_place p WHERE p.workspace_id = "
+				+ "reg_occupancy.workspace_id AND p.id = reg_occupancy.place_id AND p.deleted_at IS NULL)",
+				workspaceId, personId, limit);
+	}
+
+	private List<Occupancy> latest(String condition, long workspaceId, long ownerId, int limit) {
+		return jdbc().sql("SELECT " + columns() + " FROM reg_occupancy WHERE workspace_id = :workspaceId "
+				+ "AND deleted_at IS NULL AND " + condition + " ORDER BY start_date DESC, id DESC LIMIT :limit")
+			.param("workspaceId", workspaceId)
+			.param("ownerId", ownerId)
+			.param("limit", limit)
+			.query(rowMapper())
+			.list();
+	}
+
 	/** Những nơi một người đang ở, theo ngày bắt đầu. */
 	public List<Occupancy> currentOfPerson(long workspaceId, long personId, LocalDate today) {
 		return jdbc().sql("SELECT " + columns() + " FROM reg_occupancy WHERE workspace_id = :workspaceId "
