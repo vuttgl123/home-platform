@@ -13,6 +13,11 @@ spring:
 server:
   port: 8083
 
+media:
+  storage:
+    # Thư mục chứa ảnh; tương đối thì tính từ thư mục chạy service.
+    root: data/media
+
 ---
 spring:
   config:

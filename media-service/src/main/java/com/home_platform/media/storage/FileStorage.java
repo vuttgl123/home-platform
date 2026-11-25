@@ -6,9 +6,8 @@ import java.io.InputStream;
  * Kho lưu nội dung file. Database chỉ lưu thông tin về file; nội dung nằm ở đây. Code nghiệp vụ
  * chỉ biết interface này nên đổi kho (thư mục trên đĩa, MinIO, S3) không phải sửa nghiệp vụ.
  *
- * <p>TODO(media): chưa có bản cài đặt nào và chưa có bean nào được đăng ký. Chờ chọn kho
- * (xem {@code docs/superpowers/todo/media.md}). Khi có, thêm một lớp cài đặt cùng thuộc tính
- * cấu hình (ví dụ {@code media.storage.type}) và một test hợp đồng chạy chung cho mọi bản cài đặt.
+ * <p>Bản cài đặt hôm nay là {@link LocalFileStorage} (thư mục {@code media.storage.root}). Mọi bản
+ * cài đặt phải qua test hợp đồng {@code FileStorageContract}.
  */
 public interface FileStorage {
 
@@ -18,7 +17,10 @@ public interface FileStorage {
 	 */
 	StoredObject put(String key, InputStream content, long sizeBytes, String contentType);
 
-	/** Mở nội dung đã lưu; người gọi đóng luồng. */
+	/**
+	 * Mở nội dung đã lưu; người gọi đóng luồng.
+	 * @throws StoredObjectNotFoundException nếu khoá không có nội dung
+	 */
 	InputStream open(String key);
 
 	/** Xoá nội dung; không có thì không làm gì. */

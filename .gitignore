@@ -42,3 +42,6 @@ logs/
 
 ### Thư mục nháp của công cụ AI (kế hoạch đang chạy, ảnh chụp xem thử) ###
 .superpowers/
+
+# Kho ảnh của media-service khi chạy ở máy (media.storage.root mặc định)
+data/
