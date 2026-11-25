@@ -2,11 +2,18 @@ package com.home_platform.registry.capacity;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import com.home_platform.common.web.BadRequestException;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import com.home_platform.registry.place.Place;
+import com.home_platform.registry.place.PlaceRef;
 import com.home_platform.registry.place.PlaceService;
+import com.home_platform.registry.placetype.PlaceType;
+import com.home_platform.registry.placetype.PlaceTypeService;
 import org.springframework.stereotype.Service;
 
 /** Sức chứa và chỗ trống (spec Đợt 6, L3 và L4). Chỉ đọc. */
@@ -17,9 +24,47 @@ public class CapacityService {
 
 	private final PlaceService places;
 
-	CapacityService(CapacityRepository repository, PlaceService places) {
+	private final PlaceTypeService placeTypes;
+
+	CapacityService(CapacityRepository repository, PlaceService places, PlaceTypeService placeTypes) {
 		this.repository = repository;
 		this.places = places;
+		this.placeTypes = placeTypes;
+	}
+
+	/**
+	 * Địa điểm còn chỗ hôm nay, theo tên, kèm số người đang ở, tên loại và tổ tiên. Mỗi trang chạy
+	 * một câu lọc và một câu đếm, không đếm từng dòng.
+	 * @throws com.home_platform.common.web.NotFoundException nếu {@code rootId} không có hoặc đã xoá
+	 */
+	public CursorPage<VacancyResponse> vacancies(long workspaceId, Long placeTypeId, Long rootId,
+			CursorRequest request) {
+		CursorPage<Place> page = this.places.vacancies(workspaceId, placeTypeId, rootId, request);
+		Map<Long, Integer> living = this.places.peopleLiving(workspaceId,
+				page.items().stream().map(Place::id).toList());
+		Map<Long, String> typeNames = this.placeTypes.list(workspaceId)
+			.stream()
+			.collect(Collectors.toMap(PlaceType::id, PlaceType::name));
+		List<Long> ancestorIds = page.items()
+			.stream()
+			.flatMap(place -> ancestorIds(place).stream())
+			.distinct()
+			.toList();
+		Map<Long, String> names = this.places.names(workspaceId, ancestorIds);
+		return page.map(place -> {
+			int occupants = living.getOrDefault(place.id(), 0);
+			List<PlaceRef> ancestors = ancestorIds(place).stream()
+				.map(id -> new PlaceRef(id, names.get(id)))
+				.toList();
+			Integer free = (place.capacity() != null) ? place.capacity() - occupants : null;
+			return new VacancyResponse(place.id(), place.code(), place.name(), place.placeTypeId(),
+					typeNames.get(place.placeTypeId()), place.status(), ancestors, place.capacity(), occupants, free);
+		});
+	}
+
+	private static List<Long> ancestorIds(Place place) {
+		List<Long> ids = place.pathIds();
+		return ids.subList(0, ids.size() - 1);
 	}
 
 	/**

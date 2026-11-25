@@ -3,6 +3,8 @@ package com.home_platform.registry.capacity;
 import java.time.LocalDate;
 
 import com.home_platform.common.context.WorkspaceContext;
+import com.home_platform.common.web.CursorPage;
+import com.home_platform.common.web.CursorRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +21,13 @@ class CapacityController {
 
 	CapacityController(CapacityService service) {
 		this.service = service;
+	}
+
+	/** Địa điểm còn chỗ hôm nay, theo tên; lọc theo loại và theo cây con của một địa điểm. */
+	@GetMapping("/vacancies")
+	CursorPage<VacancyResponse> vacancies(WorkspaceContext ctx, @RequestParam(required = false) Long placeTypeId,
+			@RequestParam(required = false) Long rootId, CursorRequest page) {
+		return this.service.vacancies(ctx.workspaceId(), placeTypeId, rootId, page);
 	}
 
 	/** Có vượt sức chứa không nếu thêm một người ở từ {@code startDate} tới {@code endDate}. */

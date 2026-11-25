@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.home_platform.common.context.WorkspaceContext;
+import com.home_platform.common.jdbc.KeysetQuery;
 import com.home_platform.common.jdbc.RepositorySupport;
 import com.home_platform.common.jdbc.WorkspaceRepository;
 import com.home_platform.common.web.BadRequestException;
@@ -80,6 +81,47 @@ public class PlaceRepository extends WorkspaceRepository<Place> {
 					Map.of("subtreePrefix", rootPath + "%", "rootPath", rootPath))
 			.orderBy("path")
 			.fetch(workspaceId, page);
+	}
+
+	/**
+	 * Địa điểm còn chỗ ngày {@code today}, theo tên (spec Đợt 6, L4): có sức chứa và số người đang ở
+	 * nhỏ hơn sức chứa; hoặc chưa đặt sức chứa, không có con chưa xoá và không có ai đang ở.
+	 * @param placeTypeId chỉ loại này; {@code null} là mọi loại
+	 * @param rootPath chỉ các hậu duệ (không gồm gốc) của địa điểm có {@code path} này; {@code null} là cả không gian
+	 */
+	public CursorPage<Place> vacancies(long workspaceId, Long placeTypeId, String rootPath, LocalDate today,
+			CursorRequest page) {
+		KeysetQuery<Place> query = keyset().where("((capacity IS NOT NULL AND " + PEOPLE_LIVING_HERE
+				+ " < capacity) OR (capacity IS NULL AND NOT EXISTS (SELECT 1 FROM reg_place c "
+				+ "WHERE c.workspace_id = reg_place.workspace_id AND c.parent_id = reg_place.id "
+				+ "AND c.deleted_at IS NULL) AND " + PEOPLE_LIVING_HERE + " = 0))", Map.of("today", today));
+		if (placeTypeId != null) {
+			query = query.where("place_type_id = :placeTypeId", Map.of("placeTypeId", placeTypeId));
+		}
+		if (rootPath != null) {
+			query = query.where("path LIKE :subtreePrefix AND path <> :rootPath",
+					Map.of("subtreePrefix", rootPath + "%", "rootPath", rootPath));
+		}
+		return query.orderBy("name").fetch(workspaceId, page);
+	}
+
+	/**
+	 * Số người đang ở ngày {@code today} của từng địa điểm trong {@code ids}, theo
+	 * {@link #PEOPLE_LIVING_HERE}. Một truy vấn; danh sách rỗng thì không chạy SQL.
+	 */
+	public Map<Long, Integer> peopleLiving(long workspaceId, Collection<Long> ids, LocalDate today) {
+		if (ids.isEmpty()) {
+			return Map.of();
+		}
+		Map<Long, Integer> counts = new HashMap<>();
+		jdbc().sql("SELECT id, " + PEOPLE_LIVING_HERE + " AS living FROM reg_place "
+				+ "WHERE workspace_id = :workspaceId AND id IN (:ids)")
+			.param("workspaceId", workspaceId)
+			.param("ids", ids)
+			.param("today", today)
+			.query((rs, rowNum) -> counts.put(rs.getLong("id"), rs.getInt("living")))
+			.list();
+		return counts;
 	}
 
 	/** Địa điểm của một loại, theo tên. Index (workspace_id, place_type_id, name). */

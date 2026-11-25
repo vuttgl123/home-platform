@@ -91,12 +91,4 @@ class PlaceCapacityIT extends OccupancyTestData {
 		return Long.parseLong(JsonPath.read(body, "$.id"));
 	}
 
-	private void stay(long placeId, long personId, String relation, java.time.LocalDate start,
-			java.time.LocalDate end) throws Exception {
-		String endJson = (end != null) ? "\"" + end + "\"" : "null";
-		this.mvc.perform(asA(post("/occupancies")).contentType(MediaType.APPLICATION_JSON).content("""
-				{"placeId": "%d", "personId": "%d", "relation": "%s", "startDate": "%s", "endDate": %s}"""
-			.formatted(placeId, personId, relation, start, endJson))).andExpect(status().isCreated());
-	}
-
 }

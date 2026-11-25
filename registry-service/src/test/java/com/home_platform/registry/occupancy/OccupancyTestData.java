@@ -64,6 +64,23 @@ public abstract class OccupancyTestData extends RegistryIT {
 			.formatted(placeId, personId, start, endJson)));
 	}
 
+	/** Thêm một dòng cư trú với quan hệ {@code relation} (RESIDENT, GUEST, STAFF, OTHER). */
+	protected void stay(long placeId, long personId, String relation, LocalDate start, LocalDate end)
+			throws Exception {
+		String endJson = (end != null) ? "\"" + end + "\"" : "null";
+		this.mvc.perform(asA(post("/occupancies")).contentType(MediaType.APPLICATION_JSON).content("""
+				{"placeId": "%d", "personId": "%d", "relation": "%s", "startDate": "%s", "endDate": %s}"""
+			.formatted(placeId, personId, relation, start, endJson))).andExpect(status().isCreated());
+	}
+
+	/** Một địa điểm loại {@link #type} có sức chứa {@code capacity} ({@code null} là chưa đặt). */
+	protected long place(Long parentId, String name, Integer capacity) {
+		return this.places
+			.create(CTX_A, new PlaceCreateRequest(parentId, this.type, name, null, null, capacity, null, null, null,
+					null))
+			.id();
+	}
+
 	protected long occupancy(long placeId, long personId, LocalDate start, LocalDate end) throws Exception {
 		String body = postOccupancy(placeId, personId, start, end).andExpect(status().isCreated())
 			.andReturn()

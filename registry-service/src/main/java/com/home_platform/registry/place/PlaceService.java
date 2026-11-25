@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -127,6 +128,21 @@ public class PlaceService {
 		return this.repository.refs(workspaceId, ids)
 			.stream()
 			.collect(Collectors.toMap(PlaceRef::id, PlaceRef::name, (a, b) -> a));
+	}
+
+	/**
+	 * Địa điểm còn chỗ hôm nay (spec Đợt 6, L4), theo tên.
+	 * @param rootId chỉ trong cây con của địa điểm này; {@code null} là cả không gian
+	 * @throws com.home_platform.common.web.NotFoundException nếu {@code rootId} không có hoặc đã xoá
+	 */
+	public CursorPage<Place> vacancies(long workspaceId, Long placeTypeId, Long rootId, CursorRequest page) {
+		String rootPath = (rootId != null) ? get(workspaceId, rootId).path() : null;
+		return this.repository.vacancies(workspaceId, placeTypeId, rootPath, this.businessDate.today(), page);
+	}
+
+	/** Số người đang ở hôm nay của từng địa điểm trong {@code ids}. */
+	public Map<Long, Integer> peopleLiving(long workspaceId, Collection<Long> ids) {
+		return this.repository.peopleLiving(workspaceId, ids, this.businessDate.today());
 	}
 
 	public PlaceView view(long workspaceId, long id) {
