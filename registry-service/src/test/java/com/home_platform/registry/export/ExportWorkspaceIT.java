@@ -111,7 +111,7 @@ class ExportWorkspaceIT extends RegistryIT {
 	@Test
 	void placesSheetShowsParentPathAndAttributes() throws Exception {
 		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PLACE, this.room, "area", "Diện tích",
-				FieldDataType.NUMBER, null, null, 1));
+				FieldDataType.NUMBER, null, null, 1, null));
 		long a = place(this.building, null, "Toà A").id();
 		long floor = place(this.building, a, "Tầng 3").id();
 		Place p301 = this.places.create(CTX_A, new PlaceCreateRequest(floor, this.room, "P301", "Hướng nam",
@@ -139,7 +139,7 @@ class ExportWorkspaceIT extends RegistryIT {
 	@Test
 	void peopleSheetListsWhereEachPersonLivesToday() throws Exception {
 		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PERSON, null, "job", "Nghề nghiệp",
-				FieldDataType.TEXT, null, null, 1));
+				FieldDataType.TEXT, null, null, 1, null));
 		long a = place(this.building, null, "Toà A").id();
 		long p1 = place(this.room, a, "P1").id();
 		long p2 = place(this.room, a, "P2").id();

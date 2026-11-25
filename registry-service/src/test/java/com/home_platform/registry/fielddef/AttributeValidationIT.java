@@ -54,7 +54,7 @@ class AttributeValidationIT extends RegistryIT {
 	@Test
 	void otherWorkspacesFieldsDoNotApply() {
 		this.fieldDefs.create(CTX_B, new FieldDefCreateRequest(FieldTarget.PERSON, 0L, "nickname", "Biệt danh",
-				FieldDataType.TEXT, null, null, null));
+				FieldDataType.TEXT, null, null, null, null));
 
 		assertThatThrownBy(() -> this.validation.validate(WS_A, FieldTarget.PERSON, 0, Map.of("nickname", "Bo")))
 			.isInstanceOf(BadRequestException.class);
@@ -65,7 +65,7 @@ class AttributeValidationIT extends RegistryIT {
 	}
 
 	private void field(FieldTarget target, long typeId, String key, FieldDataType dataType) {
-		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(target, typeId, key, key, dataType, null, null, null));
+		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(target, typeId, key, key, dataType, null, null, null, null));
 	}
 
 }

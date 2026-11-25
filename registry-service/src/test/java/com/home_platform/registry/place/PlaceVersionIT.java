@@ -100,7 +100,7 @@ class PlaceVersionIT extends PlaceTestData {
 
 		long other = place(null, u, "B");
 		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PLACE, 0L, "must", "Must",
-				FieldDataType.TEXT, null, true, null));
+				FieldDataType.TEXT, null, true, null, null));
 		restoreVersion(other, 1, 1).andExpect(status().isBadRequest());
 		getPlace(other).andExpect(jsonPath("$.version").value(1));
 	}

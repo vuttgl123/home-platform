@@ -64,11 +64,12 @@ public class FieldDefService {
 	public FieldDef create(WorkspaceContext ctx, FieldDefCreateRequest request) {
 		requireScope(ctx.workspaceId(), request.target(), request.typeId());
 		List<String> options = FieldOptions.check(request.dataType(), request.options());
+		requireRemindable(request.dataType(), request.remindDays());
 		if (this.repository.keyOverlaps(ctx.workspaceId(), request.target(), request.typeId(), request.fieldKey())) {
 			throw duplicate(request);
 		}
 		FieldDef fieldDef = new FieldDef(0, 0, request.target(), request.typeId(), request.fieldKey(),
-				request.label(), request.dataType(), options, request.required(), request.sortOrder(),
+				request.label(), request.dataType(), options, request.required(), request.remindDays(), request.sortOrder(),
 				CatalogStatus.ACTIVE, null, null);
 		try {
 			return written(ctx, this.repository.insert(ctx, fieldDef));
@@ -82,10 +83,19 @@ public class FieldDefService {
 	public FieldDef update(WorkspaceContext ctx, long id, FieldDefUpdateRequest request) {
 		FieldDef current = get(ctx.workspaceId(), id);
 		List<String> options = FieldOptions.check(current.dataType(), request.options());
+		requireRemindable(current.dataType(), request.remindDays());
 		return written(ctx, this.repository.update(ctx, current.withLabel(request.label())
 			.withOptions(options)
 			.withRequired(request.required())
+			.withRemindDays(request.remindDays())
 			.withSortOrder(request.sortOrder())));
+	}
+
+	/** Chỉ mục kiểu ngày mới nhắc được (L4). */
+	private static void requireRemindable(FieldDataType dataType, Integer remindDays) {
+		if (remindDays != null && dataType != FieldDataType.DATE) {
+			throw new BadRequestException("remindDays is only allowed for DATE");
+		}
 	}
 
 	@Transactional

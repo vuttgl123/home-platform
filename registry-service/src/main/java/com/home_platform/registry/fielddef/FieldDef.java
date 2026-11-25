@@ -13,9 +13,11 @@ import lombok.With;
  * @param typeId 0 là áp dụng cho mọi bản ghi của {@code target}; khác 0 là {@code id} loại địa
  * điểm (PLACE) hoặc nhóm đồ (ITEM)
  * @param options các lựa chọn của mục SELECT; {@code null} với kiểu khác
+ * @param remindDays mục DATE nhắc trong Việc cần làm trước bấy nhiêu ngày (spec Đợt 8, L4); {@code null} là
+ * không nhắc, và luôn là {@code null} với kiểu khác
  */
 @With
 public record FieldDef(long workspaceId, long id, FieldTarget target, long typeId, String fieldKey, String label,
-		FieldDataType dataType, @JsonColumn List<String> options, boolean isRequired, int sortOrder,
+		FieldDataType dataType, @JsonColumn List<String> options, boolean isRequired, Integer remindDays, int sortOrder,
 		CatalogStatus status, Instant createdAt, Instant updatedAt) {
 }

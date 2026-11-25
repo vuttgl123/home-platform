@@ -336,7 +336,7 @@ class ConcurrentWritesIT extends CommittedDataIT {
 		inTransaction(() -> {
 			this.places.get(WS, room); // SELECT thường: chốt snapshot của transaction này
 			inBackground(() -> this.fieldDefs.create(CTX, new FieldDefCreateRequest(FieldTarget.PLACE, 0L, "floor_no",
-					"Tầng", FieldDataType.NUMBER, null, false, 10)))
+					"Tầng", FieldDataType.NUMBER, null, false, 10, null)))
 				.get();
 			return this.attributeValidation.validate(WS, FieldTarget.PLACE, this.type, floor);
 		});

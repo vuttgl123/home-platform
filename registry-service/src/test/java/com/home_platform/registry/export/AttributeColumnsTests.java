@@ -125,7 +125,7 @@ class AttributeColumnsTests {
 	}
 
 	private static FieldDef def(long id, long typeId, String key, String label, FieldDataType type, int sortOrder) {
-		return new FieldDef(-1, id, FieldTarget.PLACE, typeId, key, label, type, null, false, sortOrder,
+		return new FieldDef(-1, id, FieldTarget.PLACE, typeId, key, label, type, null, false, null, sortOrder,
 				CatalogStatus.ACTIVE, Instant.EPOCH, Instant.EPOCH);
 	}
 

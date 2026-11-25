@@ -98,7 +98,7 @@ class ItemIT extends ItemTestData {
 	void attributesFollowTheCategory() throws Exception {
 		long tv = category("Điện tử");
 		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.ITEM, tv, "warranty_until", "Bảo hành",
-				FieldDataType.DATE, null, null, null));
+				FieldDataType.DATE, null, null, null, null));
 
 		postItem("""
 				{"placeId": "%d", "categoryId": "%d", "name": "Tivi", "attributes": {"warranty_until": "2027-01-01"}}"""

@@ -118,7 +118,7 @@ class AttributeValidatorTests {
 	}
 
 	private static FieldDef def(String key, FieldDataType dataType) {
-		return new FieldDef(-1, key.hashCode(), FieldTarget.PLACE, 0, key, key, dataType, null, false, 0,
+		return new FieldDef(-1, key.hashCode(), FieldTarget.PLACE, 0, key, key, dataType, null, false, null, 0,
 				CatalogStatus.ACTIVE, null, null);
 	}
 

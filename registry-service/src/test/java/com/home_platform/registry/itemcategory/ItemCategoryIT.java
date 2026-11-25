@@ -117,7 +117,7 @@ class ItemCategoryIT extends RegistryIT {
 		long id = Long.parseLong(create("""
 				{"name": "Điện tử"}"""));
 		long field = this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.ITEM, id, "warranty",
-				"Bảo hành", FieldDataType.DATE, null, null, null)).id();
+				"Bảo hành", FieldDataType.DATE, null, null, null, null)).id();
 		this.fieldDefs.listAll(WS_A);
 
 		this.mvc.perform(asA(delete("/item-categories/" + id))).andExpect(status().isNoContent());

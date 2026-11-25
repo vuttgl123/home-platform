@@ -116,7 +116,7 @@ class PlaceIT extends PlaceTestData {
 	void attributesAreValidated() throws Exception {
 		long type = type("T");
 		this.fieldDefs.create(CTX_A,
-				new FieldDefCreateRequest(FieldTarget.PLACE, 0L, "area", "Area", FieldDataType.NUMBER, null, null, null));
+				new FieldDefCreateRequest(FieldTarget.PLACE, 0L, "area", "Area", FieldDataType.NUMBER, null, null, null, null));
 
 		postPlace("""
 				{"placeTypeId": "%d", "name": "x", "attributes": {"area": "x"}}""".formatted(type))
@@ -131,7 +131,7 @@ class PlaceIT extends PlaceTestData {
 	void largeNumberAttributesRoundTrip() throws Exception {
 		long type = type("T");
 		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PLACE, 0L, "price", "Giá",
-				FieldDataType.NUMBER, null, null, null));
+				FieldDataType.NUMBER, null, null, null, null));
 		long id = place("""
 				{"placeTypeId": "%d", "name": "Căn hộ", "attributes": {"price": 3500000000}}""".formatted(type));
 

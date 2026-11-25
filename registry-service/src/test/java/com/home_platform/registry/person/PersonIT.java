@@ -97,7 +97,7 @@ class PersonIT extends PersonTestData {
 	@Test
 	void attributesAreValidatedAgainstPersonFields() throws Exception {
 		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PERSON, 0L, "nickname", "Biệt danh",
-				FieldDataType.TEXT, null, null, null));
+				FieldDataType.TEXT, null, null, null, null));
 
 		postPerson("""
 				{"fullName": "A", "attributes": {"nickname": 1}}""").andExpect(status().isBadRequest())

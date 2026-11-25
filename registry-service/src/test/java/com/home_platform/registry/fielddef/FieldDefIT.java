@@ -166,6 +166,45 @@ class FieldDefIT extends RegistryIT {
 			.formatted(target, typeId, key, dataType);
 	}
 
+	@Test
+	void dateFieldCanRemind() throws Exception {
+		String id = created("""
+				{"target": "PERSON", "fieldKey": "id_expiry", "label": "CCCD hết hạn", "dataType": "DATE",
+				 "remindDays": 30}""");
+		this.mvc.perform(asA(get("/field-defs")).param("target", "PERSON"))
+			.andExpect(jsonPath("$[0].remindDays").value(30));
+
+		update(id, "{\"label\": \"CCCD hết hạn\", \"remindDays\": 60}").andExpect(status().isOk())
+			.andExpect(jsonPath("$.remindDays").value(60));
+		update(id, "{\"label\": \"CCCD hết hạn\"}").andExpect(status().isOk())
+			.andExpect(jsonPath("$.remindDays").doesNotExist());
+	}
+
+	@Test
+	void remindDaysOnlyForDates() throws Exception {
+		submit("""
+				{"target": "PERSON", "fieldKey": "nick", "label": "Biệt danh", "dataType": "TEXT", "remindDays": 30}""")
+			.andExpect(status().isBadRequest());
+		String id = created(field("PERSON", 0, "nick", "TEXT"));
+		update(id, "{\"label\": \"Biệt danh\", \"remindDays\": 30}").andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void remindDaysRange() throws Exception {
+		submit("""
+				{"target": "PERSON", "fieldKey": "a", "label": "A", "dataType": "DATE", "remindDays": 0}""")
+			.andExpect(status().isBadRequest());
+		submit("""
+				{"target": "PERSON", "fieldKey": "b", "label": "B", "dataType": "DATE", "remindDays": 366}""")
+			.andExpect(status().isBadRequest());
+		created("""
+				{"target": "PERSON", "fieldKey": "c", "label": "C", "dataType": "DATE", "remindDays": 365}""");
+	}
+
+	private ResultActions update(String id, String json) throws Exception {
+		return this.mvc.perform(asA(put("/field-defs/" + id)).contentType(MediaType.APPLICATION_JSON).content(json));
+	}
+
 	private ResultActions submit(String json) throws Exception {
 		return this.mvc.perform(asA(post("/field-defs")).contentType(MediaType.APPLICATION_JSON).content(json));
 	}

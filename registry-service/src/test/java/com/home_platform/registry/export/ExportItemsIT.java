@@ -74,9 +74,9 @@ class ExportItemsIT extends RegistryIT {
 			.create(CTX_A, new PersonRequest("Nguyễn An", null, null, null, null, null, null, null, null, null, null))
 			.id();
 		this.fieldDefs.create(CTX_A,
-				new FieldDefCreateRequest(FieldTarget.ITEM, null, "brand", "Hãng", FieldDataType.TEXT, null, null, 1));
+				new FieldDefCreateRequest(FieldTarget.ITEM, null, "brand", "Hãng", FieldDataType.TEXT, null, null, 1, null));
 		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.ITEM, cooling, "power", "Công suất",
-				FieldDataType.NUMBER, null, null, 2));
+				FieldDataType.NUMBER, null, null, 2, null));
 		String fridge = this.mvc.perform(asA(post("/items")).contentType(MediaType.APPLICATION_JSON).content("""
 				{"placeId": "%d", "ownerPersonId": "%d", "categoryId": "%d", "name": "Tủ lạnh", "quantity": 2,
 				 "unit": "cái", "status": "BROKEN", "placedAt": "2025-03-09", "description": "Hai cánh",

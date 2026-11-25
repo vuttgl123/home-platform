@@ -63,7 +63,7 @@ public class SetupService {
 		for (String[] field : DefaultCatalog.PLACE_FIELDS) {
 			sortOrder += DefaultCatalog.SORT_STEP;
 			this.fieldDefs.create(ctx, new FieldDefCreateRequest(FieldTarget.PLACE, typeIds.get(field[0]), field[1],
-					field[2], FieldDataType.NUMBER, null, false, sortOrder));
+					field[2], FieldDataType.NUMBER, null, false, sortOrder, null));
 		}
 		return true;
 	}

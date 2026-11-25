@@ -158,7 +158,7 @@ class PlaceTypeIT extends RegistryIT {
 		long id = Long.parseLong(create("""
 				{"code": "VILLA", "name": "Biệt thự"}"""));
 		long field = this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PLACE, id, "pool", "Hồ bơi",
-				FieldDataType.BOOLEAN, null, null, null)).id();
+				FieldDataType.BOOLEAN, null, null, null, null)).id();
 		this.fieldDefs.listAll(WS_A);
 
 		this.mvc.perform(asA(delete("/place-types/" + id))).andExpect(status().isNoContent());
@@ -166,7 +166,7 @@ class PlaceTypeIT extends RegistryIT {
 		this.mvc.perform(asA(get("/field-defs/" + field))).andExpect(status().isNotFound());
 		assertThat(this.fieldDefs.listAll(WS_A)).isEmpty();
 		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PLACE, 0L, "pool", "Hồ bơi",
-				FieldDataType.BOOLEAN, null, null, null));
+				FieldDataType.BOOLEAN, null, null, null, null));
 	}
 
 	@Test

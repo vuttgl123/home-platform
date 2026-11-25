@@ -3,6 +3,8 @@ package com.home_platform.registry.fielddef;
 import java.util.List;
 
 import com.home_platform.registry.support.Text;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -11,11 +13,12 @@ import jakarta.validation.constraints.Size;
 /**
  * @param typeId 0 hoặc bỏ trống là áp dụng cho mọi bản ghi của {@code target}
  * @param options bắt buộc với SELECT, phải trống với kiểu khác
+ * @param remindDays chỉ cho DATE: nhắc trong Việc cần làm trước bấy nhiêu ngày; trống là không nhắc
  */
 public record FieldDefCreateRequest(@NotNull FieldTarget target, Long typeId,
 		@NotBlank @Size(max = 50) @Pattern(regexp = "[a-z][a-z0-9_]*") String fieldKey,
 		@NotBlank @Size(max = 100) String label, @NotNull FieldDataType dataType, List<String> options,
-		Boolean required, Integer sortOrder) {
+		Boolean required, Integer sortOrder, @Min(1) @Max(365) Integer remindDays) {
 
 	public FieldDefCreateRequest {
 		typeId = (typeId != null) ? typeId : 0L;

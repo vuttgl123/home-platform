@@ -74,7 +74,7 @@ là `id` vừa nhận.
 | `POST /setup` | Tạo loại địa điểm, nhóm đồ và mục tuỳ biến mặc định cho không gian mới. Client gọi ngay sau khi tạo không gian; gọi lại, hoặc gọi khi không gian đã có bất kỳ danh mục nào, thì không làm gì |
 | `/place-types` | Loại địa điểm: `GET`, `GET /{id}`, `POST`, `PUT /{id}`, `POST /{id}/archive`, `POST /{id}/unarchive`, `DELETE /{id}` (chỉ khi chưa địa điểm nào dùng) |
 | `/item-categories` | Nhóm đồ, cùng bộ thao tác như loại địa điểm |
-| `/field-defs` | Mục thông tin tuỳ biến: `GET ?target=PLACE&typeId=`, `GET /{id}`, `POST`, `PUT /{id}`, `POST /{id}/archive`, `POST /{id}/unarchive`. Không xoá |
+| `/field-defs` | Mục thông tin tuỳ biến: `GET ?target=PLACE&typeId=`, `GET /{id}`, `POST`, `PUT /{id}`, `POST /{id}/archive`, `POST /{id}/unarchive`. Không xoá. Mục kiểu `DATE` có thể đặt `remindDays` (1 tới 365): giá trị ngày của nó vào Việc cần làm từ bấy nhiêu ngày trước |
 | `/code-rules` | Mẫu mã tự cấp: `GET` (luôn có mẫu chung của địa điểm và đồ đạc, `builtIn` khi không gian chưa đặt), `PUT /{PLACE\|ITEM}/{typeId}` (`typeId` 0 là mẫu chung; tiền tố, số chữ số, theo năm), `DELETE /{target}/{typeId}` |
 | `/codes` | `GET /status` (số địa điểm, món đồ chưa có mã), `POST /backfill` (cấp mã cho tối đa 100 bản ghi chưa có mã, cũ trước) |
 | `/places` | Địa điểm lồng tới 20 cấp, mã do hệ thống cấp khi tạo và không sửa được: `POST` (kèm địa chỉ tuỳ chọn), `POST /{id}/reissue-code` (cấp mã mới), `GET /{id}` (kèm tổ tiên, địa chỉ, địa chỉ hiệu lực, `occupantCount` là số người đang ở hôm nay), `PUT /{id}`, `POST /{id}/move`, `PUT /{id}/address`, `DELETE /{id}/address`, `DELETE /{id}`, `POST /{id}/restore`. `capacity` là sức chứa tuỳ chọn, 0 tới 9999 |
