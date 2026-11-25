@@ -81,6 +81,15 @@ export function ItemFields({
         </Field>
         <TextField label="Ngày đặt" type="date" error={errors.placedAt?.message} {...form.register('placedAt')} />
       </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField label="Hết bảo hành" type="date" error={errors.warrantyUntil?.message} {...form.register('warrantyUntil')} />
+        <TextField
+          label="Bảo trì mỗi (tháng)"
+          inputMode="numeric"
+          error={errors.serviceEveryMonths?.message}
+          {...form.register('serviceEveryMonths')}
+        />
+      </div>
       <Field data-invalid={errors.description ? true : undefined}>
         <FieldLabel htmlFor={descriptionId}>Mô tả</FieldLabel>
         <Textarea id={descriptionId} rows={2} {...form.register('description')} />

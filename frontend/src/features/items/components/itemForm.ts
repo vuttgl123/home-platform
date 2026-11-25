@@ -12,6 +12,8 @@ export type ItemFormValues = {
   unit: string
   status: Exclude<ItemStatus, 'REMOVED'>
   placedAt: string
+  warrantyUntil: string
+  serviceEveryMonths: string
   description: string
   attributes: AttributeFormValues
 }
@@ -31,6 +33,14 @@ export function itemFormSchema(defs: FieldDef[]) {
       unit: z.string().trim().max(20, 'Tối đa 20 ký tự'),
       status: z.enum(['IN_USE', 'BROKEN', 'STORED']),
       placedAt: z.string(),
+      warrantyUntil: z.string(),
+      serviceEveryMonths: z
+        .string()
+        .trim()
+        .refine(
+          (value) => value === '' || (WHOLE_NUMBER.test(value) && Number(value) >= 1 && Number(value) <= 120),
+          'Số nguyên từ 1 tới 120',
+        ),
       description: z.string().trim().max(10000, 'Tối đa 10000 ký tự'),
       attributes: z.record(z.string(), z.union([z.string(), z.boolean()])),
     })
@@ -49,6 +59,8 @@ export function emptyItemForm(): ItemFormValues {
     unit: '',
     status: 'IN_USE',
     placedAt: '',
+    warrantyUntil: '',
+    serviceEveryMonths: '',
     description: '',
     attributes: {},
   }
@@ -62,6 +74,8 @@ export function itemFormValues(item: ItemDetail, defs: FieldDef[]): ItemFormValu
     unit: item.unit ?? '',
     status: item.status === 'REMOVED' ? 'IN_USE' : item.status,
     placedAt: item.placedAt ?? '',
+    warrantyUntil: item.warrantyUntil ?? '',
+    serviceEveryMonths: item.serviceEveryMonths != null ? String(item.serviceEveryMonths) : '',
     description: item.description ?? '',
     attributes: attributeDefaults(defs, item.attributes),
   }
@@ -81,6 +95,8 @@ export function itemPayload(
     unit: or(values.unit),
     status: values.status,
     placedAt: or(values.placedAt),
+    warrantyUntil: or(values.warrantyUntil),
+    serviceEveryMonths: values.serviceEveryMonths.trim() ? Number(values.serviceEveryMonths) : undefined,
     description: or(values.description),
     attributes: attributePayload(defs, values.attributes, stored?.attributes ?? null) ?? undefined,
   }

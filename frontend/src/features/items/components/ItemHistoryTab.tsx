@@ -21,6 +21,8 @@ const FIELD_LABELS: Record<string, string> = {
   unit: 'Đơn vị',
   status: 'Trạng thái',
   placedAt: 'Ngày đặt',
+  warrantyUntil: 'Hết bảo hành',
+  serviceEveryMonths: 'Bảo trì (tháng)',
   removedAt: 'Ngày gỡ',
   placeId: 'Chỗ đặt',
   replacedByItemId: 'Món thay',
@@ -79,6 +81,18 @@ function useItemSnapshotRows(ws: string): ((snapshot: ItemSnapshot) => SnapshotR
     { key: 'status', label: 'Trạng thái', value: snapshot.status ? ITEM_STATUS_LABEL[snapshot.status] : null, raw: snapshot.status },
     { key: 'placedAt', label: 'Ngày đặt', value: snapshot.placedAt ? formatDate(snapshot.placedAt) : null, raw: snapshot.placedAt },
     { key: 'removedAt', label: 'Ngày gỡ', value: snapshot.removedAt ? formatDate(snapshot.removedAt) : null, raw: snapshot.removedAt ?? null },
+    {
+      key: 'warrantyUntil',
+      label: 'Hết bảo hành',
+      value: snapshot.warrantyUntil ? formatDate(snapshot.warrantyUntil) : null,
+      raw: snapshot.warrantyUntil ?? null,
+    },
+    {
+      key: 'serviceEveryMonths',
+      label: 'Bảo trì (tháng)',
+      value: snapshot.serviceEveryMonths != null ? `Mỗi ${snapshot.serviceEveryMonths} tháng` : null,
+      raw: snapshot.serviceEveryMonths ?? null,
+    },
     { key: 'description', label: 'Mô tả', value: snapshot.description, raw: snapshot.description },
     // Chuyển chỗ, đổi chủ, gỡ, thay cũng là một version: không có các dòng này thì hai bản trông giống hệt.
     { key: 'placeId', label: 'Chỗ đặt', value: snapshot.placeId ? <PlaceName ws={ws} id={snapshot.placeId} /> : null, raw: snapshot.placeId ?? null },

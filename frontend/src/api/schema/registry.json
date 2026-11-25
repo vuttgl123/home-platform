@@ -9,7 +9,7 @@
         "tags": [
           "activity-controller"
         ],
-        "operationId": "list_9",
+        "operationId": "list_11",
         "parameters": [
           {
             "name": "entityType",
@@ -129,7 +129,7 @@
         "tags": [
           "code-rule-controller"
         ],
-        "operationId": "list_8",
+        "operationId": "list_10",
         "parameters": [
           {
             "name": "X-Workspace-Id",
@@ -260,7 +260,7 @@
         "tags": [
           "code-rule-controller"
         ],
-        "operationId": "delete_7",
+        "operationId": "delete_8",
         "parameters": [
           {
             "name": "target",
@@ -574,7 +574,7 @@
         "tags": [
           "field-def-controller"
         ],
-        "operationId": "list_6",
+        "operationId": "list_7",
         "parameters": [
           {
             "name": "target",
@@ -646,7 +646,7 @@
         "tags": [
           "field-def-controller"
         ],
-        "operationId": "create_7",
+        "operationId": "create_8",
         "parameters": [
           {
             "name": "X-Workspace-Id",
@@ -762,7 +762,7 @@
         "tags": [
           "field-def-controller"
         ],
-        "operationId": "update_7",
+        "operationId": "update_8",
         "parameters": [
           {
             "name": "id",
@@ -946,7 +946,7 @@
         "tags": [
           "item-category-controller"
         ],
-        "operationId": "list_5",
+        "operationId": "list_6",
         "parameters": [
           {
             "name": "X-Workspace-Id",
@@ -997,7 +997,7 @@
         "tags": [
           "item-category-controller"
         ],
-        "operationId": "create_6",
+        "operationId": "create_7",
         "parameters": [
           {
             "name": "X-Workspace-Id",
@@ -1113,7 +1113,7 @@
         "tags": [
           "item-category-controller"
         ],
-        "operationId": "update_6",
+        "operationId": "update_7",
         "parameters": [
           {
             "name": "id",
@@ -1179,7 +1179,7 @@
         "tags": [
           "item-category-controller"
         ],
-        "operationId": "delete_6",
+        "operationId": "delete_7",
         "parameters": [
           {
             "name": "id",
@@ -1346,7 +1346,7 @@
         "tags": [
           "item-controller"
         ],
-        "operationId": "list_4",
+        "operationId": "list_5",
         "parameters": [
           {
             "name": "placeId",
@@ -1471,7 +1471,7 @@
         "tags": [
           "item-controller"
         ],
-        "operationId": "create_5",
+        "operationId": "create_6",
         "parameters": [
           {
             "name": "X-Workspace-Id",
@@ -1587,7 +1587,7 @@
         "tags": [
           "item-controller"
         ],
-        "operationId": "update_5",
+        "operationId": "update_6",
         "parameters": [
           {
             "name": "id",
@@ -1653,7 +1653,7 @@
         "tags": [
           "item-controller"
         ],
-        "operationId": "delete_5",
+        "operationId": "delete_6",
         "parameters": [
           {
             "name": "id",
@@ -2131,7 +2131,7 @@
         "tags": [
           "item-controller"
         ],
-        "operationId": "restore_2",
+        "operationId": "restore_3",
         "parameters": [
           {
             "name": "id",
@@ -2489,6 +2489,338 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CursorPageItemResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/maintenance": {
+      "get": {
+        "tags": [
+          "maintenance-controller"
+        ],
+        "operationId": "list_4",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "nextCursor of the previous page; omit for the first page",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of items in the page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPageMaintenanceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "maintenance-controller"
+        ],
+        "operationId": "create_5",
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaintenanceCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/maintenance/{id}": {
+      "put": {
+        "tags": [
+          "maintenance-controller"
+        ],
+        "operationId": "update_5",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaintenanceUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "maintenance-controller"
+        ],
+        "operationId": "delete_5",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/maintenance/{id}/restore": {
+      "post": {
+        "tags": [
+          "maintenance-controller"
+        ],
+        "operationId": "restore_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaintenanceVersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceResponse"
                 }
               }
             }
@@ -6165,12 +6497,192 @@
         }
       }
     },
+    "/todos": {
+      "get": {
+        "tags": [
+          "todo-controller"
+        ],
+        "operationId": "list_9",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BROKEN",
+                "WARRANTY",
+                "SERVICE",
+                "MOVE_OUT",
+                "CUSTOM_DATE"
+              ]
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "nextCursor of the previous page; omit for the first page",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of items in the page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPageTodoResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/todos/seen": {
+      "post": {
+        "tags": [
+          "todo-controller"
+        ],
+        "operationId": "seen",
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/todos/summary": {
+      "get": {
+        "tags": [
+          "todo-controller"
+        ],
+        "operationId": "summary",
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoSummaryResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/trash": {
       "get": {
         "tags": [
           "trash-controller"
         ],
-        "operationId": "list_7",
+        "operationId": "list_8",
         "parameters": [
           {
             "name": "entityType",
@@ -6292,6 +6804,9 @@
             "type": "string"
           },
           "entityName": {
+            "type": "string"
+          },
+          "parentId": {
             "type": "string"
           }
         }
@@ -6601,6 +7116,20 @@
           }
         }
       },
+      "CursorPageMaintenanceResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaintenanceResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        }
+      },
       "CursorPageOccupancyResponse": {
         "type": "object",
         "properties": {
@@ -6692,6 +7221,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PlaceVersionSummaryResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        }
+      },
+      "CursorPageTodoResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodoResponse"
             }
           },
           "nextCursor": {
@@ -6849,6 +7392,12 @@
           "sortOrder": {
             "type": "integer",
             "format": "int32"
+          },
+          "remindDays": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 365,
+            "minimum": 1
           }
         },
         "required": [
@@ -6900,6 +7449,10 @@
           "required": {
             "type": "boolean"
           },
+          "remindDays": {
+            "type": "integer",
+            "format": "int32"
+          },
           "sortOrder": {
             "type": "integer",
             "format": "int32"
@@ -6941,6 +7494,12 @@
           "sortOrder": {
             "type": "integer",
             "format": "int32"
+          },
+          "remindDays": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 365,
+            "minimum": 1
           }
         },
         "required": [
@@ -7041,6 +7600,18 @@
             ]
           },
           "placedAt": {
+            "type": "string",
+            "format": "date"
+          },
+          "warrantyUntil": {
+            "type": "string",
+            "format": "date"
+          },
+          "serviceEveryMonths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nextServiceOn": {
             "type": "string",
             "format": "date"
           },
@@ -7218,6 +7789,16 @@
             "type": "string",
             "format": "date"
           },
+          "warrantyUntil": {
+            "type": "string",
+            "format": "date"
+          },
+          "serviceEveryMonths": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 120,
+            "minimum": 1
+          },
           "description": {
             "type": "string",
             "maxLength": 10000,
@@ -7334,6 +7915,14 @@
             "type": "string",
             "format": "date"
           },
+          "warrantyUntil": {
+            "type": "string",
+            "format": "date"
+          },
+          "serviceEveryMonths": {
+            "type": "integer",
+            "format": "int32"
+          },
           "removedAt": {
             "type": "string",
             "format": "date"
@@ -7397,6 +7986,16 @@
           "placedAt": {
             "type": "string",
             "format": "date"
+          },
+          "warrantyUntil": {
+            "type": "string",
+            "format": "date"
+          },
+          "serviceEveryMonths": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 120,
+            "minimum": 1
           },
           "description": {
             "type": "string",
@@ -7509,6 +8108,155 @@
             "type": "string"
           }
         }
+      },
+      "MaintenanceCreateRequest": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "REPAIR",
+              "SERVICE"
+            ]
+          },
+          "doneOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "work": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "doneBy": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 0
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "markFixed": {
+            "type": "boolean"
+          },
+          "itemVersion": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "doneOn",
+          "itemId",
+          "kind",
+          "work"
+        ]
+      },
+      "MaintenanceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "REPAIR",
+              "SERVICE"
+            ]
+          },
+          "doneOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "work": {
+            "type": "string"
+          },
+          "doneBy": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MaintenanceUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "REPAIR",
+              "SERVICE"
+            ]
+          },
+          "doneOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "work": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "doneBy": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 0
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "doneOn",
+          "kind",
+          "version",
+          "work"
+        ]
+      },
+      "MaintenanceVersionRequest": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "version"
+        ]
       },
       "MissingCodes": {
         "type": "object",
@@ -8958,6 +9706,76 @@
         "properties": {
           "created": {
             "type": "boolean"
+          }
+        }
+      },
+      "TodoResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "BROKEN",
+              "WARRANTY",
+              "SERVICE",
+              "MOVE_OUT",
+              "CUSTOM_DATE"
+            ]
+          },
+          "dueOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isNew": {
+            "type": "boolean"
+          },
+          "subjectType": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "subjectCode": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string"
+          }
+        }
+      },
+      "TodoSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "byKind": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "newCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "latest": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodoResponse"
+            }
           }
         }
       },

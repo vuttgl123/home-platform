@@ -12,7 +12,7 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { RecentActivity } from '@/features/activity'
 import { ExportButton } from '@/features/exports'
 import { ITEM_STATUS_LABEL, ITEM_STATUS_TONE, type ItemStatus } from '@/features/items'
-import { todayInBusinessZone } from '@/lib/dates'
+import { daysBetween, todayInBusinessZone } from '@/lib/dates'
 import { formatNumber } from '@/lib/format'
 
 import type { DayActivity, Overview } from '../types'
@@ -287,11 +287,7 @@ function Section({
 
 /** Số ngày từ hôm nay (giờ nghiệp vụ) tới `date`, theo lịch. */
 function daysUntil(date: string): number {
-  const toDay = (value: string) => {
-    const [year, month, day] = value.split('-').map(Number)
-    return Date.UTC(year, month - 1, day) / 86_400_000
-  }
-  return toDay(date) - toDay(todayInBusinessZone())
+  return daysBetween(todayInBusinessZone(), date)
 }
 
 /** Người sắp chuyển đi trong 30 ngày tới, gần nhất trước; quá 10 người thì ghi tổng ở cuối. */

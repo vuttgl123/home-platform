@@ -23,7 +23,18 @@ import { useItemFieldDefs } from './useItemFieldDefs'
 type Mode = { mode: 'create'; place: { id: string; name: string } } | { mode: 'edit'; item: ItemDetail }
 
 const NO_DEFS: FieldDef[] = []
-const FIXED_FIELDS = new Set(['categoryId', 'name', 'code', 'quantity', 'unit', 'status', 'placedAt', 'description'])
+const FIXED_FIELDS = new Set([
+  'categoryId',
+  'name',
+  'code',
+  'quantity',
+  'unit',
+  'status',
+  'placedAt',
+  'warrantyUntil',
+  'serviceEveryMonths',
+  'description',
+])
 
 /** Hộp thoại thêm một món vào một địa điểm, hoặc sửa một món chưa gỡ. */
 export function ItemFormDialog({

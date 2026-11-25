@@ -28,6 +28,8 @@ export const FIELD_LABEL: Record<string, string> = {
   unit: 'Đơn vị',
   placedAt: 'Ngày đặt',
   removedAt: 'Ngày gỡ',
+  warrantyUntil: 'Hết bảo hành',
+  serviceEveryMonths: 'Bảo trì (tháng)',
   placeId: 'Chỗ đặt',
   replacedByItemId: 'Món thay',
   ownerPersonId: 'Chủ',

@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { todayInBusinessZone } from '@/lib/dates'
+import { addDays, todayInBusinessZone } from '@/lib/dates'
 import { formatDate } from '@/lib/format'
 import { itemCategory, page, person, placeType } from '@/test/fixtures'
 import { mockShell, recordRequests } from '@/test/handlers'
@@ -357,4 +357,25 @@ test('itemPageShowsWhereItIsAsABreadcrumb', async () => {
   expect(await trail.findByRole('link', { name: 'Toà A' })).toHaveAttribute('href', '/w/7/places/1')
   expect(trail.getByRole('link', { name: 'P301' })).toHaveAttribute('href', '/w/7/places/301?tab=items')
   expect(trail.getByText('Tủ lạnh')).toHaveAttribute('aria-current', 'page')
+})
+
+test('infoShowsWarrantyAndNextService', async () => {
+  setUp([{ ...fridge, warrantyUntil: addDays(TODAY, 108), serviceEveryMonths: 6, nextServiceOn: addDays(TODAY, 40) }])
+
+  renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  const view = await main()
+  expect(await view.findByText(`Bảo hành tới ${formatDate(addDays(TODAY, 108))} · còn 108 ngày`)).toBeInTheDocument()
+  expect(view.getByText('Bảo trì mỗi 6 tháng ·', { exact: false })).toBeInTheDocument()
+  expect(view.getByText(`lần tới ${formatDate(addDays(TODAY, 40))}`).closest('[data-tone]')).toHaveAttribute('data-tone', 'neutral')
+})
+
+test('overdueServiceIsHighlighted', async () => {
+  setUp([{ ...fridge, warrantyUntil: addDays(TODAY, -1), serviceEveryMonths: 1, nextServiceOn: addDays(TODAY, -1) }])
+
+  renderApp({ route: '/w/7/items/900', userId: '42' })
+
+  const view = await main()
+  expect(await view.findByText(`Bảo hành tới ${formatDate(addDays(TODAY, -1))} · đã hết`)).toBeInTheDocument()
+  expect(view.getByText(`lần tới ${formatDate(addDays(TODAY, -1))}`).closest('[data-tone]')).toHaveAttribute('data-tone', 'warning')
 })

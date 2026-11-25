@@ -160,3 +160,46 @@ test('comparingTwoRemovalsShowsTheRemovalDate', async () => {
     ['Món thay', '—', 'Tủ lạnh mới'],
   ])
 })
+
+test('compareShowsWarrantyAndServiceInterval', async () => {
+  mockShell({ placeTypes: [placeType()] })
+  server.use(http.get('/api/registry/item-categories', () => HttpResponse.json([])))
+  mockItemBackend({ items: [{ id: '900', name: 'Máy lạnh', version: 2 }] })
+  const summary = (no: number) => ({
+    versionNo: no,
+    action: no === 1 ? 'CREATE' : 'UPDATE',
+    changedFields: no === 1 ? null : ['warrantyUntil', 'serviceEveryMonths'],
+    changedBy: '42',
+    changedAt: '2026-11-01T03:00:00Z',
+    note: null,
+  })
+  const snapshot = (warrantyUntil: string | null, serviceEveryMonths: number | null) => ({
+    id: '900',
+    name: 'Máy lạnh',
+    status: 'IN_USE',
+    warrantyUntil,
+    serviceEveryMonths,
+  })
+  server.use(
+    http.get('/api/registry/items/900/versions', () => HttpResponse.json({ items: [summary(2), summary(1)], nextCursor: null })),
+    http.get('/api/registry/items/900/versions/1', () => HttpResponse.json({ ...summary(1), snapshot: snapshot(null, null) })),
+    http.get('/api/registry/items/900/versions/2', () => HttpResponse.json({ ...summary(2), snapshot: snapshot('2027-03-12', 6) })),
+  )
+  const { user } = renderApp({ route: '/w/7/items/900?tab=history', userId: '42' })
+  const main = within(await screen.findByRole('main'))
+  await user.click(await main.findByRole('checkbox', { name: 'Chọn v2 để so sánh' }))
+  await user.click(main.getByRole('checkbox', { name: 'Chọn v1 để so sánh' }))
+
+  await user.click(main.getByRole('button', { name: 'So sánh' }))
+
+  const dialog = within(await screen.findByRole('dialog', { name: 'So sánh v1 và v2' }))
+  expect(
+    dialog
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => within(row).getAllByRole('cell').map((cell) => cell.textContent)),
+  ).toEqual([
+    ['Hết bảo hành', '—', '12/03/2027'],
+    ['Bảo trì (tháng)', '—', 'Mỗi 6 tháng'],
+  ])
+})

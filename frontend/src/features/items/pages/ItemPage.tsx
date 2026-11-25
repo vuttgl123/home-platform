@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AttributeView, useFieldDefs } from '@/features/catalog'
 import { thumbnailUrl } from '@/features/media'
 import { usePlace } from '@/features/places'
+import { todayInBusinessZone } from '@/lib/dates'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { isId } from '@/lib/ids'
 
@@ -38,7 +39,7 @@ import { PutBackItemDialog } from '../components/PutBackItemDialog'
 import { ReissueItemCodeDialog } from '../components/ReissueItemCodeDialog'
 import { RemoveItemDialog } from '../components/RemoveItemDialog'
 import { ReplaceItemDialog } from '../components/ReplaceItemDialog'
-import { ITEM_STATUS_LABEL, ITEM_STATUS_TONE } from '../labels'
+import { ITEM_STATUS_LABEL, ITEM_STATUS_TONE, warrantyLine } from '../labels'
 import { useItem } from '../queries'
 import type { ItemDetail } from '../types'
 
@@ -267,6 +268,14 @@ function ItemInfo({ ws, item }: { ws: string; item: ItemDetail }) {
         <InfoList
           rows={[
             ...rows.map(([label, value]) => ({ label, value })),
+            { label: 'Bảo hành', value: item.warrantyUntil ? <WarrantyLine warrantyUntil={item.warrantyUntil} /> : null },
+            {
+              label: 'Bảo trì',
+              value:
+                item.serviceEveryMonths != null ? (
+                  <ServiceLine everyMonths={item.serviceEveryMonths} nextOn={item.nextServiceOn ?? null} />
+                ) : null,
+            },
             { label: 'Mô tả', value: item.description ? <span className="whitespace-pre-line">{item.description}</span> : null },
           ]}
         />
@@ -278,5 +287,20 @@ function ItemInfo({ ws, item }: { ws: string; item: ItemDetail }) {
       )}
       <p className="text-xs text-muted-foreground lg:col-span-2">Sửa lần cuối {formatDateTime(item.updatedAt)}</p>
     </div>
+  )
+}
+
+function WarrantyLine({ warrantyUntil }: { warrantyUntil: string }) {
+  const { text, tone } = warrantyLine(warrantyUntil, todayInBusinessZone())
+  return <ToneBadge tone={tone}>{text}</ToneBadge>
+}
+
+/** "Bảo trì mỗi N tháng · lần tới …"; hạn đã tới hoặc đã qua thì phần "lần tới" mang màu cảnh báo. */
+function ServiceLine({ everyMonths, nextOn }: { everyMonths: number; nextOn: string | null }) {
+  return (
+    <span>
+      {`Bảo trì mỗi ${everyMonths} tháng · `}
+      {nextOn && <ToneBadge tone={nextOn <= todayInBusinessZone() ? 'warning' : 'neutral'}>{`lần tới ${formatDate(nextOn)}`}</ToneBadge>}
+    </span>
   )
 }

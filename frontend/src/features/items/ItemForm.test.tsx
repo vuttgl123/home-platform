@@ -11,6 +11,7 @@ import { renderWithProviders } from '@/test/render'
 import { server } from '@/test/server'
 
 import { ItemFormDialog } from './components/ItemFormDialog'
+import { warrantyLine } from './labels'
 import type { ItemDetail } from './types'
 
 function mockCatalog() {
@@ -259,4 +260,63 @@ test('editFormHasNoOwnerField', async () => {
   const { form } = await openEdit(backend.items.get('900')!)
 
   expect(form.queryByRole('radio', { name: 'Của địa điểm này' })).not.toBeInTheDocument()
+})
+
+test('sendsWarrantyAndInterval', async () => {
+  const backend = mockItemBackend({})
+  const { user, form } = await openCreate()
+
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Máy lạnh')
+  await user.type(form.getByLabelText('Hết bảo hành'), '2027-03-12')
+  await user.type(form.getByRole('textbox', { name: 'Bảo trì mỗi (tháng)' }), '6')
+  await user.click(form.getByRole('button', { name: 'Thêm' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).toMatchObject({ name: 'Máy lạnh', warrantyUntil: '2027-03-12', serviceEveryMonths: 6 })
+})
+
+test('emptyWarrantyAndIntervalAreNotSent', async () => {
+  const backend = mockItemBackend({})
+  const { user, form } = await openCreate()
+
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Ghế')
+  await user.click(form.getByRole('button', { name: 'Thêm' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).not.toHaveProperty('warrantyUntil')
+  expect(backend.writes[0].body).not.toHaveProperty('serviceEveryMonths')
+})
+
+test('intervalMustBeOneToHundredTwenty', async () => {
+  const backend = mockItemBackend({})
+  const { user, form } = await openCreate()
+  await user.type(form.getByRole('textbox', { name: 'Tên' }), 'Máy lạnh')
+  const interval = form.getByRole('textbox', { name: 'Bảo trì mỗi (tháng)' })
+
+  for (const value of ['0', '121', '1.5']) {
+    await user.clear(interval)
+    await user.type(interval, value)
+    await user.click(form.getByRole('button', { name: 'Thêm' }))
+    expect(await form.findByText('Số nguyên từ 1 tới 120')).toBeInTheDocument()
+  }
+  expect(backend.writes).toHaveLength(0)
+})
+
+test('editKeepsWarrantyAndInterval', async () => {
+  const backend = mockItemBackend({ items: [{ id: '900', name: 'Máy lạnh', warrantyUntil: '2027-03-12', serviceEveryMonths: 6 }] })
+  const { user, form } = await openEdit(backend.items.get('900')!)
+
+  expect(form.getByLabelText('Hết bảo hành')).toHaveValue('2027-03-12')
+  expect(form.getByRole('textbox', { name: 'Bảo trì mỗi (tháng)' })).toHaveValue('6')
+  await user.click(form.getByRole('button', { name: 'Lưu' }))
+
+  await waitFor(() => expect(backend.writes).toHaveLength(1))
+  expect(backend.writes[0].body).toMatchObject({ warrantyUntil: '2027-03-12', serviceEveryMonths: 6 })
+})
+
+test('warrantyLineCountsDownAndTurnsWarning', () => {
+  expect(warrantyLine('2026-12-26', '2026-11-25')).toEqual({ text: 'Bảo hành tới 26/12/2026 · còn 31 ngày', tone: 'neutral' })
+  expect(warrantyLine('2026-12-25', '2026-11-25')).toEqual({ text: 'Bảo hành tới 25/12/2026 · còn 30 ngày', tone: 'warning' })
+  expect(warrantyLine('2026-11-25', '2026-11-25')).toEqual({ text: 'Bảo hành tới 25/11/2026 · hết hôm nay', tone: 'warning' })
+  expect(warrantyLine('2026-11-24', '2026-11-25')).toEqual({ text: 'Bảo hành tới 24/11/2026 · đã hết', tone: 'neutral' })
 })
