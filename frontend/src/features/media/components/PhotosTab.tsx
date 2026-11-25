@@ -106,7 +106,12 @@ export function PhotosTab({ ws, owner, highlight }: { ws: string; owner: PhotoOw
           photos={list}
           onOpen={setViewing}
           badge={(photo) =>
-            highlight && highlight.fileId === photo.fileId ? <ToneBadge tone="primary">{highlight.label}</ToneBadge> : null
+            highlight && highlight.fileId === photo.fileId ? (
+              // Nền đặc: nhãn nằm trên ảnh, nền trong mờ thì không đọc được trên ảnh sáng.
+              <ToneBadge tone="primary" className="bg-primary text-primary-foreground shadow-sm">
+                {highlight.label}
+              </ToneBadge>
+            ) : null
           }
           actions={(photo, index) => (
             <PhotoActions
