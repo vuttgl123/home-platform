@@ -86,7 +86,13 @@ Sắp xếp: `dueOn` tăng dần (quá hạn lâu nhất và hỏng lâu nhất 
 
 Vì `since` dựa vào dữ liệu chứ không dựa vào lần đọc, tải lại trang không sinh việc mới. Một việc rời danh sách rồi quay lại (ví dụ món sửa xong rồi hỏng lại) thì có `since` mới, nên lại là việc mới.
 
-`since` của việc vừa vào khung do người dùng vừa sửa dữ liệu (ví dụ đặt `warrantyUntil` là tuần sau) bằng **thời điểm sửa**, không phải đầu ngày `warrantyUntil − 30` đã qua. Nếu không thì việc đó sẽ không bao giờ là "mới". Cách lấy: `since` = `max(mốc theo bảng L5, updated_at của bản ghi gây ra việc)`. Với `CUSTOM_DATE` là `updated_at` của địa điểm, người hay món đồ đó. Với `SERVICE` là `max(updated_at của món, created_at của dòng SERVICE mới nhất)`.
+`since` của việc vừa vào khung do người dùng vừa sửa dữ liệu (ví dụ đặt `warrantyUntil` là tuần sau) bằng **thời điểm đặt giá trị đó**, không phải đầu ngày `warrantyUntil − 30` đã qua. Nếu không thì việc đó sẽ không bao giờ là "mới". Cách lấy: `since` = `max(mốc theo bảng L5, lúc giá trị gây ra việc được đặt)`. "Lúc được đặt" là `changed_at` của version mới nhất mà giá trị đó khác version liền trước, tính riêng cho từng trường:
+- `WARRANTY`: `warrantyUntil`;
+- `SERVICE`: `serviceEveryMonths`, cùng `updated_at` muộn nhất trong các dòng `SERVICE` của món, kể cả dòng đã xoá;
+- `CUSTOM_DATE`: giá trị của mục đó trong `attributes`, cùng `updated_at` của định nghĩa mục;
+- `MOVE_OUT`: `updated_at` của dòng cư trú, vì cư trú không có version.
+
+Không lấy `updated_at` của cả bản ghi (tôi chọn khi lập kế hoạch): nếu lấy, chỉ cần đổi tên một món là chuông lại báo việc bảo hành của nó.
 
 ## 4. Cách làm
 
@@ -113,7 +119,7 @@ Vì `since` dựa vào dữ liệu chứ không dựa vào lần đọc, tải l
 
 **Nhật ký, gói `maintenance` mới:**
 - `GET /maintenance?itemId=&cursor=&limit=`: các dòng chưa xoá của một món, `doneOn` mới nhất trước, rồi id;
-- `POST /maintenance` (`itemId`, `kind`, `doneOn`, `work`, `doneBy`, `note`, `markFixed`, `itemVersion`) theo L1 và L2; trả dòng vừa tạo và `itemVersion` mới khi có `markFixed`;
+- `POST /maintenance` (`itemId`, `kind`, `doneOn`, `work`, `doneBy`, `note`, `markFixed`, `itemVersion`) theo L1 và L2; trả dòng vừa tạo (frontend tải lại món đồ để có `version` mới);
 - `PUT /maintenance/{id}` (có `version`), `DELETE /maintenance/{id}?version=`, `POST /maintenance/{id}/restore` (có `version`).
 
 Thứ tự khoá trong transaction: dòng bảo trì, rồi món đồ, giống cách dịch vụ sở hữu khoá dòng rồi khoá địa điểm.
@@ -121,7 +127,7 @@ Thứ tự khoá trong transaction: dòng bảo trì, rồi món đồ, giống 
 **Mục tuỳ biến.** `remindDays` có trong `FieldDef`, request tạo, request sửa, response; kiểm tra theo L4.
 
 **Việc cần làm, gói `todo` mới:**
-- `GET /todos?kind=&cursor=&limit=`: trang `{ kind, dueOn, since, isNew, subject, context, link }`, sắp theo L5. `subject` gồm loại bản ghi, id, tên, mã. `context` là chữ phụ: đường dẫn địa điểm, tên mục tuỳ biến, tên người, tuỳ `kind`. `link` gồm loại và id của hồ sơ cần mở: món đồ với `BROKEN`, `WARRANTY`, `SERVICE`; **người** với `MOVE_OUT` (chữ phụ là tên địa điểm); bản ghi mang mục tuỳ biến với `CUSTOM_DATE`. Tính trong Java: mỗi nguồn một truy vấn trả mọi dòng trong khung, gộp lại, sắp, rồi cắt trang theo con trỏ `(dueOn, kind, id)`.
+- `GET /todos?kind=&cursor=&limit=`: trang `{ key, kind, dueOn, since, isNew, subjectType, subjectId, subjectName, subjectCode, context }`, sắp theo L5. `key` là chuỗi duy nhất của việc, dùng cho con trỏ và cho React. `subject*` là hồ sơ cần mở: món đồ với `BROKEN`, `WARRANTY`, `SERVICE`; **người** với `MOVE_OUT`; bản ghi mang mục tuỳ biến với `CUSTOM_DATE`. `context` là chữ phụ: tên địa điểm của món hoặc của dòng cư trú, hoặc nhãn của mục tuỳ biến. Tính trong Java: mỗi nguồn một truy vấn trả mọi dòng trong khung, gộp lại, sắp, rồi cắt trang theo con trỏ `(dueOn, kind, key)`.
 - `GET /todos/summary`: `{ total, byKind, newCount, latest[] }`, trong đó `latest` là tối đa 10 việc có `since` mới nhất, dùng cho chuông và thanh bên.
 - `POST /todos/seen`: đặt `seenAt` = bây giờ cho người đang gọi (`WorkspaceContext.userId`), trả `204`.
 
