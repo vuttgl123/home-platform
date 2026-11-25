@@ -117,6 +117,67 @@ class OverviewIT extends RegistryIT {
 			.andExpect(jsonPath("$.peopleLiving").value(2));
 	}
 
+	/** Đang ở và kết thúc từ hôm nay tới hôm nay + 30, tính cả hai đầu; gần nhất trước (spec Đợt 6, L5). */
+	@Test
+	void endingSoonCoversTheNext30Days() throws Exception {
+		long room = type("ROOM", "Phòng", 1);
+		long p1 = place(room, null, "P1");
+		long p2 = place(room, null, "P2");
+		long lastDay = occupancy(p1, person("Đi hôm nay"), this.today.minusDays(10), this.today);
+		occupancy(p2, person("Đi sau 30 ngày"), this.today.minusDays(10), this.today.plusDays(30));
+		occupancy(p1, person("Đi sau 31 ngày"), this.today.minusDays(10), this.today.plusDays(31));
+		occupancy(p2, person("Đã đi"), this.today.minusDays(10), this.today.minusDays(1));
+		occupancy(p1, person("Ở mãi"), this.today.minusDays(10), null);
+		occupancy(p2, person("Chưa đến"), this.today.plusDays(1), this.today.plusDays(10));
+
+		this.mvc.perform(asA(get("/overview")))
+			.andExpect(jsonPath("$.endingSoon.total").value(2))
+			.andExpect(jsonPath("$.endingSoon.rows[*].personName", contains("Đi hôm nay", "Đi sau 30 ngày")))
+			.andExpect(jsonPath("$.endingSoon.rows[*].endDate",
+					contains(this.today.toString(), this.today.plusDays(30).toString())))
+			.andExpect(jsonPath("$.endingSoon.rows[0].occupancyId").value(Long.toString(lastDay)))
+			.andExpect(jsonPath("$.endingSoon.rows[0].placeId").value(Long.toString(p1)))
+			.andExpect(jsonPath("$.endingSoon.rows[0].placeName").value("P1"))
+			.andExpect(jsonPath("$.endingSoon.rows[1].placeName").value("P2"));
+	}
+
+	@Test
+	void endingSoonKeepsTenRows() throws Exception {
+		long room = type("ROOM", "Phòng", 1);
+		long place = place(room, null, "P1");
+		for (int i = 1; i <= 12; i++) {
+			occupancy(place, person("Người " + i), this.today.minusDays(10), this.today.plusDays(i));
+		}
+
+		this.mvc.perform(asA(get("/overview")))
+			.andExpect(jsonPath("$.endingSoon.total").value(12))
+			.andExpect(jsonPath("$.endingSoon.rows", hasSize(10)))
+			.andExpect(jsonPath("$.endingSoon.rows[0].personName").value("Người 1"));
+	}
+
+	@Test
+	void endingSoonSkipsDeletedPeopleAndPlaces() throws Exception {
+		long room = type("ROOM", "Phòng", 1);
+		long kept = place(room, null, "Còn");
+		long gonePlace = place(room, null, "Xoá");
+		long gonePerson = person("Đã xoá");
+		occupancy(kept, person("Còn"), this.today.minusDays(3), this.today.plusDays(3));
+		occupancy(kept, gonePerson, this.today.minusDays(3), this.today.plusDays(3));
+		occupancy(gonePlace, person("Ở chỗ đã xoá"), this.today.minusDays(3), this.today.plusDays(3));
+		this.jdbc.sql("UPDATE reg_person SET deleted_at = UTC_TIMESTAMP(3) WHERE workspace_id = :ws AND id = :id")
+			.param("ws", WS_A)
+			.param("id", gonePerson)
+			.update();
+		this.jdbc.sql("UPDATE reg_place SET deleted_at = UTC_TIMESTAMP(3) WHERE workspace_id = :ws AND id = :id")
+			.param("ws", WS_A)
+			.param("id", gonePlace)
+			.update();
+
+		this.mvc.perform(asA(get("/overview")))
+			.andExpect(jsonPath("$.endingSoon.total").value(1))
+			.andExpect(jsonPath("$.endingSoon.rows[*].personName", contains("Còn")));
+	}
+
 	/** Hết hạn hôm qua và bắt đầu ngày mai thì không tính; kết thúc đúng hôm nay vẫn tính. */
 	@Test
 	void onlyOccupanciesValidTodayCount() throws Exception {

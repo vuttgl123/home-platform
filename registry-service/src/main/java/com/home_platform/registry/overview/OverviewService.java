@@ -27,6 +27,12 @@ public class OverviewService {
 	/** Số ngày của biểu đồ hoạt động, tính cả hôm nay. */
 	static final int ACTIVITY_DAYS = 14;
 
+	/** Số ngày tới của "sắp chuyển đi", tính thêm sau hôm nay (hôm nay + 30 vẫn tính). */
+	static final int ENDING_SOON_DAYS = 30;
+
+	/** Số dòng "sắp chuyển đi" trả về; {@link EndingSoon#total} vẫn đếm đủ. */
+	static final int ENDING_SOON_ROWS = 10;
+
 	/** Mọi câu đếm đọc trong một transaction nên các con số khớp nhau. */
 	@Transactional(readOnly = true)
 	public OverviewResponse get(long workspaceId) {
@@ -37,7 +43,10 @@ public class OverviewService {
 				this.repository.countPeopleLiving(workspaceId, today),
 				this.repository.countItemsByStatus(workspaceId),
 				new OverviewResponse.MissingCodes(missing.placesWithoutCode(), missing.itemsWithoutCode()),
-				this.repository.activityByDay(workspaceId, today.minusDays(ACTIVITY_DAYS - 1), today, this.businessDate.zone()));
+				this.repository.activityByDay(workspaceId, today.minusDays(ACTIVITY_DAYS - 1), today, this.businessDate.zone()),
+				new EndingSoon(this.repository.countEndingSoon(workspaceId, today, today.plusDays(ENDING_SOON_DAYS)),
+						this.repository.endingSoon(workspaceId, today, today.plusDays(ENDING_SOON_DAYS),
+								ENDING_SOON_ROWS)));
 	}
 
 }

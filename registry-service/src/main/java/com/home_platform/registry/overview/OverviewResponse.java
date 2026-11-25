@@ -15,9 +15,11 @@ import com.home_platform.registry.item.ItemStatus;
  * @param missingCodes bản ghi chưa có mã, đúng con số của {@code GET /codes/status}
  * @param activityByDay số thay đổi theo ngày của 14 ngày gần nhất (tính cả hôm nay), cũ trước; ngày không có gì
  *   vẫn có dòng với các số 0
+ * @param endingSoon người đang ở có ngày kết thúc từ hôm nay tới hôm nay + 30
  */
 public record OverviewResponse(int places, List<PlaceTypeCount> placeTypes, int people, int peopleLiving,
-		Map<ItemStatus, Integer> itemsByStatus, MissingCodes missingCodes, List<DayActivity> activityByDay) {
+		Map<ItemStatus, Integer> itemsByStatus, MissingCodes missingCodes, List<DayActivity> activityByDay,
+		EndingSoon endingSoon) {
 
 	public record MissingCodes(int places, int items) {
 	}

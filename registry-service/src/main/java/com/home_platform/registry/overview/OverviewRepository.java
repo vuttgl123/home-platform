@@ -92,6 +92,37 @@ public class OverviewRepository {
 		return counts;
 	}
 
+	/** Dòng cư trú {@code o} đang ở, kết thúc từ {@code :today} tới {@code :last}, người và địa điểm chưa xoá. */
+	private static final String ENDING_SOON = "FROM reg_occupancy o "
+			+ "JOIN reg_person pe ON pe.workspace_id = o.workspace_id AND pe.id = o.person_id "
+			+ "JOIN reg_place p ON p.workspace_id = o.workspace_id AND p.id = o.place_id "
+			+ "WHERE o.workspace_id = :workspaceId AND pe.deleted_at IS NULL AND p.deleted_at IS NULL AND " + CURRENT
+			+ " AND o.end_date BETWEEN :today AND :last";
+
+	/** Số người sắp chuyển đi: đang ở, ngày kết thúc từ {@code today} tới {@code last}. */
+	public int countEndingSoon(long workspaceId, LocalDate today, LocalDate last) {
+		return this.jdbc.sql("SELECT COUNT(*) " + ENDING_SOON)
+			.param("workspaceId", workspaceId)
+			.param("today", today)
+			.param("last", last)
+			.query(Integer.class)
+			.single();
+	}
+
+	/** Tối đa {@code limit} người sắp chuyển đi, ngày kết thúc gần nhất trước, rồi theo tên. */
+	public List<EndingSoonRow> endingSoon(long workspaceId, LocalDate today, LocalDate last, int limit) {
+		return this.jdbc.sql("SELECT o.id, o.person_id, pe.full_name, o.place_id, p.name, o.end_date " + ENDING_SOON
+				+ " ORDER BY o.end_date, pe.full_name, o.id LIMIT :limit")
+			.param("workspaceId", workspaceId)
+			.param("today", today)
+			.param("last", last)
+			.param("limit", limit)
+			.query((rs, rowNum) -> new EndingSoonRow(rs.getLong("id"), rs.getLong("person_id"),
+					rs.getString("full_name"), rs.getLong("place_id"), rs.getString("name"),
+					rs.getObject("end_date", LocalDate.class)))
+			.list();
+	}
+
 	private int count(String sql, long workspaceId) {
 		return this.jdbc.sql(sql).param("workspaceId", workspaceId).query(Integer.class).single();
 	}
