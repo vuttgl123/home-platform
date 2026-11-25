@@ -1,6 +1,6 @@
 # Ảnh cho địa điểm, người và đồ đạc (Đợt 7)
 
-Ngày: 2026-11-25 · Trạng thái: **đã duyệt theo uỷ quyền** (bạn: "Làm tiếp cho tôi Đợt tiếp theo cho tôi"; các đợt trước: "cứ đề xuất rồi tự làm luôn", "các quy tắc bạn tự đề xuất tự làm")
+Ngày: 2026-11-25 · Trạng thái: **đã xây** (2026-11-25), **đã duyệt theo uỷ quyền** (bạn: "Làm tiếp cho tôi Đợt tiếp theo cho tôi"; các đợt trước: "cứ đề xuất rồi tự làm luôn", "các quy tắc bạn tự đề xuất tự làm")
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 

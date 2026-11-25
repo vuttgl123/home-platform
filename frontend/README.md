@@ -70,6 +70,7 @@ src/
 │   ├── history/        tab Lịch sử dùng chung: danh sách version, xem và khôi phục một version, so sánh hai version
 │   ├── activity/       trang Hoạt động (lọc theo loại, hành động, ngày, "chỉ việc tôi làm") và Thùng rác
 │   ├── overview/       trang tổng quan của không gian (trang chủ `/w/:ws` khi đã có địa điểm)
+│   ├── media/          tab Ảnh dùng chung (lưới, tải nhiều ảnh, xem lớn, chú thích, sắp xếp, gỡ, ảnh bìa/đại diện)
 │   ├── vacancies/      trang Chỗ trống (`/w/:ws/vacancies`): chỗ còn xếp người, lọc theo loại và toà, nút Xếp người
 │   ├── exports/        nút tải file Excel (`ExportButton`) và tên file
 │   ├── print/          trang in hồ sơ một địa điểm (`/w/:ws/places/:id/print`, ngoài khung trang)
@@ -101,6 +102,9 @@ Luật phụ thuộc:
   chiều ngược lại không có.
 - `overview` và `print` cũng đứng trên các feature bản ghi (print ghép places, people, ownership, items,
   catalog); không feature nào nhập chúng, chỉ `app/`.
+- `media` là lá: không nhập feature nào. `places`, `people`, `items` nhập `thumbnailUrl` của nó cho ảnh bìa, avatar;
+  tab Ảnh của địa điểm và người là slot ghép ở `app/photos/` (nối `PhotosTab` với `useSetPlaceCover`,
+  `useSetPersonAvatar`), trang món đồ tự gắn `ItemPhotosTab`.
 - `vacancies` đứng trên `places`, `people`, `catalog`; không feature nào nhập nó. Ghi cư trú hay địa điểm làm
   mới khoá `['vacancies', ws]` bằng chữ (không nhập `vacancies`) để không có vòng phụ thuộc.
 - `exports` chỉ nhập `workspaces` (tên không gian cho tên file); trang Đồ đạc và trang Người nhập `ExportButton`.
@@ -215,6 +219,22 @@ Thiết kế: `docs/superpowers/specs/2026-11-25-capacity-and-vacancies-design.m
   không sinh hàng nghìn vạch); vị trí theo %. `OccupancyTimelineCard` tự tải `GET /occupancies/timeline`.
 - **Sắp chuyển đi** trên trang Tổng quan đọc `endingSoon` của `GET /overview`; registry cũ không có trường
   này thì thẻ ẩn đi.
+
+## Ảnh
+
+Thiết kế: `docs/superpowers/specs/2026-11-25-photos-design.md`.
+
+- **Đường dẫn ảnh** (`features/media/urls.ts`): `/api/media/workspaces/<ws>/files/<id>` và `/thumbnail`. Không
+  gian nằm trên đường dẫn vì `<img>` không gửi được header; trình duyệt giữ ảnh một năm (nội dung một file
+  không đổi). Gọi API (danh sách, tải lên, chú thích, sắp xếp, gỡ) qua client `media` như các service khác.
+- **Tải lên** (`PhotosTab`): kiểm tra kiểu (JPEG, PNG, WebP) và cỡ (10 MB) phía client, rồi gửi lần lượt, mỗi
+  file một dòng trạng thái; lỗi server đổi sang chữ tiếng Việt theo mã (400, 413, 409) ở `uploadErrors.ts`.
+  `ownerType`, `ownerId`, `caption` đi trên query, chỉ file nằm trong multipart.
+- **Ảnh bìa, đại diện**: `PhotosTab` nhận `highlight` (`fileId`, nhãn, `onSet`). Ghi bằng lệnh sửa của bản ghi
+  (một version mới, gửi lại đủ các trường). Gỡ đúng ảnh đang là bìa thì bỏ luôn ảnh bìa. Ảnh không tải được
+  thì `CoverImage` ẩn đi, `PersonAvatar` quay về chữ cái đầu.
+- **Test**: jsdom không giữ nguyên `File` khi `FormData` đi qua `Request` của undici, nên test tải lên chỉ kiểm
+  multipart, query và có phần `file`; tải ảnh thật được kiểm bằng Chrome trong bộ preview.
 
 ## Giao diện
 
