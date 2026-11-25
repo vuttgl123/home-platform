@@ -67,6 +67,6 @@ test('longRangesKeepFewTicks', () => {
   ]
   const months = timelineLayout(rows, 'person', '2026-06-15').months
   expect(months.length).toBeGreaterThan(0)
-  expect(months.length).toBeLessThanOrEqual(12)
+  expect(months.length).toBeLessThanOrEqual(8)
   expect(months[0].label).toBe('T1/2020')
 })

@@ -5,8 +5,8 @@ import type { Occupancy, OccupancyStatus } from './types'
 
 /** Số ngày đệm thêm ở hai đầu trục, để thanh không dính mép. */
 const PAD_DAYS = 7
-/** Số vạch tháng nhiều nhất; trục dài hơn thì cách vài tháng mới có một vạch. */
-const MAX_TICKS = 12
+/** Số vạch tháng nhiều nhất: 8 nhãn "T10/2026" vừa trục rộng 720px; trục dài hơn thì cách vài tháng một vạch. */
+const MAX_TICKS = 8
 const DAY_MS = 86_400_000
 
 export type TimelineBar = { id: string; left: number; width: number; open: boolean; status: OccupancyStatus; title: string }

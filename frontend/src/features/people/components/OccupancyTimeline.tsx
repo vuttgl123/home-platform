@@ -40,12 +40,12 @@ export function OccupancyTimeline({
   return (
     <InfoCard title="Dòng thời gian">
       <div className="overflow-x-auto">
-        <div className="flex min-w-[640px] flex-col gap-1.5 text-sm">
+        <div className="flex min-w-[720px] flex-col gap-1.5 text-sm">
           <div className="grid grid-cols-[9rem_1fr] gap-3">
             <span />
             <div className="relative h-5 text-xs text-muted-foreground tabular-nums">
               {layout.months.map((month) => (
-                <span key={month.label} className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${month.left}%` }}>
+                <span key={month.label} className={cn('absolute whitespace-nowrap', edgeShift(month.left))} style={{ left: `${month.left}%` }}>
                   {month.label}
                 </span>
               ))}
@@ -82,7 +82,7 @@ export function OccupancyTimeline({
           <div className="grid grid-cols-[9rem_1fr] gap-3">
             <span />
             <div className="relative h-4 text-xs font-medium text-primary">
-              <span className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${layout.todayLeft}%` }}>
+              <span className={cn('absolute whitespace-nowrap', edgeShift(layout.todayLeft))} style={{ left: `${layout.todayLeft}%` }}>
                 Hôm nay
               </span>
             </div>
@@ -92,6 +92,12 @@ export function OccupancyTimeline({
       {truncated && <p className="mt-2 text-xs text-muted-foreground">Chỉ hiện 200 lần ở gần nhất</p>}
     </InfoCard>
   )
+}
+
+/** Nhãn đặt giữa vạch; sát mép trái hay phải thì canh vào trong để không bị cắt. */
+function edgeShift(left: number): string {
+  if (left < 4) return 'translate-x-0'
+  return left > 96 ? '-translate-x-full' : '-translate-x-1/2'
 }
 
 /** Dòng thời gian của một địa điểm (`placeId`) hay của một người (`personId`), tự tải dữ liệu. */
