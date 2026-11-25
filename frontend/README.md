@@ -63,12 +63,14 @@ src/
 │   ├── workspaces/     danh sách, tạo không gian
 │   ├── catalog/        trang Danh mục: loại địa điểm, nhóm đồ, mục tuỳ biến (cả phần xem và ô nhập dùng chung)
 │   ├── places/         cây, trang địa điểm, thêm, sửa, di chuyển, xoá, địa chỉ
-│   ├── people/         danh sách và hồ sơ người, cư trú (tab Người ở của địa điểm, nơi ở của một người)
+│   ├── people/         danh sách và hồ sơ người, cư trú (tab Người ở của địa điểm, nơi ở của một người),
+│   │                   dòng thời gian cư trú, cảnh báo vượt sức chứa trong form cư trú
 │   ├── ownership/      tab Sở hữu của địa điểm và của một người: thêm chủ, sửa, thôi sở hữu, chuyển nhượng
 │   ├── items/          tab Đồ đạc của địa điểm, trang món đồ: thêm, sửa, chuyển chỗ, gỡ, thay, đưa lại, xoá
 │   ├── history/        tab Lịch sử dùng chung: danh sách version, xem và khôi phục một version, so sánh hai version
 │   ├── activity/       trang Hoạt động (lọc theo loại, hành động, ngày, "chỉ việc tôi làm") và Thùng rác
 │   ├── overview/       trang tổng quan của không gian (trang chủ `/w/:ws` khi đã có địa điểm)
+│   ├── vacancies/      trang Chỗ trống (`/w/:ws/vacancies`): chỗ còn xếp người, lọc theo loại và toà, nút Xếp người
 │   ├── exports/        nút tải file Excel (`ExportButton`) và tên file
 │   ├── print/          trang in hồ sơ một địa điểm (`/w/:ws/places/:id/print`, ngoài khung trang)
 │   └── search/         ô tìm chung (Ctrl+K): địa điểm, người, đồ đạc theo tên và theo mã
@@ -99,6 +101,8 @@ Luật phụ thuộc:
   chiều ngược lại không có.
 - `overview` và `print` cũng đứng trên các feature bản ghi (print ghép places, people, ownership, items,
   catalog); không feature nào nhập chúng, chỉ `app/`.
+- `vacancies` đứng trên `places`, `people`, `catalog`; không feature nào nhập nó. Ghi cư trú hay địa điểm làm
+  mới khoá `['vacancies', ws]` bằng chữ (không nhập `vacancies`) để không có vòng phụ thuộc.
 - `exports` chỉ nhập `workspaces` (tên không gian cho tên file); trang Đồ đạc và trang Người nhập `ExportButton`.
 - `components/ui` không biết gì về nghiệp vụ.
 
@@ -196,6 +200,21 @@ thử lại.
   một bản thành các dòng `{ key, label, value, raw }`; hộp xem một version và hộp so sánh dùng chung các
   dòng đó. `compareRows` ghép hai bản theo `key` và so `raw` theo nội dung. Mục tuỳ biến lấy bằng
   `attributeRows` với mục của chính loại (nhóm) ở bản đó (`defsOfType`).
+
+## Chỗ ở và sức chứa
+
+Thiết kế: `docs/superpowers/specs/2026-11-25-capacity-and-vacancies-design.md`.
+
+- **Sức chứa** là ô số trong form địa điểm (0 tới 9999, bỏ trống là chưa đặt; bỏ trống thì không gửi
+  `capacity`, PUT ghi đè nên sức chứa bị bỏ). `CapacityLine` hiện "3/4 người · còn 1 chỗ" (success), "đã đầy"
+  (warning), "vượt" (danger); `capacityText` cho chữ không màu (trang in, trang Chỗ trống).
+- **Cảnh báo vượt** (`useCapacityCheck`): form cư trú gọi `GET /places/{id}/capacity-check` 300 ms sau lần đổi
+  ngày hay địa điểm cuối; khi `peak + 1 > capacity` hiện `CapacityWarning`. Nút lưu không bị khoá.
+- **Dòng thời gian** (`timelineLayout` trong `features/people/timeline.ts`, hàm thuần): trục từ ngày bắt đầu
+  sớm nhất tới `max(hôm nay, ngày cuối muộn nhất)`, đệm 7 ngày; tối đa 8 vạch tháng (năm gõ nhầm như 2999
+  không sinh hàng nghìn vạch); vị trí theo %. `OccupancyTimelineCard` tự tải `GET /occupancies/timeline`.
+- **Sắp chuyển đi** trên trang Tổng quan đọc `endingSoon` của `GET /overview`; registry cũ không có trường
+  này thì thẻ ẩn đi.
 
 ## Giao diện
 

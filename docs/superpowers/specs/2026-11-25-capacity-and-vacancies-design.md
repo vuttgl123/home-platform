@@ -1,6 +1,6 @@
 # Chỗ ở và sức chứa (Đợt 6, D3)
 
-Ngày: 2026-11-25 · Trạng thái: **đã duyệt theo uỷ quyền** (bạn: "Được hãy làm cho tôi"; "Còn các quy tắc bạn tự đề xuất tự làm nhé")
+Ngày: 2026-11-25 · Trạng thái: **đã xây** (2026-11-25), **đã duyệt theo uỷ quyền** (bạn: "Được hãy làm cho tôi"; "Còn các quy tắc bạn tự đề xuất tự làm nhé")
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 
