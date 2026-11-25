@@ -12,6 +12,7 @@ import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.registry.item.ItemService;
+import com.home_platform.registry.maintenance.MaintenanceService;
 import com.home_platform.registry.person.PersonService;
 import com.home_platform.registry.place.PlaceService;
 import com.home_platform.registry.support.Text;
@@ -29,17 +30,21 @@ public class ActivityService {
 
 	private final ItemService items;
 
-	ActivityService(EntityHistory history, PlaceService places, PersonService people, ItemService items) {
+	private final MaintenanceService maintenance;
+
+	ActivityService(EntityHistory history, PlaceService places, PersonService people, ItemService items,
+			MaintenanceService maintenance) {
 		this.history = history;
 		this.places = places;
 		this.people = people;
 		this.items = items;
+		this.maintenance = maintenance;
 	}
 
 	/**
 	 * Các version mới nhất trước, mỗi dòng kèm tên hiện tại của bản ghi. Mỗi loại bản ghi có mặt
 	 * trong trang được tra tên bằng một truy vấn.
-	 * @param filter loại bản ghi (PLACE, PERSON, ITEM), hành động, người làm, khoảng thời gian;
+	 * @param filter loại bản ghi (PLACE, PERSON, ITEM, MAINTENANCE), hành động, người làm, khoảng thời gian;
 	 * trường {@code null} là không lọc
 	 * @throws BadRequestException nếu {@code from} không trước {@code to}
 	 */
@@ -57,8 +62,13 @@ public class ActivityService {
 							ids -> ids.stream().distinct().toList()))));
 		Map<String, Map<Long, String>> names = new HashMap<>();
 		idsByType.forEach((type, ids) -> names.put(type, namesOf(workspaceId, type, ids)));
+		List<Long> maintenanceIds = idsByType.getOrDefault(MaintenanceService.ENTITY_TYPE, List.of());
+		Map<Long, Long> itemOfEntry = maintenanceIds.isEmpty() ? Map.of()
+				: this.maintenance.itemIds(workspaceId, maintenanceIds);
 		return changes.map(change -> new ActivityEntry(change,
-				names.getOrDefault(change.entityType(), Map.of()).get(change.entityId())));
+				names.getOrDefault(change.entityType(), Map.of()).get(change.entityId()),
+				MaintenanceService.ENTITY_TYPE.equals(change.entityType()) ? itemOfEntry.get(change.entityId())
+						: null));
 	}
 
 	private Map<Long, String> namesOf(long workspaceId, String entityType, List<Long> ids) {
@@ -66,6 +76,7 @@ public class ActivityService {
 			case PlaceService.ENTITY_TYPE -> this.places.names(workspaceId, ids);
 			case PersonService.ENTITY_TYPE -> this.people.names(workspaceId, ids);
 			case ItemService.ENTITY_TYPE -> this.items.names(workspaceId, ids);
+			case MaintenanceService.ENTITY_TYPE -> this.maintenance.names(workspaceId, ids);
 			default -> Map.of();
 		};
 	}
