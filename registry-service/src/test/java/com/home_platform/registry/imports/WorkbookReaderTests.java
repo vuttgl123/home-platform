@@ -131,15 +131,25 @@ class WorkbookReaderTests {
 	@Test
 	void tooManyRowsIsAFileError() {
 		XlsxBuilder file = workbook().sheet("Người", "Họ tên");
-		for (int row = 0; row < 3_000; row++) {
+		for (int row = 0; row < 2_000; row++) {
 			file.row("Người " + row);
 		}
 		file.sheet("Đồ đạc", "Tên", "Ở đâu");
-		for (int row = 0; row < 2_001; row++) {
+		for (int row = 0; row < 1_001; row++) {
 			file.row("Món " + row, "P301");
 		}
 
-		assertFileErrors(file.build(), "File có hơn 5.000 dòng; hãy chia thành nhiều file");
+		assertFileErrors(file.build(), "File có hơn 3.000 dòng; hãy chia thành nhiều file");
+	}
+
+	@Test
+	void exactlyTheLimitIsRead() {
+		XlsxBuilder file = workbook().sheet("Người", "Họ tên");
+		for (int row = 0; row < 3_000; row++) {
+			file.row("Người " + row);
+		}
+
+		assertThat(read(file.build()).sheets().get(0).rows()).hasSize(3_000);
 	}
 
 	@Test

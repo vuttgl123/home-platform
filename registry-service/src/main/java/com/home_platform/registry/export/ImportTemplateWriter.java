@@ -35,7 +35,7 @@ public class ImportTemplateWriter {
 	private static final List<String> GUIDE_HEADERS = List.of("Mục", "Cách ghi");
 
 	/** Số dòng có danh sách chọn ở mỗi cột liệt kê; bằng giới hạn dòng của một lần nhập. */
-	private static final int DROPDOWN_ROWS = 5_000;
+	private static final int DROPDOWN_ROWS = 3_000;
 
 	private final FieldDefService fieldDefs;
 

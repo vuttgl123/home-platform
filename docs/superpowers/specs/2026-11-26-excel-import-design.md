@@ -45,7 +45,7 @@ Một nơi đã có danh sách phòng, người ở, đồ đạc trên Excel th
 
 ## 3. Luật nghiệp vụ (tôi chọn)
 
-**N1. File.** Một file `.xlsx`, tối đa **5 MB** và **5.000 dòng dữ liệu** cộng mọi sheet (hằng số `MAX_ROWS`). Quá giới hạn, không mở được, không phải `.xlsx`, hay không có dòng nào để nhập thì là **lỗi cả file**: không đọc tiếp, không nhập gì.
+**N1. File.** Một file `.xlsx`, tối đa **5 MB** và **3.000 dòng dữ liệu** cộng mọi sheet (hằng số `MAX_ROWS`; hạ từ 5.000 sau khi đo, xem 4.2). Quá giới hạn, không mở được, không phải `.xlsx`, hay không có dòng nào để nhập thì là **lỗi cả file**: không đọc tiếp, không nhập gì.
 
 - Sheet được nhận theo tên: **Địa điểm, Người, Cư trú, Sở hữu, Đồ đạc** (bỏ khoảng trắng hai đầu, không phân biệt hoa thường). Thiếu sheet nào thì bỏ qua sheet đó. Sheet khác tên bị bỏ qua kèm **ghi chú** (sheet "Hướng dẫn" bỏ qua không cần ghi chú).
 - Dòng 1 là tiêu đề. Cột được nhận theo chữ tiêu đề (cùng cách so như tên sheet), thứ tự cột không quan trọng. Cột lạ bị bỏ qua kèm ghi chú "Cột 'X' ở sheet Y không có trong mẫu, bị bỏ qua". Cột "Đang ở" của sheet Người bỏ qua không cần ghi chú (cột chỉ để xem, cư trú khai ở sheet Cư trú). Sheet có dòng mà thiếu cột bắt buộc (N2) là lỗi cả file.
@@ -155,7 +155,7 @@ Cảnh báo "có vẻ đã có" (không chặn, vì trùng tên vẫn có thể 
 
 **Dịch lỗi.** Một lớp `ImportMessages` giữ bảng dịch các lỗi đã biết của lệnh tạo (giấy tờ trùng, cư trú chồng ngày, sở hữu chồng ngày, tổng tỷ lệ quá 100%, ngày kết thúc trước ngày bắt đầu, cây quá sâu, lỗi từng khoá của mục tuỳ biến, chủ đồ đã xoá, ngày gỡ trước ngày đặt, mã trùng). Lỗi chưa có trong bảng hiện "Không nhập được dòng này (<chi tiết gốc>)", để không lỗi nào bị nuốt.
 
-**Giới hạn thời gian.** Mục tiêu: file 5.000 dòng xem trước xong dưới 60 giây trên máy dev. Đo trong IT; quá mục tiêu thì hạ `MAX_ROWS` và ghi lại con số. Trong lúc chạy, transaction giữ khoá của bộ đếm mã, nên người khác tạo địa điểm, đồ đạc trong cùng không gian phải chờ tới khi xong (chấp nhận: một gia đình, một toà nhà; độ dài bị N1 chặn).
+**Giới hạn thời gian.** Mục tiêu: file đủ `MAX_ROWS` dòng xem trước xong dưới 60 giây trên máy dev; quá mục tiêu thì hạ `MAX_ROWS` và ghi lại con số. Đo ngày 2026-11-26 trên jar registry với database UAT: 5.000 dòng mất 66 tới 73 giây (tắt log SQL cũng vậy: thời gian nằm ở số lượt hỏi database, khoảng 13 tới 15 ms một dòng), 3.000 dòng mất 39 tới 40 giây, nên `MAX_ROWS` là 3.000. Transaction của lần chạy có giới hạn riêng 120 giây: mặc định 30 giây của nền tảng cắt ngang file lớn, và mọi dòng sau mốc đó báo lỗi dù không sai gì. Trong lúc chạy, transaction giữ khoá của bộ đếm mã, nên người khác tạo địa điểm, đồ đạc trong cùng không gian phải chờ tới khi xong (chấp nhận: một gia đình, một toà nhà; độ dài bị N1 chặn).
 
 ### 4.3 Frontend
 
@@ -180,7 +180,7 @@ Cảnh báo "có vẻ đã có" (không chặn, vì trùng tên vẫn có thể 
   - **khứ hồi:** xuất một không gian mẫu (không có hai người trùng tên), nhập file đó vào một không gian trống có cùng Danh mục (loại địa điểm, nhóm đồ, mục tuỳ biến), xuất lại: hai file giống nhau từng ô;
   - chữ tổ hợp (NFD) trong file khớp với tên, nhãn dựng sẵn (NFC);
   - mẫu: tiêu đề bằng tiêu đề file xuất trừ "Đang ở", có cột mục tuỳ biến, có sheet Hướng dẫn;
-  - thời gian của file 5.000 dòng (mục 4.2).
+  - thời gian của file đủ `MAX_ROWS` dòng (mục 4.2).
 - **Frontend (Vitest):** tải mẫu; chọn file gửi xem trước; dải số, tab, bảng, lọc dòng lỗi, "Hiện thêm"; nút Nhập bị khoá khi có lỗi; nhập xong hiện kết quả và làm mới dữ liệu; `committed: false` quay về xem trước; `413`, `404`, file không đọc lại được; mục trên thanh bên và nút ở Tổng quan.
 - **Xem bằng mắt** ở khổ 1440, 1920 và 390, nền sáng và nền tối, với một file có cả dòng ổn, cảnh báo và lỗi.
 

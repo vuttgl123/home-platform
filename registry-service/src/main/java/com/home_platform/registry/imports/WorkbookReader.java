@@ -28,11 +28,15 @@ import org.dhatim.fastexcel.reader.Sheet;
  */
 final class WorkbookReader {
 
-	static final int MAX_ROWS = 5_000;
+	/**
+	 * Giới hạn dòng của một file: 3.000 dòng xem trước mất khoảng 40 giây trên database UAT (đo ngày
+	 * 2026-11-26; 5.000 dòng mất 66 tới 73 giây, quá mục tiêu 60 giây của spec).
+	 */
+	static final int MAX_ROWS = 3_000;
 
 	static final String UNREADABLE = "Không đọc được file; hãy lưu lại dưới dạng Excel (.xlsx)";
 
-	static final String TOO_MANY_ROWS = "File có hơn 5.000 dòng; hãy chia thành nhiều file";
+	static final String TOO_MANY_ROWS = "File có hơn 3.000 dòng; hãy chia thành nhiều file";
 
 	static final String NOTHING_TO_IMPORT = "File không có dòng nào để nhập";
 

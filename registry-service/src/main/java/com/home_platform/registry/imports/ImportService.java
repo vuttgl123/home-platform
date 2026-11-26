@@ -32,6 +32,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class ImportService {
 
+	/**
+	 * Giới hạn thời gian của một lần chạy, thay cho mặc định 30 giây của nền tảng: một file đủ
+	 * {@value WorkbookReader#MAX_ROWS} dòng cần khoảng 40 giây trên database UAT. Hết hạn thì mọi dòng
+	 * còn lại lỗi, nên giới hạn này để dư gấp ba.
+	 */
+	static final int TIMEOUT_SECONDS = 120;
+
 	private final TransactionTemplate savepoint;
 
 	private final ImportLookupRepository lookups;
@@ -48,6 +55,7 @@ public class ImportService {
 			PlaceTypeService placeTypes, ItemCategoryService categories, List<SheetRows> sheetRows) {
 		this.savepoint = new TransactionTemplate(transactions);
 		this.savepoint.setPropagationBehavior(TransactionDefinition.PROPAGATION_NESTED);
+		this.savepoint.setTimeout(TIMEOUT_SECONDS);
 		this.lookups = lookups;
 		this.fieldDefs = fieldDefs;
 		this.placeTypes = placeTypes;

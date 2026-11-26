@@ -21,7 +21,7 @@
   - dừng registry preview trước khi chạy `verify`.
 - Giới hạn:
   - file tối đa 5 MB (`5 * 1024 * 1024` byte), quá thì `413` với chi tiết `"File must be at most 5 MB"`;
-  - `MAX_ROWS = 5_000` dòng dữ liệu cộng mọi sheet;
+  - `MAX_ROWS = 3_000` dòng dữ liệu cộng mọi sheet (hạ từ 5.000 ở Task 8 sau khi đo);
   - multipart của registry: `max-file-size: 5MB`, `max-request-size: 6MB`;
   - mã tối đa 50 ký tự; ghi chú version cắt còn 255 ký tự.
 - Ghi chú version của mọi hồ sơ nhập vào: `"Nhập từ Excel: " + tên file` (N9).
@@ -30,7 +30,7 @@
 - Chữ của backend (đúng nguyên văn; `{…}` là chỗ điền):
   - lỗi cả file:
     - "Không đọc được file; hãy lưu lại dưới dạng Excel (.xlsx)"
-    - "File có hơn 5.000 dòng; hãy chia thành nhiều file"
+    - "File có hơn 3.000 dòng; hãy chia thành nhiều file"
     - "File không có dòng nào để nhập"
     - "Sheet {sheet} thiếu cột bắt buộc: {cột, cột} (dòng 1 phải là tiêu đề cột)"
   - ghi chú:
