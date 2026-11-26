@@ -20,12 +20,16 @@ import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.ResultActions;
 
 /** Tóm tắt cho chuông và mốc "đã xem" của từng người (spec Đợt 8, L6). */
 class TodoSeenIT extends OccupancyTestData {
+
+	@Autowired
+	CacheManager cacheManager;
 
 	private static final long OTHER_USER = 4343L;
 
@@ -104,6 +108,26 @@ class TodoSeenIT extends OccupancyTestData {
 		summary().andExpect(jsonPath("$.newCount").value(1)).andExpect(jsonPath("$.latest[0].kind").value("CUSTOM_DATE"));
 	}
 
+	/** Ngày giấy tờ đã đặt trước lần xem chuông: không phải mới, dù mục tuỳ biến cũng đã có từ trước. */
+	@Test
+	void aDocumentDateSetBeforeTheLastLookIsNotNew() throws Exception {
+		this.mvc.perform(asA(post("/field-defs")).contentType(MediaType.APPLICATION_JSON).content("""
+				{"target": "PERSON", "fieldKey": "id_expiry", "label": "CCCD hết hạn", "dataType": "DATE",
+				 "remindDays": 30}""")).andExpect(status().isCreated());
+		String person = this.mvc.perform(asA(post("/people")).contentType(MediaType.APPLICATION_JSON).content("""
+				{"fullName": "An", "attributes": {"id_expiry": "%s"}}""".formatted(this.today.plusDays(20))))
+			.andExpect(status().isCreated())
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
+		Instant before = Instant.now().minus(10, ChronoUnit.MINUTES);
+		backdate("PERSON", Long.parseLong(JsonPath.read(person, "$.id")), before);
+		backdateFieldDefs(before);
+		seenAt(Instant.now().minus(1, ChronoUnit.MINUTES));
+
+		summary().andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.newCount").value(0));
+	}
+
 	@Test
 	void seenIsPerUser() throws Exception {
 		item("{\"name\": \"Tủ lạnh\", \"status\": \"BROKEN\"}");
@@ -178,11 +202,16 @@ class TodoSeenIT extends OccupancyTestData {
 			.update();
 	}
 
+	/**
+	 * Lùi mốc tạo, sửa của mọi mục tuỳ biến. Danh mục được đọc qua cache, nên xoá cache: không thì
+	 * việc cần làm vẫn thấy mục "vừa sửa" và mọi hạn tuỳ biến đều thành mới.
+	 */
 	private void backdateFieldDefs(Instant at) {
 		this.jdbc.sql("UPDATE reg_field_def SET created_at = :at, updated_at = :at WHERE workspace_id = :ws")
 			.param("at", utc(at))
 			.param("ws", WS_A)
 			.update();
+		this.cacheManager.getCacheNames().forEach(name -> this.cacheManager.getCache(name).clear());
 	}
 
 	private static LocalDateTime utc(Instant at) {
