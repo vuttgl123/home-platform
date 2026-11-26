@@ -1,16 +1,15 @@
 package com.home_platform.common.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.emptyString;
 
 import java.util.Map;
 
@@ -19,6 +18,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@ExtendWith(OutputCaptureExtension.class)
 class ApiExceptionHandlerTests {
 
 	private final MockMvc mvc = MockMvcBuilders.standaloneSetup(new FailingController())
@@ -69,8 +72,16 @@ class ApiExceptionHandlerTests {
 	}
 
 	@Test
-	void lockTimeoutIsNotAVersionConflict() throws Exception {
-		this.mvc.perform(get("/locked")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").doesNotExist());
+	void lockTimeoutIsBusyNotAVersionConflict() throws Exception {
+		this.mvc.perform(get("/locked")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("BUSY"));
+	}
+
+	/** Đóng tab giữa lúc tải file: không phải lỗi của ứng dụng, không ghi log mức ERROR. */
+	@Test
+	void clientDisconnectIsNotAnError(CapturedOutput output) throws Exception {
+		this.mvc.perform(get("/disconnected"));
+
+		assertThat(output.getAll()).doesNotContain("Unhandled exception").doesNotContain("ERROR");
 	}
 
 	@Test
@@ -193,6 +204,11 @@ class ApiExceptionHandlerTests {
 		@GetMapping("/duplicate")
 		void duplicate() {
 			throw new DuplicateKeyException("Duplicate entry 'x' for key 'uk_reg_place_type_code'");
+		}
+
+		@GetMapping("/disconnected")
+		void disconnected() throws java.io.IOException {
+			throw new java.io.IOException("Broken pipe");
 		}
 
 		@GetMapping("/locked")

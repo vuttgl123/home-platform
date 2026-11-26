@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.util.DisconnectedClientHelper;
 
 /**
  * Mọi lỗi của API trả về cùng một dạng: Problem Details (RFC 9457). Lớp cha lo các lỗi của
@@ -98,8 +99,10 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(PessimisticLockingFailureException.class)
 	ProblemDetail handleLockFailure(PessimisticLockingFailureException ex) {
 		log.warn("Lock failure: {}", ex.getMessage());
-		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
 				"The record is being changed by someone else; try again");
+		problem.setProperty(ConflictException.CODE_PROPERTY, ConflictException.BUSY);
+		return problem;
 	}
 
 	/**
@@ -109,6 +112,11 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	 */
 	@ExceptionHandler(Exception.class)
 	ProblemDetail handleUnexpected(Exception ex) {
+		// Client đóng kết nối (đóng tab giữa lúc tải file): không phải lỗi, và không còn ai nhận response.
+		if (DisconnectedClientHelper.isClientDisconnectedException(ex)) {
+			log.debug("Client disconnected: {}", ex.getMessage());
+			return null;
+		}
 		log.error("Unhandled exception", ex);
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
 		String requestId = MDC.get(RequestLogFilter.REQUEST_ID);

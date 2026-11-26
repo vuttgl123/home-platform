@@ -16,6 +16,12 @@ public class ConflictException extends ErrorResponseException {
 	/** Mã của lỗi "bản ghi đã được người khác sửa": client đọc lại rồi thử lại. */
 	public static final String VERSION_CONFLICT = "VERSION_CONFLICT";
 
+	/**
+	 * Mã của 409 khi không lấy được khoá dòng: lệnh khác (ví dụ một lần nhập Excel) đang giữ dữ liệu
+	 * đó. Client thử lại sau là được; không cần đọc lại như với {@link #VERSION_CONFLICT}.
+	 */
+	public static final String BUSY = "BUSY";
+
 	public ConflictException(String detail) {
 		super(HttpStatus.CONFLICT, ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, detail), null);
 	}
