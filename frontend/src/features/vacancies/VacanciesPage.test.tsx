@@ -149,3 +149,20 @@ test('loadsMore', async () => {
   expect(await content.findByRole('link', { name: 'P103' })).toBeInTheDocument()
   expect(requests.at(-1)?.searchParams.get('cursor')).toBe('1')
 })
+
+test('buildingFilterListsEveryTopLevelPlace', async () => {
+  setUp()
+  const roots = Array.from({ length: 25 }, (_, index) => place({ id: String(1000 + index), name: `Toà ${index + 1}` }))
+  server.use(
+    http.get('/api/registry/places', ({ request }) => {
+      const cursor = new URL(request.url).searchParams.get('cursor')
+      return HttpResponse.json(cursor ? { items: roots.slice(20), nextCursor: null } : { items: roots.slice(0, 20), nextCursor: 'p2' })
+    }),
+  )
+
+  renderApp({ route: '/w/7/vacancies', userId: '42' })
+
+  const select = await screen.findByLabelText('Toà')
+  await waitFor(() => expect(within(select).getAllByRole('option')).toHaveLength(26))
+  expect(within(select).getByRole('option', { name: 'Toà 25' })).toBeInTheDocument()
+})

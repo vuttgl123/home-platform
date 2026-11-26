@@ -4,7 +4,7 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { usePlaceTypes } from '@/features/catalog'
-import { useChildren } from '@/features/places'
+import { useTopLevelPlaces } from '@/features/places'
 
 import type { VacancyFilter } from '../types'
 
@@ -25,7 +25,7 @@ export function VacancyFilters({
   const types = (usePlaceTypes(ws).data ?? [])
     .filter((type) => type.status === 'ACTIVE')
     .sort((a, b) => a.sortOrder - b.sortOrder)
-  const buildings = useChildren(ws, null).items
+  const buildings = useTopLevelPlaces(ws).data ?? []
   const buildingId = useId()
   const typeLabelId = useId()
   return (

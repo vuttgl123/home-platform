@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { mockDownloads } from '@/test/downloads'
-import { emptyOverview, importReport, rowReport, sheetReport } from '@/test/fixtures'
+import { emptyOverview, importReport, page, rowReport, sheetReport } from '@/test/fixtures'
 import { mockShell, recordRequests } from '@/test/handlers'
 import { mockImportBackend, type ImportResponder } from '@/test/importBackend'
 import { renderApp } from '@/test/render'
@@ -192,6 +192,7 @@ test('chooseAnotherFileStartsOver', async () => {
 
 test('sidebarAndOverviewLinkToTheImportPage', async () => {
   mockShell({ overview: { ...emptyOverview(), places: 3 } })
+  server.use(http.get('/api/registry/activity', () => HttpResponse.json(page([]))))
 
   renderApp({ route: '/w/7', userId: '42' })
 

@@ -174,6 +174,8 @@ test('oneFailingSearchKeepsTheOthers', async () => {
 
 test('enterOpensTheRecordAndClosesThePalette', async () => {
   mockSearch()
+  // Trang của địa điểm được mở; test chỉ cần đường đi đúng, nên trang đó báo không tìm thấy là đủ.
+  server.use(http.get('/api/registry/places/301', () => HttpResponse.json(problem(404, 'Not found'), { status: 404 })))
   const { user, palette, router } = await openPalette()
 
   await user.type(palette.getByRole('combobox'), 'p-0042')

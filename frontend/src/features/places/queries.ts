@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 
-import { useCursorList, type ApiError, type CursorList } from '@/api'
+import { fetchAllPages, useCursorList, type ApiError, type CursorList } from '@/api'
 import { isId } from '@/lib/ids'
 
 import {
@@ -56,6 +56,17 @@ export function useChildren(
     queryKey: placeKeys.children(ws, parentId),
     fetchPage: (cursor) => (parentId == null ? listTopLevel(ws, cursor) : listChildren(ws, parentId, cursor)),
     enabled: options.enabled,
+  })
+}
+
+/**
+ * Mọi địa điểm cấp cao nhất, tải đủ các trang một lần: cho ô chọn (bộ lọc "Toà" của trang Chỗ trống).
+ * Khoá nằm dưới danh sách con nên lệnh ghi địa điểm làm cũ nó.
+ */
+export function useTopLevelPlaces(ws: string) {
+  return useQuery<PlaceSummary[], ApiError>({
+    queryKey: [...placeKeys.lists(ws), 'top-level-all'],
+    queryFn: () => fetchAllPages((cursor) => listTopLevel(ws, cursor)),
   })
 }
 
@@ -161,8 +172,9 @@ export function useDeletePlace(ws: string) {
   return useMutation<void, ApiError, PlaceDetail>({
     mutationFn: (place) => deletePlace(ws, place.id, place.version),
     onSuccess: () => {
-      // Như `refreshAfterWrite`: cha có thể vừa thành lá.
+      // Như `refreshAfterWrite`: cha có thể vừa thành lá, và trang Chỗ trống mất một chỗ.
       void queryClient.invalidateQueries({ queryKey: placeKeys.lists(ws) })
+      void queryClient.invalidateQueries({ queryKey: ['vacancies', ws] })
       void queryClient.invalidateQueries({ queryKey: placeKeys.searches(ws) })
       void queryClient.invalidateQueries({ queryKey: placeKeys.subtrees(ws) })
     },

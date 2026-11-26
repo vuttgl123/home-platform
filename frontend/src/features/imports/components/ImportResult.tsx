@@ -29,7 +29,7 @@ export function ImportResult({ ws, report, onAgain }: { ws: string; report: Impo
       </ul>
       <div className="flex flex-wrap gap-2">
         {links.map((link) => (
-          <Link key={link.to} to={link.to} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+          <Link key={link.to} to={link.to} className={buttonVariants({ variant: 'secondary', size: 'sm' })}>
             {link.label}
           </Link>
         ))}

@@ -1,12 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react'
+import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, test } from 'vitest'
 
 import { setCurrentUser } from '@/api'
-
+import { page } from '@/test/fixtures'
 import { mockShell, recordRequests } from '@/test/handlers'
 import { mockPeopleBackend } from '@/test/peopleBackend'
 import { renderApp, renderWithProviders } from '@/test/render'
+import { server } from '@/test/server'
 
 import { PersonPage } from './pages/PersonPage'
 
@@ -129,6 +131,8 @@ test('unknownPersonShowsNotFound', async () => {
 test('pageWithoutSlotsHasNoItemsTab', async () => {
   setCurrentUser('42')
   mockPeopleBackend({ people: [an] })
+  // Trang được render rời, không qua khung ứng dụng (mockShell): mục tuỳ biến của người phải tự có.
+  server.use(http.get('/api/registry/field-defs', () => HttpResponse.json([])))
   renderWithProviders(
     <MemoryRouter initialEntries={['/w/7/people/55']}>
       <Routes>
@@ -145,6 +149,7 @@ test('pageWithoutSlotsHasNoItemsTab', async () => {
 test('itemsTabIsOnTheUrl', async () => {
   mockShell()
   mockPeopleBackend({ people: [an] })
+  server.use(http.get('/api/registry/items', () => HttpResponse.json(page([]))))
   const { user, router } = renderApp({ route: '/w/7/people/55', userId: '42' })
 
   await user.click(await (await main()).findByRole('tab', { name: 'Đồ đạc' }))
