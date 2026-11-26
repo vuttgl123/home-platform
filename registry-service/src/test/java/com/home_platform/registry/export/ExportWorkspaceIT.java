@@ -137,6 +137,15 @@ class ExportWorkspaceIT extends RegistryIT {
 	}
 
 	@Test
+	void placesSheetSortsSiblingsByName() throws Exception {
+		long floor = place(this.building, null, "Tầng 1").id();
+		place(this.room, floor, "P10");
+		place(this.room, floor, "P2");
+
+		assertThat(workspace().get(PLACES).column("Tên")).containsExactly("Tầng 1", "P2", "P10");
+	}
+
+	@Test
 	void peopleSheetListsWhereEachPersonLivesToday() throws Exception {
 		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PERSON, null, "job", "Nghề nghiệp",
 				FieldDataType.TEXT, null, null, 1, null));

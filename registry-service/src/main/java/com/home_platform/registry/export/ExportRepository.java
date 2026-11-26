@@ -62,20 +62,14 @@ public class ExportRepository {
 	}
 
 	/**
-	 * Một lô địa điểm chưa xoá theo thứ tự của cây: con đứng ngay sau cha. Index (workspace_id, path).
-	 * @param afterPath {@code path} của dòng cuối lô trước; {@code null} là lô đầu
+	 * Mọi địa điểm chưa xoá, một lần: sheet Địa điểm xếp theo tên trong từng cấp ({@link PlaceOrder}),
+	 * điều mà đọc theo lô theo {@code path} không làm được. Số địa điểm của một không gian nhỏ (vài nghìn).
 	 */
-	public List<ExportPlaceRow> places(long workspaceId, String afterPath, int limit) {
-		Map<String, Object> params = params(workspaceId, limit);
-		StringBuilder sql = new StringBuilder("SELECT id, path, place_type_id, code, name, status, capacity, description, "
-				+ "attributes FROM reg_place WHERE workspace_id = :workspaceId AND deleted_at IS NULL");
-		if (afterPath != null) {
-			sql.append(" AND path > :afterPath");
-			params.put("afterPath", afterPath);
-		}
-		sql.append(" ORDER BY path LIMIT :limit");
-		return this.jdbc.sql(sql.toString())
-			.params(params)
+	public List<ExportPlaceRow> allPlaces(long workspaceId) {
+		return this.jdbc
+			.sql("SELECT id, path, place_type_id, code, name, status, capacity, description, attributes FROM reg_place "
+					+ "WHERE workspace_id = :workspaceId AND deleted_at IS NULL")
+			.param("workspaceId", workspaceId)
 			.query((rs, rowNum) -> new ExportPlaceRow(rs.getLong("id"), rs.getString("path"),
 					rs.getLong("place_type_id"), rs.getString("code"), rs.getString("name"),
 					PlaceStatus.valueOf(rs.getString("status")), rs.getObject("capacity", Integer.class),

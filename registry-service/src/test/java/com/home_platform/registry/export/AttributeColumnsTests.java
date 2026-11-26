@@ -124,6 +124,16 @@ class AttributeColumnsTests {
 		assertThat(sheet.cell(2, "Số").isBlank()).isTrue();
 	}
 
+	/** Hai mục chung cùng nhãn: thêm tên loại không phân biệt được, nên thêm khoá. */
+	@Test
+	void twoSharedFieldsWithTheSameLabelGetTheirKey() {
+		AttributeColumns columns = AttributeColumns.of(List.of(def(1, 0, "note_a", "Ghi chú", FieldDataType.TEXT, 1),
+				def(2, 0, "note_b", "Ghi chú", FieldDataType.TEXT, 2), def(3, 0, "area", "Diện tích", FieldDataType.NUMBER, 3)),
+				FieldTarget.PLACE, TYPES);
+
+		assertThat(columns.headers()).containsExactly("Ghi chú (note_a)", "Ghi chú (note_b)", "Diện tích");
+	}
+
 	private static FieldDef def(long id, long typeId, String key, String label, FieldDataType type, int sortOrder) {
 		return new FieldDef(-1, id, FieldTarget.PLACE, typeId, key, label, type, null, false, null, sortOrder,
 				CatalogStatus.ACTIVE, Instant.EPOCH, Instant.EPOCH);

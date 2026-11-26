@@ -117,8 +117,7 @@ public class ExportService {
 		}
 		PlaceSheet sheet = new PlaceSheet(workbook, paths, typeNames,
 				AttributeColumns.of(fieldDefs(workspaceId), FieldTarget.PLACE, typeNames));
-		forEachBatch(after -> this.repository.places(workspaceId, after, BATCH), ExportPlaceRow::path,
-				batch -> batch.forEach(sheet::write));
+		PlaceOrder.treeOrder(this.repository.allPlaces(workspaceId)).forEach(sheet::write);
 		sheet.finish();
 	}
 

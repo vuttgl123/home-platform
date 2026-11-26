@@ -48,7 +48,20 @@ public final class AttributeColumns {
 			String typeName = typeNames.getOrDefault(def.typeId(), String.valueOf(def.typeId()));
 			columns.add(new Column(def, ambiguous ? def.label() + " (" + typeName + ")" : def.label()));
 		}
-		return new AttributeColumns(columns);
+		return new AttributeColumns(withUniqueHeaders(columns));
+	}
+
+	/**
+	 * Tiêu đề còn trùng sau khi thêm tên loại (ví dụ hai mục chung cùng nhãn) thì thành "nhãn (khoá)":
+	 * file mẫu và lớp đọc file nhập nhận cột theo tiêu đề, nên tiêu đề phải khác nhau.
+	 */
+	private static List<Column> withUniqueHeaders(List<Column> columns) {
+		Map<String, Integer> counts = new HashMap<>();
+		columns.forEach(column -> counts.merge(column.header(), 1, Integer::sum));
+		return columns.stream()
+			.map(column -> (counts.get(column.header()) > 1)
+					? new Column(column.def(), column.def().label() + " (" + column.def().fieldKey() + ")") : column)
+			.toList();
 	}
 
 	public List<String> headers() {
