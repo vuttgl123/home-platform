@@ -1,4 +1,4 @@
-import { CircleCheckIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react'
+import { CircleCheckIcon, CircleXIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react'
 import { useId, useState } from 'react'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -191,6 +191,12 @@ function RowResult({ row }: { row: RowReport }) {
             message.level === 'ERROR' ? 'text-destructive' : 'text-amber-700 dark:text-amber-400',
           )}
         >
+          {message.level === 'ERROR' ? (
+            <CircleXIcon aria-hidden="true" className="size-3.5 shrink-0 self-center" />
+          ) : (
+            <TriangleAlertIcon aria-hidden="true" className="size-3.5 shrink-0 self-center" />
+          )}
+          <span className="sr-only">{message.level === 'ERROR' ? 'Lỗi:' : 'Cảnh báo:'}</span>
           {message.column ? (
             <span className="rounded border border-current/30 px-1 text-xs">{message.column}</span>
           ) : null}

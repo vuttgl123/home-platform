@@ -104,6 +104,8 @@ test('summaryTabsAndRows', async () => {
   expect(within(rows[1]).getByText('3')).toBeInTheDocument()
   expect(within(rows[1]).getByText('Email không hợp lệ')).toBeInTheDocument()
   expect(within(rows[1]).getByText('Email')).toBeInTheDocument()
+  // Lỗi và cảnh báo không chỉ khác nhau ở màu: có chữ cho trình đọc màn hình.
+  expect(within(rows[1]).getByRole('listitem')).toHaveTextContent(/^Lỗi:/)
 })
 
 test('errorsOnlySwitchIsOnWhenThereAreErrors', async () => {

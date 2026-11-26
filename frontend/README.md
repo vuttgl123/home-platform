@@ -74,7 +74,8 @@ src/
 │   ├── vacancies/      trang Chỗ trống (`/w/:ws/vacancies`): chỗ còn xếp người, lọc theo loại và toà, nút Xếp người
 │   ├── maintenance/    tab Bảo trì của món đồ: nhật ký sửa chữa, bảo trì; ghi, sửa, xoá có Hoàn tác
 │   ├── todos/          trang Việc cần làm (`/w/:ws/todos`), số trên thanh bên, chuông ở đầu trang
-│   ├── exports/        nút tải file Excel (`ExportButton`) và tên file
+│   ├── exports/        nút tải file Excel (`ExportButton`, cả file mẫu nhập) và tên file
+│   ├── imports/        trang Nhập từ Excel (`/w/:ws/import`): chọn file, xem trước từng dòng, nhập
 │   ├── print/          trang in hồ sơ một địa điểm (`/w/:ws/places/:id/print`, ngoài khung trang)
 │   └── search/         ô tìm chung (Ctrl+K): địa điểm, người, đồ đạc theo tên và theo mã
 ├── components/
@@ -112,6 +113,8 @@ Luật phụ thuộc:
 - `maintenance` nhập `items` (kiểu `ItemDetail`, `itemKeys`, `useFetchFreshItem`); trang món đồ không nhập nó,
   tab Bảo trì là slot `ItemTabSlots` ghép ở `app/router.tsx`.
 - `todos` không nhập feature nào; `app/layout/AppLayout.tsx` gắn chuông và số trên thanh bên.
+- `imports` chỉ nhập `exports` (`ExportButton` cho nút Tải mẫu). Trang Tổng quan và trang chủ của không gian
+  trống chỉ dẫn link tới `/w/:ws/import`, không nhập `imports`.
 - `exports` chỉ nhập `workspaces` (tên không gian cho tên file); trang Đồ đạc và trang Người nhập `ExportButton`.
 - `components/ui` không biết gì về nghiệp vụ.
 
@@ -258,6 +261,24 @@ Thiết kế: `docs/superpowers/specs/2026-11-25-maintenance-and-reminders-desig
   thanh bên và chuông.
 - **Chuông** (`TodoBell`): chấm số là `newCount` (tối đa "9+"). Mở chuông gọi `POST /todos/seen`, đặt số về 0
   ngay; danh sách trong popover giữ nguyên lúc mở để chấm "mới" còn tới khi đóng.
+
+## Nhập từ Excel
+
+Thiết kế: `docs/superpowers/specs/2026-11-26-excel-import-design.md`.
+
+- **Ba bước** (`ImportPage`): ① chọn file (`FilePicker`: nút Tải mẫu, ô chọn file `.xlsx`, kéo thả; file trên
+  5 MB bị từ chối ngay ở trình duyệt), ② xem trước (`ReportView`), ③ nhập (`ImportResult`). Vào từ thanh bên,
+  từ nút "Nhập Excel" ở Tổng quan, và từ trang chủ của không gian chưa có địa điểm.
+- **Xem trước** gửi file tới `POST /imports/preview`; backend chạy thử mọi dòng rồi huỷ. Báo cáo gồm dải số theo
+  sheet, lỗi cả file (`Alert` đỏ), ghi chú, rồi một tab mỗi sheet với bảng Dòng · Hồ sơ · Kết quả (200 dòng một
+  lần, "Hiện thêm"). Lời nhắn lỗi và cảnh báo có biểu tượng và chữ ẩn "Lỗi:" / "Cảnh báo:", không chỉ khác màu.
+  Còn lỗi thì nút Nhập khoá.
+- **Nhập** gửi lại đúng file đã chọn tới `POST /imports` (đọc lại file trước khi gửi: file trên máy đổi thì báo
+  "Không đọc lại được file"). Backend kiểm lại từ đầu; `committed: false` nghĩa là dữ liệu đổi từ lúc xem
+  trước, trang quay về bước ② với báo cáo mới. Một ref chặn bấm hai lần. Đã lưu thì `invalidateQueries()` làm
+  mới cả cache, vì lần nhập chạm mọi loại hồ sơ.
+- Tên và nội dung file không đo được trong test (FormData của jsdom qua undici mất `File`); tên file thật được
+  kiểm bằng trình duyệt: ghi chú version của hồ sơ nhập vào là "Nhập từ Excel: <tên file>".
 
 ## Giao diện
 

@@ -1,6 +1,6 @@
 # Nhập từ Excel (Đợt 9)
 
-Ngày: 2026-11-26 · Trạng thái: **đã duyệt** (bạn: "Tôi đồng ý" với đề xuất 7 luật và cách A; "Tôi đồng ý" với bản thiết kế)
+Ngày: 2026-11-26 · Trạng thái: **đã xây** (2026-11-26), **đã duyệt** (bạn: "Tôi đồng ý" với đề xuất 7 luật và cách A; "Tôi đồng ý" với bản thiết kế)
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 
@@ -191,6 +191,13 @@ Cảnh báo "có vẻ đã có" (không chặn, vì trùng tên vẫn có thể 
 - Cảnh báo "có vẻ đã có" cho người, địa điểm, đồ đạc, để bắt lỗi nhập cùng một file hai lần (N7).
 - Không chặn các yêu cầu chạy cùng lúc trong một không gian; khoá của database và lần kiểm lại khi nhập đủ an toàn (4.2).
 - Bảng xem trước hiện 200 dòng một lần thay vì cuộn ảo (4.3).
+- Khi xây (2026-11-26):
+  - `MAX_ROWS` là 3.000 và transaction của lần chạy có giới hạn riêng 120 giây (4.2, đã đo).
+  - File mẫu có danh sách chọn ở các cột liệt kê (vẫn gõ được mã tiếng Anh).
+  - Trang chủ của không gian chưa có địa điểm cũng có nút "Nhập từ Excel".
+  - File trên 5 MB bị từ chối ngay ở trình duyệt.
+  - Lỗi và cảnh báo trong bảng có biểu tượng và chữ ẩn, không chỉ khác màu.
+  - Cột "Đang ở" có chữ thì có ghi chú (N1 nói bỏ qua không ghi chú; người điền cột đó tưởng là khai cư trú).
 
 ## 7. Để lại cho người làm
 
