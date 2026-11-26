@@ -9,7 +9,7 @@
         "tags": [
           "activity-controller"
         ],
-        "operationId": "list_11",
+        "operationId": "list_12",
         "parameters": [
           {
             "name": "entityType",
@@ -129,7 +129,7 @@
         "tags": [
           "code-rule-controller"
         ],
-        "operationId": "list_10",
+        "operationId": "list_11",
         "parameters": [
           {
             "name": "X-Workspace-Id",
@@ -1580,6 +1580,33 @@
                 "STORED",
                 "REMOVED"
               ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rootId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attr",
+            "in": "query",
+            "description": "khoá:phép:giá trị (has, eq, gte, lte, set, unset); lặp tối đa 3 lần; chỉ với categoryId hoặc không phạm vi",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           },
           {
@@ -4043,6 +4070,41 @@
         "operationId": "list_1",
         "parameters": [
           {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "living",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "rootId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attr",
+            "in": "query",
+            "description": "khoá:phép:giá trị (has, eq, gte, lte, set, unset); lặp tối đa 3 lần",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
             "name": "X-Workspace-Id",
             "in": "header",
             "description": "Id of the workspace the call works in",
@@ -6433,6 +6495,134 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/CursorPagePlaceResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error, described as Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/places/list": {
+      "get": {
+        "tags": [
+          "capacity-controller"
+        ],
+        "operationId": "list_10",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "typeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "INACTIVE"
+              ]
+            }
+          },
+          {
+            "name": "rootId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasRoom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "attr",
+            "in": "query",
+            "description": "khoá:phép:giá trị (has, eq, gte, lte, set, unset); lặp tối đa 3 lần",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "description": "Id of the workspace the call works in",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "description": "Id of the calling user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "nextCursor of the previous page; omit for the first page",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of items in the page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorPageVacancyResponse"
                 }
               }
             }

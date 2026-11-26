@@ -8,7 +8,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -24,7 +24,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1097,6 +1097,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["byType"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/places/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2310,7 +2326,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 entityType?: string;
@@ -2354,7 +2370,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: never;
             header: {
@@ -3231,6 +3247,10 @@ export interface operations {
                 categoryId?: string;
                 ownerId?: string;
                 status?: "IN_USE" | "BROKEN" | "STORED" | "REMOVED";
+                q?: string;
+                rootId?: string;
+                /** @description khoá:phép:giá trị (has, eq, gte, lte, set, unset); lặp tối đa 3 lần; chỉ với categoryId hoặc không phạm vi */
+                attr?: string[];
                 /** @description nextCursor of the previous page; omit for the first page */
                 cursor?: string;
                 /** @description Maximum number of items in the page */
@@ -4632,6 +4652,11 @@ export interface operations {
     list_1: {
         parameters: {
             query?: {
+                q?: string;
+                living?: boolean;
+                rootId?: string;
+                /** @description khoá:phép:giá trị (has, eq, gte, lte, set, unset); lặp tối đa 3 lần */
+                attr?: string[];
                 /** @description nextCursor of the previous page; omit for the first page */
                 cursor?: string;
                 /** @description Maximum number of items in the page */
@@ -5973,6 +5998,52 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CursorPagePlaceResponse"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_10: {
+        parameters: {
+            query?: {
+                q?: string;
+                typeId?: string;
+                status?: "ACTIVE" | "INACTIVE";
+                rootId?: string;
+                hasRoom?: boolean;
+                /** @description khoá:phép:giá trị (has, eq, gte, lte, set, unset); lặp tối đa 3 lần */
+                attr?: string[];
+                /** @description nextCursor of the previous page; omit for the first page */
+                cursor?: string;
+                /** @description Maximum number of items in the page */
+                limit?: number;
+            };
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CursorPageVacancyResponse"];
                 };
             };
             /** @description Error, described as Problem Details */
