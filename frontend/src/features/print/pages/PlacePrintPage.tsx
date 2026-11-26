@@ -11,10 +11,10 @@ import { Switch } from '@/components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AttributeView, useFieldDefs, usePlaceTypes } from '@/features/catalog'
 import { ITEM_STATUS_LABEL, useItemsAtPlace, useItemsInSubtree } from '@/features/items'
-import { useOwnershipsAtPlace } from '@/features/ownership'
+import { formatShare, useOwnershipsAtPlace } from '@/features/ownership'
 import { RELATION_LABEL, useOccupanciesAtPlace } from '@/features/people'
 import { capacityText, PLACE_STATUS_LABEL, usePlace } from '@/features/places'
-import { formatDate, formatDateTime, formatNumber } from '@/lib/format'
+import { formatDate, formatDateTime } from '@/lib/format'
 import { isId } from '@/lib/ids'
 
 import { useAllPages } from '../useAllPages'
@@ -117,7 +117,7 @@ export function PlacePrintPage() {
         columns={['Tên', 'Tỷ lệ', 'Từ ngày', 'Số giấy tờ']}
         row={(ownership) => [
           ownership.personFullName,
-          ownership.sharePercent != null ? `${formatNumber(ownership.sharePercent)}%` : null,
+          ownership.sharePercent != null ? formatShare(ownership.sharePercent) : null,
           formatDate(ownership.startDate),
           ownership.documentNo,
         ]}

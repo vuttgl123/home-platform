@@ -1,5 +1,6 @@
 import { PlusIcon } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
+import { useLocation } from 'react-router'
 
 import { ErrorState } from '@/components/common/ErrorState'
 import { FormError } from '@/components/common/FormError'
@@ -29,11 +30,23 @@ type Editing = { rule: CodeRule; label: string } | 'new'
  * Phần "Mã tự cấp": dạng mã của địa điểm và đồ đạc (chung, hoặc riêng cho một loại, một nhóm), và
  * nút cấp mã cho bản ghi có từ trước khi có mã tự cấp.
  */
+/** Neo của phần này trên URL; nút "Cấp mã" ở Tổng quan dẫn tới `/catalog#ma-tu-cap`. */
+const ANCHOR = 'ma-tu-cap'
+
 export function CodeRuleSection({ ws }: { ws: string }) {
   const rules = useCodeRules(ws)
   const types = usePlaceTypes(ws).data ?? []
   const categories = useItemCategories(ws).data ?? []
   const [editing, setEditing] = useState<Editing | null>(null)
+  const { hash } = useLocation()
+  // Dẫn tới từ nút "Cấp mã" ở Tổng quan: cuộn tới phần này khi bảng đã tải (các phần phía trên cũng tải
+  // dần, cuộn sớm quá thì lệch).
+  const loaded = rules.isSuccess
+  useEffect(() => {
+    if (hash === `#${ANCHOR}` && loaded) {
+      document.getElementById(ANCHOR)?.scrollIntoView({ block: 'start' })
+    }
+  }, [hash, loaded])
   const remove = useCatalogWrite(ws, (rule: CodeRule) => codeRuleApi.remove(ws, rule.target, rule.typeId))
   const year = Number(todayInBusinessZone().slice(0, 4))
 
@@ -48,6 +61,7 @@ export function CodeRuleSection({ ws }: { ws: string }) {
 
   return (
     <CatalogSection
+      id={ANCHOR}
       title="Mã tự cấp"
       description="Mã của địa điểm và đồ đạc do hệ thống cấp và không sửa được. Đổi dạng mã chỉ áp dụng cho mã cấp từ nay."
       action={

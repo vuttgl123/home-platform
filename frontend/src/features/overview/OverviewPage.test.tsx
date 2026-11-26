@@ -116,7 +116,7 @@ test('todoSectionLinksToCatalog', async () => {
   expect(todo.getByText('4 địa điểm chưa có mã')).toBeInTheDocument()
   // Dòng có số 0 không hiện.
   expect(todo.queryByText(/đồ chưa có mã/)).not.toBeInTheDocument()
-  expect(todo.getByRole('link', { name: 'Cấp mã' })).toHaveAttribute('href', '/w/7/catalog')
+  expect(todo.getByRole('link', { name: 'Cấp mã' })).toHaveAttribute('href', '/w/7/catalog#ma-tu-cap')
 })
 
 test('todoSectionCountsItemsToo', async () => {

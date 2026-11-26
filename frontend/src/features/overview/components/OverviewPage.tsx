@@ -82,8 +82,8 @@ export function OverviewPage({ ws, overview }: { ws: string; overview: Overview 
                 {missingCodes.places > 0 && <li>{formatNumber(missingCodes.places)} địa điểm chưa có mã</li>}
                 {missingCodes.items > 0 && <li>{formatNumber(missingCodes.items)} đồ chưa có mã</li>}
               </ul>
-              {/* Một liên kết thật (không phải nút): nó mở trang Danh mục, nơi có phần "Mã tự cấp". */}
-              <Link to={`/w/${ws}/catalog`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+              {/* Một liên kết thật (không phải nút): nó mở trang Danh mục và cuộn tới phần "Mã tự cấp". */}
+              <Link to={`/w/${ws}/catalog#ma-tu-cap`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                 Cấp mã
               </Link>
             </AlertDescription>

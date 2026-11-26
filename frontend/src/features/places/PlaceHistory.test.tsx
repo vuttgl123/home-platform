@@ -224,3 +224,39 @@ test('comparingAMovedPlaceShowsBothParents', async () => {
       .map((row) => within(row).getAllByRole('cell').map((cell) => cell.textContent)),
   ).toEqual([['Chỗ chứa', 'Toà B', 'Toà A']])
 })
+
+test('addressChangeIsJudgedByTheFullAddress', async () => {
+  setUp()
+  // v2 chỉ đổi mã phường bên trong; chữ địa chỉ đầy đủ giữ nguyên, nên dòng Địa chỉ không hiện là "đổi".
+  const snapshots: Record<number, Record<string, unknown>> = {
+    1: { id: '301', name: 'Phòng 301', code: 'R1', placeTypeId: '100', status: 'ACTIVE', attributes: null, address: { ...address, wardCode: 'A' } },
+    2: { id: '301', name: 'P-301', code: 'R1', placeTypeId: '100', status: 'ACTIVE', attributes: null, address: { ...address, wardCode: 'B' } },
+  }
+  server.use(
+    http.get('/api/registry/places/301/versions/:no', ({ params }) =>
+      HttpResponse.json({
+        versionNo: Number(params.no),
+        action: 'UPDATE',
+        changedFields: ['name', 'address'],
+        changedBy: '42',
+        changedAt: '2026-11-01T03:00:00Z',
+        note: null,
+        snapshot: snapshots[Number(params.no)],
+      }),
+    ),
+  )
+  const { user } = renderApp({ route: '/w/7/places/301?tab=history', userId: '42' })
+  const view = await main()
+  await user.click(await view.findByRole('checkbox', { name: 'Chọn v2 để so sánh' }))
+  await user.click(view.getByRole('checkbox', { name: 'Chọn v1 để so sánh' }))
+
+  await user.click(view.getByRole('button', { name: 'So sánh' }))
+
+  const dialog = within(await screen.findByRole('dialog', { name: 'So sánh v1 và v2' }))
+  await dialog.findByText('P-301')
+  const rows = dialog
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => within(row).getAllByRole('cell').map((cell) => cell.textContent))
+  expect(rows).toEqual([['Tên', 'Phòng 301', 'P-301']])
+})

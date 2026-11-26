@@ -66,7 +66,7 @@ function usePlaceSnapshotRows(ws: string): ((snapshot: PlaceSnapshot) => Snapsho
     },
     { key: 'status', label: 'Trạng thái', value: snapshot.status ? PLACE_STATUS_LABEL[snapshot.status] : null, raw: snapshot.status },
     { key: 'description', label: 'Mô tả', value: snapshot.description, raw: snapshot.description },
-    { key: 'address', label: 'Địa chỉ', value: snapshot.address?.fullAddress ?? 'Không có địa chỉ riêng', raw: snapshot.address ?? null },
+    { key: 'address', label: 'Địa chỉ', value: snapshot.address?.fullAddress ?? 'Không có địa chỉ riêng', raw: snapshot.address?.fullAddress ?? null },
     // Chuyển chỗ cũng là một version: không có dòng này thì hai bản trước và sau khi chuyển trông giống hệt.
     { key: 'parentId', label: 'Chỗ chứa', value: snapshot.parentId ? <PlaceName ws={ws} id={snapshot.parentId} /> : null, raw: snapshot.parentId ?? null },
     ...attributeRows(defsOfType(defs.data ?? [], snapshot.placeTypeId), (snapshot.attributes as Record<string, unknown>) ?? null).map(

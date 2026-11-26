@@ -4,18 +4,21 @@ import { ToneBadge } from '@/components/common/ToneBadge'
 
 /** Một phần của trang danh mục: tiêu đề, nút thêm, và bảng. */
 export function CatalogSection({
+  id,
   title,
   description,
   action,
   children,
 }: {
+  /** Neo của phần trên URL (`#id`), để trang khác dẫn thẳng tới nó. */
+  id?: string
   title: string
   description: string
   action: ReactNode
   children: ReactNode
 }) {
   return (
-    <section aria-label={title} className="flex flex-col gap-3">
+    <section id={id} aria-label={title} className="flex flex-col gap-3 scroll-mt-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <h2 className="text-lg font-semibold tracking-tight">{title}</h2>

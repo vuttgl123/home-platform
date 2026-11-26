@@ -1,10 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { expect, test } from 'vitest'
+import { delay, http, HttpResponse } from 'msw'
+import { expect, onTestFinished, test, vi } from 'vitest'
 
 import { mockCatalogBackend } from '@/test/catalogBackend'
 import { mockShell } from '@/test/handlers'
 import { mockPlaceBackend } from '@/test/placeBackend'
 import { renderApp } from '@/test/render'
+import { server } from '@/test/server'
 
 import { suggestFieldKey } from './fieldKeys'
 
@@ -403,4 +405,25 @@ test('tableShowsTheReminder', async () => {
   expect(within(rows.find((row) => row.textContent?.includes('Kiểm định'))!).getByText('trước 45 ngày')).toBeInTheDocument()
   expect(within(rows.find((row) => row.textContent?.includes('Năm xây'))!).getByText('—')).toBeInTheDocument()
   expect(within(rows[0]).getByText('Nhắc')).toBeInTheDocument()
+})
+
+test('codeAnchorScrollsOnceTheSectionLoads', async () => {
+  setUp()
+  server.use(
+    http.get('/api/registry/code-rules', async () => {
+      await delay(300)
+      return HttpResponse.json([])
+    }),
+  )
+  const original = Element.prototype.scrollIntoView
+  const scrolled = vi.fn()
+  Element.prototype.scrollIntoView = scrolled
+  onTestFinished(() => {
+    Element.prototype.scrollIntoView = original
+  })
+
+  renderApp({ route: '/w/7/catalog#ma-tu-cap', userId: '42' })
+
+  await waitFor(() => expect(scrolled).toHaveBeenCalled(), { timeout: 2000 })
+  expect(scrolled.mock.contexts[0]).toHaveAttribute('id', 'ma-tu-cap')
 })

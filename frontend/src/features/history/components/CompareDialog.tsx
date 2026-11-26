@@ -12,6 +12,7 @@ import { formatDateTime } from '@/lib/format'
 
 import { blankAsDash } from '../blank'
 import { compareRows } from '../compare'
+import { ACTION_LABEL } from '../labels'
 import { useVersion } from '../queries'
 import type { EntityKind, SnapshotRow, VersionSummary } from '../types'
 
@@ -48,7 +49,7 @@ export function CompareDialog<Snapshot>({
   const shown = lines?.filter((line) => line.changed || !onlyChanged) ?? []
 
   const heading = (version: VersionSummary) =>
-    `v${version.versionNo} · ${formatDateTime(version.changedAt)} · ${version.changedBy === me ? 'Bạn' : 'Người dùng khác'}`
+    `v${version.versionNo} · ${ACTION_LABEL[version.action]} · ${formatDateTime(version.changedAt)} · ${version.changedBy === me ? 'Bạn' : 'Người dùng khác'}`
 
   return (
     <Dialog open onOpenChange={onOpenChange}>

@@ -74,7 +74,7 @@ function headers(name: string) {
 test('showsDetailsPeopleOwnersAndItems', async () => {
   const asked = setUp({
     occupancies: [occupancy({ personFullName: 'Nguyễn An', relation: 'RESIDENT', startDate: '2026-01-01' })],
-    ownerships: [ownership({ personFullName: 'Trần Bình', sharePercent: 50, startDate: '2025-06-01', documentNo: 'SĐ-123' })],
+    ownerships: [ownership({ personFullName: 'Trần Bình', sharePercent: 33.333, startDate: '2025-06-01', documentNo: 'SĐ-123' })],
     items: [item({ code: 'TL-1', name: 'Tủ lạnh', categoryName: 'Điện máy', quantity: 2, unit: 'cái', status: 'BROKEN', ownerName: 'Nguyễn An' })],
   })
 
@@ -90,7 +90,8 @@ test('showsDetailsPeopleOwnersAndItems', async () => {
   expect(await screen.findByText('Diện tích')).toBeInTheDocument()
   expect(screen.getByText('42')).toBeInTheDocument()
   expect(cells('Người đang ở')).toEqual([['Nguyễn An', 'Người ở', '01/01/2026']])
-  expect(cells('Chủ sở hữu')).toEqual([['Trần Bình', '50%', '01/06/2025', 'SĐ-123']])
+  // Cùng cách ghi với tab Sở hữu (formatShare).
+  expect(cells('Chủ sở hữu')).toEqual([['Trần Bình', '33,33%', '01/06/2025', 'SĐ-123']])
   expect(headers('Đồ đạc')).toEqual(['Mã', 'Tên', 'Nhóm', 'Số lượng', 'Trạng thái', 'Chủ'])
   expect(cells('Đồ đạc')).toEqual([['TL-1', 'Tủ lạnh', 'Điện máy', '2 cái', 'Hỏng', 'Nguyễn An']])
   expect(screen.getByText(/^In lúc \d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/)).toBeInTheDocument()
