@@ -79,7 +79,7 @@ test('emptyBoxOffersShortcuts', async () => {
   const { palette } = await openPalette()
 
   const options = palette.getAllByRole('option').map((option) => option.textContent)
-  expect(options).toEqual(['Người', 'Đồ đạc', 'Danh mục', 'Hoạt động', 'Thùng rác'])
+  expect(options).toEqual(['Người', 'Địa điểm', 'Đồ đạc', 'Danh mục', 'Hoạt động', 'Thùng rác'])
 })
 
 test('typingFastSendsOneRoundOfRequests', async () => {
@@ -193,4 +193,43 @@ test('nothingFoundSaysSo', async () => {
   await user.type(palette.getByRole('combobox'), 'zzz')
 
   expect(await palette.findByText('Không tìm thấy gì.')).toBeInTheDocument()
+})
+
+test('contentSearchOpensTheListWithQ', async () => {
+  mockSearch()
+  server.use(
+    http.get('/api/registry/items', () => HttpResponse.json(page([]))),
+    http.get('/api/registry/item-categories', () => HttpResponse.json([])),
+  )
+  const { user, palette, router } = await openPalette()
+
+  await user.type(palette.getByRole('combobox'), 'bảo hành')
+  const options = (await palette.findAllByRole('option')).map((option) => option.textContent)
+  expect(options.slice(-3)).toEqual(['Tìm “bảo hành” trong Người', 'Tìm “bảo hành” trong Đồ đạc', 'Tìm “bảo hành” trong Địa điểm'])
+  await user.click(palette.getByRole('option', { name: 'Tìm “bảo hành” trong Đồ đạc' }))
+
+  await waitFor(() => expect(router.state.location.pathname).toBe('/w/7/items'))
+  expect(new URLSearchParams(router.state.location.search).get('q')).toBe('bảo hành')
+  expect(screen.queryByRole('dialog', { name: 'Tìm nhanh' })).not.toBeInTheDocument()
+  expect(await screen.findByRole('searchbox', { name: 'Tìm đồ' })).toHaveValue('bảo hành')
+})
+
+test('oneLetterShowsNoContentSearch', async () => {
+  mockSearch()
+  const { user, palette } = await openPalette()
+
+  await user.type(palette.getByRole('combobox'), 'a')
+
+  await waitFor(() => expect(palette.queryAllByRole('option')).toHaveLength(0))
+  expect(palette.queryByRole('option', { name: /trong Người/ })).not.toBeInTheDocument()
+})
+
+test('nothingFoundStillOffersContentSearch', async () => {
+  mockSearch()
+  const { user, palette } = await openPalette()
+
+  await user.type(palette.getByRole('combobox'), 'zzz')
+
+  expect(await palette.findByText('Không tìm thấy gì.')).toBeInTheDocument()
+  expect(palette.getByRole('option', { name: 'Tìm “zzz” trong Địa điểm' })).toBeInTheDocument()
 })

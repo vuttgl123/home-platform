@@ -2,26 +2,36 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { ToneBadge } from '@/components/common/ToneBadge'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useItemQuickFind } from '@/features/items'
 import { usePersonQuickFind } from '@/features/people'
 import { usePlaceQuickFind } from '@/features/places'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { MIN_SEARCH_LENGTH } from '@/lib/searchText'
 
 import { groupResults, type SearchRow } from '../groupResults'
 
 const SHORTCUTS = [
   { label: 'Người', path: 'people' },
+  { label: 'Địa điểm', path: 'places' },
   { label: 'Đồ đạc', path: 'items' },
   { label: 'Danh mục', path: 'catalog' },
   { label: 'Hoạt động', path: 'activity' },
   { label: 'Thùng rác', path: 'trash' },
 ]
 
+/** Trang danh sách mở được với `?q=` (spec Đợt 11, S7), theo thứ tự hiện. */
+const CONTENT_SEARCHES = [
+  { label: 'Người', path: 'people' },
+  { label: 'Đồ đạc', path: 'items' },
+  { label: 'Địa điểm', path: 'places' },
+]
+
 /**
  * Ô tìm chung: địa điểm, người, đồ đạc theo tên (bắt đầu bằng) và theo mã (đúng mã). Gọi API sau khi
- * người dùng ngừng gõ 300 ms; mỗi loại một nhóm, lỗi của một loại không làm hỏng các loại khác.
+ * người dùng ngừng gõ 300 ms; mỗi loại một nhóm, lỗi của một loại không làm hỏng các loại khác. Từ 2
+ * ký tự, cuối danh sách có "Tìm … trong" từng trang danh sách: tìm cả trong ghi chú, mô tả.
  */
 export function SearchPalette({ ws, open, onOpenChange }: { ws: string; open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
@@ -77,7 +87,22 @@ function Palette({ ws, onDone }: { ws: string; onDone: () => void }) {
             <Group heading="Địa điểm" rows={groups.places} failed={places.isError} onSelect={go} />
             <Group heading="Người" rows={groups.people} failed={people.isError} onSelect={go} />
             <Group heading="Đồ đạc" rows={groups.items} failed={items.isError} onSelect={go} />
-            {nothing && <CommandEmpty>Không tìm thấy gì.</CommandEmpty>}
+            {/* Không dùng CommandEmpty: nó chỉ hiện khi danh sách không có dòng nào, mà "Tìm trong nội dung" luôn có. */}
+            {nothing && <p className="py-6 text-center text-sm">Không tìm thấy gì.</p>}
+            {/* Chỉ khi kết quả đã về: hiện sớm hơn thì Enter chọn nhầm dòng này thay cho kết quả đầu. */}
+            {!loading && [...typed].length >= MIN_SEARCH_LENGTH && (
+              <CommandGroup heading="Tìm trong nội dung">
+                {CONTENT_SEARCHES.map((target) => (
+                  <CommandItem
+                    key={target.path}
+                    value={`content:${target.path}`}
+                    onSelect={() => go(`/w/${ws}/${target.path}?q=${encodeURIComponent(typed)}`)}
+                  >
+                    Tìm “{typed}” trong {target.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
           </>
         )}
       </CommandList>
