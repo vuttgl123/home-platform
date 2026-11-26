@@ -1,6 +1,6 @@
 # Dọn và làm chắc (Đợt 10)
 
-Ngày: 2026-11-26 · Trạng thái: **đã duyệt** (bạn: "Được làm cho tôi nhé cứ theo thứ tự bạn đề xuất" với nhóm 1 "Dọn và làm chắc" là đợt đầu)
+Ngày: 2026-11-26 · Trạng thái: **đã xây** (2026-11-26), **đã duyệt** (bạn: "Được làm cho tôi nhé cứ theo thứ tự bạn đề xuất" với nhóm 1 "Dọn và làm chắc" là đợt đầu)
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 
