@@ -149,6 +149,24 @@ test('strangeValuesAreIgnored', async () => {
   expect([...requests[0].searchParams.keys()]).toEqual([])
 })
 
+test('aTypeFieldIsDroppedWhenTheTypeChanges', async () => {
+  const { requests } = setUp()
+  server.use(
+    http.get('/api/registry/field-defs', () =>
+      HttpResponse.json([fieldDef({ id: '5', target: 'PLACE', typeId: '102', fieldKey: 'so_giuong', label: 'Số giường', dataType: 'NUMBER' })]),
+    ),
+  )
+  const { user, router } = renderApp({ route: '/w/7/places?type=102&f=so_giuong~gte~2', userId: '42' })
+  const content = await main()
+  await waitFor(() => expect(requests.at(-1)?.searchParams.getAll('attr')).toEqual(['so_giuong:gte:2']))
+
+  await user.selectOptions(content.getByRole('combobox', { name: 'Loại' }), 'Toà nhà')
+
+  await waitFor(() => expect(requests.at(-1)?.searchParams.get('typeId')).toBe('100'))
+  expect(requests.at(-1)?.searchParams.has('attr')).toBe(false)
+  expect(new URLSearchParams(router.state.location.search).has('f')).toBe(false)
+})
+
 test('emptyResultSaysWhy', async () => {
   setUp([{ items: [] }])
   renderApp({ route: '/w/7/places?q=zz', userId: '42' })

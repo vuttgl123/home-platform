@@ -48,7 +48,6 @@ export function PlaceFilters({
             id={typeId}
             className="w-full"
             value={filter.placeTypeId ?? ''}
-            // Đổi loại thì điều kiện của mục riêng loại cũ không còn áp dụng; trang đọc lại và bỏ chúng.
             onChange={(event) => onChange({ ...filter, placeTypeId: event.target.value || null })}
           >
             <NativeSelectOption value="">Mọi loại</NativeSelectOption>

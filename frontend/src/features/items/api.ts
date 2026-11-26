@@ -1,4 +1,6 @@
 import { registry, unwrap, workspaceHeaders, type CursorPage, type RegistrySchemas } from '@/api'
+import { toApiValues, type AttributeCondition } from '@/features/catalog'
+import { searchText } from '@/lib/searchText'
 
 import type { ItemBody, ItemDetail, ItemStatus, ItemSummary, ItemUpdateBody } from './types'
 
@@ -45,16 +47,34 @@ export async function moveItem(ws: string, id: string, version: number, placeId:
   return (await unwrap(call)) as ItemDetail
 }
 
-export type ItemFilter = { status: ItemStatus | null; categoryId: string | null }
+/** Bộ lọc của trang Đồ đạc (spec Đợt 11, S5); `null`, `''`, `[]` là không lọc. */
+export type ItemFilter = {
+  status: ItemStatus | null
+  categoryId: string | null
+  q: string
+  rootId: string | null
+  conditions: AttributeCondition[]
+}
 
-/** Đồ của cả không gian, theo tên: chưa gỡ, hoặc đúng `status`; có thể lọc theo nhóm. */
-export async function listAllItems(ws: string, filter: ItemFilter, cursor?: string): Promise<CursorPage<ItemSummary>> {
-  const call = registry.GET('/items', {
-    params: {
-      header: workspaceHeaders(ws),
-      query: { status: filter.status ?? undefined, categoryId: filter.categoryId ?? undefined, cursor },
-    },
-  })
+/** Tham số của `GET /items` (cả không gian) cho một bộ lọc; cũng là khoá cache. */
+export function itemListQuery(filter: ItemFilter) {
+  const attr = toApiValues(filter.conditions)
+  return {
+    status: filter.status ?? undefined,
+    categoryId: filter.categoryId ?? undefined,
+    q: searchText(filter.q),
+    rootId: filter.rootId ?? undefined,
+    attr: attr.length > 0 ? attr : undefined,
+  }
+}
+
+/** Đồ của cả không gian, theo tên: chưa gỡ, hoặc đúng `status`; lọc theo nhóm, chữ, toà, mục tuỳ biến. */
+export async function listAllItems(
+  ws: string,
+  query: ReturnType<typeof itemListQuery>,
+  cursor?: string,
+): Promise<CursorPage<ItemSummary>> {
+  const call = registry.GET('/items', { params: { header: workspaceHeaders(ws), query: { ...query, cursor } } })
   return (await unwrap(call)) as CursorPage<ItemSummary>
 }
 

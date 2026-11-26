@@ -120,7 +120,10 @@ export function mockItemBackend(options: {
         // Cả không gian: chưa gỡ, hoặc đúng `status`; có thể lọc thêm theo nhóm.
         const status = query.get('status')
         const categoryId = query.get('categoryId')
+        // `q` như backend: "chứa" trong tên (đủ cho test); `rootId`, `attr` không giả lập.
+        const q = query.get('q')?.toLowerCase()
         found = found
+          .filter((item) => !q || item.name.toLowerCase().includes(q))
           .filter((item) => (status ? item.status === status : item.removedAt == null))
           .filter((item) => categoryId == null || item.categoryId === categoryId)
           .sort((a, b) => a.name.localeCompare(b.name))

@@ -24,8 +24,9 @@ export function PlacesPage() {
   const waiting = settled.has('f') && fieldDefs.isPending
   const list = usePlaceList(workspaceId, readPlaceFilter(settled, defs), !waiting)
 
+  /** Đọc lại sau khi ghi: đổi loại thì điều kiện của mục riêng loại cũ rời cả URL, không chỉ request. */
   function update(next: PlaceFilter) {
-    setSearchParams(writePlaceFilter(next), { replace: true })
+    setSearchParams(writePlaceFilter(readPlaceFilter(writePlaceFilter(next), defs)), { replace: true })
   }
 
   return (
