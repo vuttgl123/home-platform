@@ -18,6 +18,10 @@ import com.home_platform.common.web.NotFoundException;
 import com.home_platform.registry.support.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
+import com.home_platform.registry.place.PlaceService;
+import com.home_platform.registry.search.AttributeFilter;
+import com.home_platform.registry.search.SqlCondition;
+import com.home_platform.registry.search.TextSearch;
 import com.home_platform.registry.support.BusinessDate;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -40,8 +44,14 @@ public class PersonService {
 
 	private final BusinessDate businessDate;
 
+	private final PlaceService places;
+
+	private final AttributeFilter attributeFilter;
+
 	PersonService(PersonRepository repository, AttributeValidation attributeValidation, EntityHistory history,
-			BusinessDate businessDate) {
+			BusinessDate businessDate, PlaceService places, AttributeFilter attributeFilter) {
+		this.places = places;
+		this.attributeFilter = attributeFilter;
 		this.repository = repository;
 		this.attributeValidation = attributeValidation;
 		this.history = history;
@@ -153,8 +163,24 @@ public class PersonService {
 		return this.repository.deleted(workspaceId, page);
 	}
 
-	public CursorPage<Person> list(long workspaceId, CursorRequest page) {
-		return this.repository.list(workspaceId, page);
+	/**
+	 * Người theo bộ lọc, theo tên (spec Đợt 11, S4).
+	 * @param q chữ tìm trong họ tên, số điện thoại, email, số giấy tờ, ghi chú; dưới 2 ký tự thì bỏ qua
+	 * @param living {@code true}/{@code false}: có/không có một dòng cư trú hôm nay; {@code null}: mọi người
+	 * @param rootId đang ở tại địa điểm này hay một nơi bên trong nó
+	 * @param attr điều kiện {@code khoá:phép:giá trị} theo mục tuỳ biến
+	 * @throws BadRequestException nếu {@code attr} sai, hoặc có {@code rootId} mà {@code living} là {@code false}
+	 * @throws NotFoundException nếu {@code rootId} không có hoặc đã xoá
+	 */
+	public CursorPage<Person> list(long workspaceId, String q, Boolean living, Long rootId, List<String> attr,
+			CursorRequest page) {
+		if (rootId != null && Boolean.FALSE.equals(living)) {
+			throw new BadRequestException("rootId needs living to be true or empty");
+		}
+		List<SqlCondition> attributes = this.attributeFilter.conditions(workspaceId, FieldTarget.PERSON, attr, null);
+		String rootPath = (rootId != null) ? this.places.get(workspaceId, rootId).path() : null;
+		PersonFilter filter = new PersonFilter(TextSearch.pattern(q), living, rootPath, attributes);
+		return this.repository.list(workspaceId, filter, this.businessDate.today(), page);
 	}
 
 	public CursorPage<Person> searchByName(long workspaceId, String prefix, CursorRequest page) {

@@ -6,14 +6,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.home_platform.common.jdbc.KeysetQuery;
 import com.home_platform.common.jdbc.RepositorySupport;
 import com.home_platform.common.jdbc.WorkspaceRepository;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
+import com.home_platform.registry.search.SqlCondition;
+import com.home_platform.registry.search.TextSearch;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class PersonRepository extends WorkspaceRepository<Person> {
+
+	/**
+	 * Các dòng cư trú hôm nay ({@code :today}) của người ở dòng ngoài, tại địa điểm chưa xoá, mọi quan
+	 * hệ; dùng trong {@code EXISTS} nên một người ở hai nơi vẫn chỉ là một dòng.
+	 */
+	private static final String STAYS_TODAY = "SELECT 1 FROM reg_occupancy o JOIN reg_place pl "
+			+ "ON pl.workspace_id = o.workspace_id AND pl.id = o.place_id "
+			+ "WHERE o.workspace_id = reg_person.workspace_id AND o.person_id = reg_person.id "
+			+ "AND o.deleted_at IS NULL AND pl.deleted_at IS NULL AND o.start_date <= :today "
+			+ "AND (o.end_date IS NULL OR o.end_date >= :today)";
 
 	PersonRepository(RepositorySupport support) {
 		super(support, "reg_person", Person.class);
@@ -38,9 +51,29 @@ public class PersonRepository extends WorkspaceRepository<Person> {
 		return keyset().onlyDeleted().orderByDesc("deleted_at").fetch(workspaceId, page);
 	}
 
-	/** Người chưa xoá, theo tên. Index (workspace_id, full_name). */
-	public CursorPage<Person> list(long workspaceId, CursorRequest page) {
-		return keyset().orderBy("full_name").fetch(workspaceId, page);
+	/**
+	 * Người chưa xoá theo bộ lọc, theo tên (spec Đợt 11, S4). Không bộ lọc thì đi theo index
+	 * (workspace_id, full_name); tìm chữ và mục tuỳ biến quét các dòng của không gian.
+	 */
+	public CursorPage<Person> list(long workspaceId, PersonFilter filter, LocalDate today, CursorRequest page) {
+		KeysetQuery<Person> query = keyset();
+		if (filter.text() != null) {
+			SqlCondition text = TextSearch.anyColumnContains(filter.text(), "full_name", "phone", "email", "id_number",
+					"note");
+			query = query.where(text.sql(), text.params());
+		}
+		if (filter.rootPath() != null) {
+			query = query.where("EXISTS (" + STAYS_TODAY + " AND pl.path LIKE :rootPrefix)",
+					Map.of("today", today, "rootPrefix", filter.rootPath() + "%"));
+		}
+		else if (filter.living() != null) {
+			query = query.where((filter.living() ? "EXISTS (" : "NOT EXISTS (") + STAYS_TODAY + ")",
+					Map.of("today", today));
+		}
+		for (SqlCondition condition : filter.attributes()) {
+			query = query.where(condition.sql(), condition.params());
+		}
+		return query.orderBy("full_name").fetch(workspaceId, page);
 	}
 
 	/** @param likePrefix mẫu từ {@code Text.likePrefix} */

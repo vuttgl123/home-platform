@@ -10,7 +10,13 @@ import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.registry.occupancy.OccupancyMapper;
 import com.home_platform.registry.occupancy.OccupancyService;
+import com.home_platform.registry.search.AttributeFilter;
 import com.home_platform.registry.support.Text;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
@@ -53,9 +59,19 @@ class PersonController {
 			.toList());
 	}
 
+	/**
+	 * Người theo tên (spec Đợt 11, S4): tìm chữ trong họ tên, số điện thoại, email, số giấy tờ, ghi
+	 * chú; lọc đang ở hay không, đang ở trong một địa điểm (gồm chính nó), mục tuỳ biến.
+	 */
 	@GetMapping
-	CursorPage<PersonResponse> list(WorkspaceContext ctx, CursorRequest page) {
-		return this.service.list(ctx.workspaceId(), page).map(this.mapper::toResponse);
+	@Parameter(name = AttributeFilter.PARAM, in = ParameterIn.QUERY,
+			description = "khoá:phép:giá trị (has, eq, gte, lte, set, unset); lặp tối đa 3 lần",
+			array = @ArraySchema(schema = @Schema(type = "string")))
+	CursorPage<PersonResponse> list(WorkspaceContext ctx, @RequestParam(required = false) String q,
+			@RequestParam(required = false) Boolean living, @RequestParam(required = false) Long rootId,
+			CursorRequest page, HttpServletRequest request) {
+		return this.service.list(ctx.workspaceId(), q, living, rootId, AttributeFilter.values(request), page)
+			.map(this.mapper::toResponse);
 	}
 
 	/** Đúng một trong ba: tên bắt đầu bằng, số điện thoại bắt đầu bằng, đúng số giấy tờ. */
