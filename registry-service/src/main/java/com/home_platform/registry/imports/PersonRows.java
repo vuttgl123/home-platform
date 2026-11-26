@@ -60,6 +60,7 @@ class PersonRows implements SheetRows {
 		}
 		Map<String, Integer> nameRows = new HashMap<>();
 		Map<String, Integer> phoneRows = new HashMap<>();
+		PersonIndex index = PersonIndex.of(run);
 		List<RowReport> reports = new ArrayList<>();
 		for (ImportRow row : sheet.rows()) {
 			RowReader reader = new RowReader(row);
@@ -75,6 +76,8 @@ class PersonRows implements SheetRows {
 			if (created != null) {
 				warnDuplicates(reader, fullName, request.phone(), knownNames, knownPhones, nameRows, phoneRows);
 			}
+			index.addRow(row.number(), (created != null) ? created.id() : null, fullName, request.phone(),
+					request.idNumber());
 			reports.add(reader.report(fullName, null));
 		}
 		return reports;
