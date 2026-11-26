@@ -17,6 +17,8 @@ import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorCodec;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
+import com.home_platform.registry.search.SqlCondition;
+import com.home_platform.registry.search.TextSearch;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -122,6 +124,35 @@ public class PlaceRepository extends WorkspaceRepository<Place> {
 			.query((rs, rowNum) -> counts.put(rs.getLong("id"), rs.getInt("living")))
 			.list();
 		return counts;
+	}
+
+	/**
+	 * Bảng địa điểm theo bộ lọc, theo tên (spec Đợt 11, S3). Tìm chữ và mục tuỳ biến quét các dòng
+	 * của không gian; đủ nhanh với vài nghìn địa điểm.
+	 */
+	public CursorPage<Place> list(long workspaceId, PlaceFilter filter, LocalDate today, CursorRequest page) {
+		KeysetQuery<Place> query = keyset();
+		if (filter.text() != null) {
+			SqlCondition text = TextSearch.anyColumnContains(filter.text(), "name", "code", "description");
+			query = query.where(text.sql(), text.params());
+		}
+		if (filter.placeTypeId() != null) {
+			query = query.where("place_type_id = :placeTypeId", Map.of("placeTypeId", filter.placeTypeId()));
+		}
+		if (filter.status() != null) {
+			query = query.where("status = :status", Map.of("status", filter.status().name()));
+		}
+		if (filter.rootPath() != null) {
+			query = query.where("path LIKE :subtreePrefix AND path <> :rootPath",
+					Map.of("subtreePrefix", filter.rootPath() + "%", "rootPath", filter.rootPath()));
+		}
+		if (filter.hasRoom()) {
+			query = query.where("capacity IS NOT NULL AND " + PEOPLE_LIVING_HERE + " < capacity", Map.of("today", today));
+		}
+		for (SqlCondition condition : filter.attributes()) {
+			query = query.where(condition.sql(), condition.params());
+		}
+		return query.orderBy("name").fetch(workspaceId, page);
 	}
 
 	/** Địa điểm của một loại, theo tên. Index (workspace_id, place_type_id, name). */

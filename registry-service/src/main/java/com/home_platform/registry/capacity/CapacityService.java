@@ -12,6 +12,7 @@ import com.home_platform.common.web.CursorRequest;
 import com.home_platform.registry.place.Place;
 import com.home_platform.registry.place.PlaceRef;
 import com.home_platform.registry.place.PlaceService;
+import com.home_platform.registry.place.PlaceStatus;
 import com.home_platform.registry.placetype.PlaceType;
 import com.home_platform.registry.placetype.PlaceTypeService;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,20 @@ public class CapacityService {
 	 */
 	public CursorPage<VacancyResponse> vacancies(long workspaceId, Long placeTypeId, Long rootId,
 			CursorRequest request) {
-		CursorPage<Place> page = this.places.vacancies(workspaceId, placeTypeId, rootId, request);
+		return rows(workspaceId, this.places.vacancies(workspaceId, placeTypeId, rootId, request));
+	}
+
+	/**
+	 * Bảng địa điểm theo bộ lọc (spec Đợt 11, S3), cùng dạng dòng với chỗ trống; tham số như
+	 * {@link PlaceService#list}.
+	 */
+	public CursorPage<VacancyResponse> list(long workspaceId, String q, Long typeId, PlaceStatus status, Long rootId,
+			boolean hasRoom, List<String> attr, CursorRequest request) {
+		return rows(workspaceId, this.places.list(workspaceId, q, typeId, status, rootId, hasRoom, attr, request));
+	}
+
+	/** Kèm số người đang ở, tên loại và tổ tiên; mỗi trang một câu đếm và một câu tên, không đếm từng dòng. */
+	private CursorPage<VacancyResponse> rows(long workspaceId, CursorPage<Place> page) {
 		Map<Long, Integer> living = this.places.peopleLiving(workspaceId,
 				page.items().stream().map(Place::id).toList());
 		Map<Long, String> typeNames = this.placeTypes.list(workspaceId)

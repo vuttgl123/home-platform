@@ -32,6 +32,9 @@ import com.home_platform.registry.support.Text;
 import com.home_platform.registry.fielddef.AttributeValidation;
 import com.home_platform.registry.fielddef.FieldTarget;
 import com.home_platform.registry.placetype.PlaceTypeService;
+import com.home_platform.registry.search.AttributeFilter;
+import com.home_platform.registry.search.SqlCondition;
+import com.home_platform.registry.search.TextSearch;
 import com.home_platform.registry.support.BusinessDate;
 import com.home_platform.registry.support.Geohash;
 import org.springframework.dao.DuplicateKeyException;
@@ -67,9 +70,12 @@ public class PlaceService {
 
 	private final CodeIssuer codes;
 
+	private final AttributeFilter attributeFilter;
+
 	PlaceService(PlaceRepository repository, PlaceTypeService placeTypes, AttributeValidation attributeValidation,
 			EntityHistory history, IdGenerator idGenerator, PlaceAddressRepository addresses, Clock clock,
-			BusinessDate businessDate, CodeIssuer codes) {
+			BusinessDate businessDate, CodeIssuer codes, AttributeFilter attributeFilter) {
+		this.attributeFilter = attributeFilter;
 		this.businessDate = businessDate;
 		this.codes = codes;
 		this.repository = repository;
@@ -138,6 +144,23 @@ public class PlaceService {
 	public CursorPage<Place> vacancies(long workspaceId, Long placeTypeId, Long rootId, CursorRequest page) {
 		String rootPath = (rootId != null) ? get(workspaceId, rootId).path() : null;
 		return this.repository.vacancies(workspaceId, placeTypeId, rootPath, this.businessDate.today(), page);
+	}
+
+	/**
+	 * Bảng địa điểm theo bộ lọc (spec Đợt 11, S3), theo tên.
+	 * @param q chữ tìm trong tên, mã, mô tả; dưới 2 ký tự thì bỏ qua
+	 * @param rootId chỉ các hậu duệ (không gồm nó) của địa điểm này
+	 * @param attr điều kiện {@code khoá:phép:giá trị} theo mục tuỳ biến
+	 * @throws com.home_platform.common.web.BadRequestException nếu {@code attr} sai
+	 * @throws com.home_platform.common.web.NotFoundException nếu {@code rootId} không có hoặc đã xoá
+	 */
+	public CursorPage<Place> list(long workspaceId, String q, Long typeId, PlaceStatus status, Long rootId,
+			boolean hasRoom, List<String> attr, CursorRequest page) {
+		List<SqlCondition> attributes = this.attributeFilter.conditions(workspaceId, FieldTarget.PLACE, attr,
+				"place_type_id");
+		String rootPath = (rootId != null) ? get(workspaceId, rootId).path() : null;
+		PlaceFilter filter = new PlaceFilter(TextSearch.pattern(q), typeId, status, rootPath, hasRoom, attributes);
+		return this.repository.list(workspaceId, filter, this.businessDate.today(), page);
 	}
 
 	/** Số người đang ở hôm nay của từng địa điểm trong {@code ids}. */
