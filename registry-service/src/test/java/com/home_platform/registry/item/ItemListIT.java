@@ -181,7 +181,7 @@ class ItemListIT extends ItemTestData {
 	void statusWithAPlaceIs400() throws Exception {
 		this.mvc.perform(asA(get("/items").param("placeId", String.valueOf(this.room)).param("status", "BROKEN")))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.detail").value("status can only be combined with categoryId or no scope"));
+			.andExpect(jsonPath("$.detail").value("status, q, rootId and attr can only be combined with categoryId or no scope"));
 	}
 
 	@Test

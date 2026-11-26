@@ -1,5 +1,6 @@
 package com.home_platform.registry.item;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -9,7 +10,13 @@ import com.home_platform.common.web.BadRequestException;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
 import com.home_platform.registry.code.CodeReissueRequest;
+import com.home_platform.registry.search.AttributeFilter;
 import com.home_platform.registry.support.Text;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
@@ -43,20 +50,26 @@ class ItemController {
 	 * với cả không gian hoặc với nhóm; trống là mọi món chưa gỡ.
 	 */
 	@GetMapping
+	@Parameter(name = AttributeFilter.PARAM, in = ParameterIn.QUERY,
+			description = "khoá:phép:giá trị (has, eq, gte, lte, set, unset); lặp tối đa 3 lần; chỉ với categoryId hoặc không phạm vi",
+			array = @ArraySchema(schema = @Schema(type = "string")))
 	CursorPage<ItemResponse> list(WorkspaceContext ctx, @RequestParam(required = false) Long placeId,
 			@RequestParam(defaultValue = "false") boolean removed, @RequestParam(required = false) Long subtreeOf,
 			@RequestParam(required = false) Long categoryId, @RequestParam(required = false) Long ownerId,
-			@RequestParam(required = false) ItemStatus status, CursorRequest page) {
+			@RequestParam(required = false) ItemStatus status, @RequestParam(required = false) String q,
+			@RequestParam(required = false) Long rootId, CursorRequest page, HttpServletRequest request) {
 		if (Stream.of(placeId, subtreeOf, categoryId, ownerId).filter(Objects::nonNull).count() > 1) {
 			throw new BadRequestException("Give at most one of placeId, subtreeOf, categoryId or ownerId");
 		}
-		if (status != null && (placeId != null || subtreeOf != null || ownerId != null)) {
-			throw new BadRequestException("status can only be combined with categoryId or no scope");
+		List<String> attr = AttributeFilter.values(request);
+		boolean filtered = status != null || q != null || rootId != null || !attr.isEmpty();
+		if (filtered && (placeId != null || subtreeOf != null || ownerId != null)) {
+			throw new BadRequestException("status, q, rootId and attr can only be combined with categoryId or no scope");
 		}
 		CursorPage<ItemView> found = (placeId != null) ? this.service.atPlace(ctx.workspaceId(), placeId, removed, page)
 				: (subtreeOf != null) ? this.service.inSubtree(ctx.workspaceId(), subtreeOf, page)
 						: (ownerId != null) ? this.service.ownedBy(ctx.workspaceId(), ownerId, page)
-								: this.service.all(ctx.workspaceId(), status, categoryId, page);
+								: this.service.all(ctx.workspaceId(), status, categoryId, q, rootId, attr, page);
 		return found.map(this.mapper::toResponse);
 	}
 

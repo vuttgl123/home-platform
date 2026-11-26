@@ -28,6 +28,9 @@ import com.home_platform.registry.itemcategory.ItemCategoryService;
 import com.home_platform.registry.person.PersonService;
 import com.home_platform.registry.place.PlaceService;
 import com.home_platform.registry.support.BusinessDate;
+import com.home_platform.registry.search.AttributeFilter;
+import com.home_platform.registry.search.SqlCondition;
+import com.home_platform.registry.search.TextSearch;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,9 +66,12 @@ public class ItemService {
 
 	private final PersonService people;
 
+	private final AttributeFilter attributeFilter;
+
 	ItemService(ItemRepository repository, PlaceService places, ItemCategoryService categories,
 			AttributeValidation attributeValidation, EntityHistory history, BusinessDate businessDate,
-			CodeIssuer codes, PersonService people) {
+			CodeIssuer codes, PersonService people, AttributeFilter attributeFilter) {
+		this.attributeFilter = attributeFilter;
 		this.businessDate = businessDate;
 		this.codes = codes;
 		this.people = people;
@@ -442,13 +448,22 @@ public class ItemService {
 
 	/**
 	 * Đồ của cả không gian (hoặc của một nhóm), theo tên; xem {@link ItemRepository#all}.
-	 * @throws NotFoundException nếu nhóm không có
+	 * @param q chữ tìm trong tên, mã, mô tả; dưới 2 ký tự thì bỏ qua
+	 * @param rootId món nằm tại địa điểm này hay một nơi bên trong nó
+	 * @param attr điều kiện {@code khoá:phép:giá trị} theo mục tuỳ biến; mục của một nhóm không khớp đồ chưa có nhóm
+	 * @throws NotFoundException nếu nhóm hay {@code rootId} không có
+	 * @throws com.home_platform.common.web.BadRequestException nếu {@code attr} sai
 	 */
-	public CursorPage<ItemView> all(long workspaceId, ItemStatus status, Long categoryId, CursorRequest page) {
+	public CursorPage<ItemView> all(long workspaceId, ItemStatus status, Long categoryId, String q, Long rootId,
+			List<String> attr, CursorRequest page) {
 		if (categoryId != null) {
 			this.categories.get(workspaceId, categoryId);
 		}
-		return withViews(workspaceId, this.repository.all(workspaceId, status, categoryId, page));
+		List<SqlCondition> attributes = this.attributeFilter.conditions(workspaceId, FieldTarget.ITEM, attr,
+				"category_id");
+		String rootPath = (rootId != null) ? this.places.get(workspaceId, rootId).path() : null;
+		ItemFilter filter = new ItemFilter(status, categoryId, TextSearch.pattern(q), rootPath, attributes);
+		return withViews(workspaceId, this.repository.all(workspaceId, filter, page));
 	}
 
 	public CursorPage<ItemView> searchByName(long workspaceId, String prefix, CursorRequest page) {

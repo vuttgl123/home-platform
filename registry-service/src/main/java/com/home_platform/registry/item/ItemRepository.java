@@ -10,6 +10,8 @@ import com.home_platform.common.jdbc.RepositorySupport;
 import com.home_platform.common.jdbc.WorkspaceRepository;
 import com.home_platform.common.web.CursorPage;
 import com.home_platform.common.web.CursorRequest;
+import com.home_platform.registry.search.SqlCondition;
+import com.home_platform.registry.search.TextSearch;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -86,14 +88,26 @@ public class ItemRepository extends WorkspaceRepository<Item> {
 	/**
 	 * Đồ của cả không gian, theo tên. {@code status} trống: mọi món chưa gỡ (index (workspace_id, name));
 	 * có giá trị: đúng trạng thái đó (index (workspace_id, status, name)). {@code categoryId} khác null
-	 * thì chỉ món của nhóm đó (index (workspace_id, category_id, name)).
+	 * thì chỉ món của nhóm đó (index (workspace_id, category_id, name)). Tìm chữ ({@code text}: tên, mã, mô
+	 * tả), toà ({@code rootPath}: gồm chính nó) và mục tuỳ biến quét các dòng đó (spec Đợt 11, S5).
 	 */
-	public CursorPage<Item> all(long workspaceId, ItemStatus status, Long categoryId, CursorRequest page) {
+	public CursorPage<Item> all(long workspaceId, ItemFilter filter, CursorRequest page) {
 		var query = keyset();
-		query = (status == null) ? query.where("removed_at IS NULL", Map.of())
-				: query.where("status = :status", Map.of("status", status.name()));
-		if (categoryId != null) {
-			query = query.where("category_id = :categoryId", Map.of("categoryId", categoryId));
+		query = (filter.status() == null) ? query.where("removed_at IS NULL", Map.of())
+				: query.where("status = :status", Map.of("status", filter.status().name()));
+		if (filter.categoryId() != null) {
+			query = query.where("category_id = :categoryId", Map.of("categoryId", filter.categoryId()));
+		}
+		if (filter.text() != null) {
+			SqlCondition text = TextSearch.anyColumnContains(filter.text(), "name", "code", "description");
+			query = query.where(text.sql(), text.params());
+		}
+		if (filter.rootPath() != null) {
+			query = query.where("place_id IN (SELECT p.id FROM reg_place p WHERE p.workspace_id = :workspaceId "
+					+ "AND p.path LIKE :rootPrefix AND p.deleted_at IS NULL)", Map.of("rootPrefix", filter.rootPath() + "%"));
+		}
+		for (SqlCondition condition : filter.attributes()) {
+			query = query.where(condition.sql(), condition.params());
 		}
 		return query.orderBy("name").fetch(workspaceId, page);
 	}
