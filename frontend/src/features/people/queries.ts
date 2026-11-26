@@ -172,6 +172,8 @@ export function refreshOccupancies(queryClient: QueryClient, ws: string, personI
   void queryClient.invalidateQueries({ queryKey: personKeys.detail(ws, personId) })
   // Trang Chỗ trống (features/vacancies) đếm người đang ở; khoá viết thẳng để không import vòng.
   void queryClient.invalidateQueries({ queryKey: ['vacancies', ws] })
+  // Bảng địa điểm (features/places) có cột Đang ở; khoá viết thẳng như trên.
+  void queryClient.invalidateQueries({ queryKey: ['places', ws, 'filtered'] })
 }
 
 export function useCreateOccupancy(ws: string) {

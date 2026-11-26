@@ -25,3 +25,18 @@ test('deletingAPlaceMarksVacanciesStale', async () => {
 
   expect(queryClient.getQueryState(['vacancies', '7', 'list'])?.isInvalidated).toBe(true)
 })
+
+test('deletingAPlaceMarksThePlaceTableStale', async () => {
+  server.use(http.delete('/api/registry/places/:id', () => new HttpResponse(null, { status: 204 })))
+  setCurrentUser('42')
+  const queryClient = createQueryClient()
+  queryClient.setQueryData(['places', '7', 'filtered', {}], { pages: [], pageParams: [] })
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
+  const { result } = renderHook(() => useDeletePlace('7'), { wrapper })
+
+  await act(() => result.current.mutateAsync(placeDetail({ id: '301', version: 2 })))
+
+  expect(queryClient.getQueryState(['places', '7', 'filtered', {}])?.isInvalidated).toBe(true)
+})

@@ -8,6 +8,7 @@ export { PlacePicker } from './components/PlacePicker'
 export type { PlaceChoice } from './components/PlacePicker'
 export { PlaceTree } from './components/PlaceTree'
 export { PlacePage } from './pages/PlacePage'
+export { PlacesPage } from './pages/PlacesPage'
 export type { PlaceTabSlots } from './pages/PlacePage'
 export {
   placeKeys,

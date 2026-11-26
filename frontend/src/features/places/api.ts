@@ -1,6 +1,9 @@
 import { registry, unwrap, workspaceHeaders, type CursorPage, type RegistrySchemas } from '@/api'
 
-import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from './types'
+import { toApiValues } from '@/features/catalog'
+import { searchText } from '@/lib/searchText'
+
+import type { PlaceDetail, PlaceFilter, PlaceRow, PlaceSearchResult, PlaceSummary } from './types'
 
 // Cây tải mỗi lần 50 dòng: nhánh nghìn phòng không phải bấm "Tải thêm" quá nhiều, mà một trang
 // vẫn nhẹ. Backend cho tối đa 100.
@@ -118,4 +121,28 @@ export async function quickFindPlaces(ws: string, term: string): Promise<{ byCod
     ((await unwrap(registry.GET('/places/search', { params: { header: workspaceHeaders(ws), query: { ...query, limit: QUICK_LIMIT } } }))) as CursorPage<PlaceSearchResult>).items
   const [byCode, byName] = await Promise.all([find({ code: term }), find({ name: term })])
   return { byCode, byName }
+}
+
+/** Tham số của `GET /places/list` cho một bộ lọc; dùng cả làm khoá cache, nên chữ gõ thêm dấu cách không tải lại. */
+export function placeListQuery(filter: PlaceFilter) {
+  const attr = toApiValues(filter.conditions)
+  return {
+    q: searchText(filter.q),
+    typeId: filter.placeTypeId ?? undefined,
+    status: filter.status ?? undefined,
+    rootId: filter.rootId ?? undefined,
+    hasRoom: filter.hasRoom || undefined,
+    attr: attr.length > 0 ? attr : undefined,
+  }
+}
+
+/** Bảng địa điểm theo bộ lọc, theo tên (spec Đợt 11, S3). */
+export async function listPlaces(
+  ws: string,
+  query: ReturnType<typeof placeListQuery>,
+  cursor?: string,
+): Promise<CursorPage<PlaceRow>> {
+  const call = registry.GET('/places/list', { params: { header: workspaceHeaders(ws), query: { ...query, cursor } } })
+  const found = (await unwrap(call)) as CursorPage<Omit<PlaceRow, 'id'> & { placeId: string }>
+  return { ...found, items: found.items.map((row) => ({ ...row, id: row.placeId })) }
 }

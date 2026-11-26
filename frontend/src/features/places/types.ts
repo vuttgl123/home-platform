@@ -1,4 +1,5 @@
 import type { Present, RegistrySchemas } from '@/api'
+import type { AttributeCondition } from '@/features/catalog'
 
 type S = RegistrySchemas
 
@@ -47,3 +48,19 @@ export type PlaceDetail = Omit<
 }
 
 export type PlaceStatus = PlaceSummary['status']
+
+/** Một dòng của bảng địa điểm (spec Đợt 11, S3); cùng dạng với chỗ trống, `id` là `placeId`. */
+export type PlaceRow = Omit<
+  Present<S['VacancyResponse'], 'placeId' | 'name' | 'placeTypeId' | 'status' | 'occupantCount'>,
+  'ancestors'
+> & { id: string; ancestors: PlaceRef[] }
+
+/** Bộ lọc của bảng địa điểm; `null`, `''`, `false`, `[]` là không lọc. */
+export type PlaceFilter = {
+  q: string
+  placeTypeId: string | null
+  status: PlaceStatus | null
+  rootId: string | null
+  hasRoom: boolean
+  conditions: AttributeCondition[]
+}

@@ -9,9 +9,11 @@ import {
   deletePlace,
   getPlace,
   listChildren,
+  listPlaces,
   listSubtree,
   listTopLevel,
   movePlace,
+  placeListQuery,
   quickFindPlaces,
   reissuePlaceCode,
   removeAddress,
@@ -23,7 +25,7 @@ import {
   type PlaceCreateBody,
   type PlaceUpdateBody,
 } from './api'
-import type { PlaceDetail, PlaceSearchResult, PlaceSummary } from './types'
+import type { PlaceDetail, PlaceFilter, PlaceRow, PlaceSearchResult, PlaceSummary } from './types'
 
 /**
  * Khoá cache của địa điểm. Khoá ngắn là tiền tố của khoá dài, nên làm cũ `details(ws)` là làm cũ
@@ -40,6 +42,9 @@ export const placeKeys = {
   subtree: (ws: string, placeId: string) => ['places', ws, 'subtree', placeId] as const,
   searches: (ws: string) => ['places', ws, 'search'] as const,
   search: (ws: string, name: string) => ['places', ws, 'search', name] as const,
+  /** Bảng địa điểm (trang Địa điểm); ghi địa điểm hay cư trú thì làm cũ cả `filteredAll`. */
+  filteredAll: (ws: string) => ['places', ws, 'filtered'] as const,
+  filtered: (ws: string, query: ReturnType<typeof placeListQuery>) => ['places', ws, 'filtered', query] as const,
 }
 
 /**
@@ -68,6 +73,12 @@ export function useTopLevelPlaces(ws: string) {
     queryKey: [...placeKeys.lists(ws), 'top-level-all'],
     queryFn: () => fetchAllPages((cursor) => listTopLevel(ws, cursor)),
   })
+}
+
+/** Bảng địa điểm theo bộ lọc, tải dần; chỉ tải khi `enabled`. */
+export function usePlaceList(ws: string, filter: PlaceFilter, enabled = true): CursorList<PlaceRow> {
+  const query = placeListQuery(filter)
+  return useCursorList({ queryKey: placeKeys.filtered(ws, query), fetchPage: (cursor) => listPlaces(ws, query, cursor), enabled })
 }
 
 /** Mọi hậu duệ của một địa điểm, tải dần; chỉ tải khi `enabled`. */
@@ -133,6 +144,7 @@ export function refreshAfterWrite(
   void queryClient.invalidateQueries({ queryKey: placeKeys.lists(ws) })
   void queryClient.invalidateQueries({ queryKey: placeKeys.searches(ws) })
   void queryClient.invalidateQueries({ queryKey: placeKeys.subtrees(ws) })
+  void queryClient.invalidateQueries({ queryKey: placeKeys.filteredAll(ws) })
   if (scope === 'descendants') {
     void queryClient.invalidateQueries({ queryKey: placeKeys.details(ws), predicate: (query) => !isOwnDetail(query.queryKey) })
   }
@@ -177,6 +189,7 @@ export function useDeletePlace(ws: string) {
       void queryClient.invalidateQueries({ queryKey: ['vacancies', ws] })
       void queryClient.invalidateQueries({ queryKey: placeKeys.searches(ws) })
       void queryClient.invalidateQueries({ queryKey: placeKeys.subtrees(ws) })
+      void queryClient.invalidateQueries({ queryKey: placeKeys.filteredAll(ws) })
     },
   })
 }

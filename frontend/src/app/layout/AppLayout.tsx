@@ -1,5 +1,6 @@
 import {
   ActivityIcon,
+  Building2Icon,
   BedDoubleIcon,
   FileUpIcon,
   LayoutDashboardIcon,
@@ -47,6 +48,7 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 const SECTIONS: { path: string; label: string; icon: LucideIcon }[] = [
   { path: '', label: 'Tổng quan', icon: LayoutDashboardIcon },
   { path: 'todos', label: 'Việc cần làm', icon: ListChecksIcon },
+  { path: 'places', label: 'Địa điểm', icon: Building2Icon },
   { path: 'people', label: 'Người', icon: UsersIcon },
   { path: 'vacancies', label: 'Chỗ trống', icon: BedDoubleIcon },
   { path: 'items', label: 'Đồ đạc', icon: PackageIcon },
