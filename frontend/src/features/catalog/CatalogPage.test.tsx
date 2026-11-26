@@ -3,6 +3,7 @@ import { delay, http, HttpResponse } from 'msw'
 import { expect, onTestFinished, test, vi } from 'vitest'
 
 import { mockCatalogBackend } from '@/test/catalogBackend'
+import { fieldDef } from '@/test/fixtures'
 import { mockShell } from '@/test/handlers'
 import { mockPlaceBackend } from '@/test/placeBackend'
 import { renderApp } from '@/test/render'
@@ -426,4 +427,34 @@ test('codeAnchorScrollsOnceTheSectionLoads', async () => {
 
   await waitFor(() => expect(scrolled).toHaveBeenCalled(), { timeout: 2000 })
   expect(scrolled.mock.contexts[0]).toHaveAttribute('id', 'ma-tu-cap')
+})
+
+test('codeAnchorWaitsForTheSectionsAboveIt', async () => {
+  setUp()
+  // Bảng mã tải xong trước, mục tuỳ biến (ở phía trên) tải sau: cuộn sớm thì phần Mã tự cấp bị đẩy đi.
+  server.use(
+    http.get('/api/registry/code-rules', async () => {
+      await delay(50)
+      return HttpResponse.json([])
+    }),
+    http.get('/api/registry/field-defs', async () => {
+      await delay(400)
+      return HttpResponse.json([fieldDef({ id: '500', target: 'PLACE', typeId: '0', fieldKey: 'area_m2', label: 'Diện tích (m²)', dataType: 'NUMBER' })])
+    }),
+  )
+  const original = Element.prototype.scrollIntoView
+  let fieldsWereThere = false
+  const scrolled = vi.fn(() => {
+    fieldsWereThere = screen.queryByText('Diện tích (m²)') != null
+  })
+  Element.prototype.scrollIntoView = scrolled
+  onTestFinished(() => {
+    Element.prototype.scrollIntoView = original
+  })
+
+  renderApp({ route: '/w/7/catalog#ma-tu-cap', userId: '42' })
+
+  await waitFor(() => expect(scrolled).toHaveBeenCalled(), { timeout: 3000 })
+  expect(fieldsWereThere).toBe(true)
+  expect(scrolled).toHaveBeenCalledTimes(1)
 })

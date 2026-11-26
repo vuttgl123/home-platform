@@ -1,5 +1,6 @@
+import { useIsFetching } from '@tanstack/react-query'
 import { PlusIcon } from 'lucide-react'
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { ErrorState } from '@/components/common/ErrorState'
@@ -33,20 +34,49 @@ type Editing = { rule: CodeRule; label: string } | 'new'
 /** Neo của phần này trên URL; nút "Cấp mã" ở Tổng quan dẫn tới `/catalog#ma-tu-cap`. */
 const ANCHOR = 'ma-tu-cap'
 
+/**
+ * Cuộn tới phần tử {@code id}, rồi cuộn lại mỗi khi trang đổi cao trong {@link FOLLOW_MS}: có dữ liệu chỉ
+ * tải sau dữ liệu khác, và phông chữ, bảng phía trên còn đẩy phần tử đi sau lần cuộn đầu. Người dùng tự
+ * cuộn, chạm hay bấm phím thì thôi theo.
+ * @return hàm dừng theo
+ */
+function scrollAndFollow(id: string): () => void {
+  const scroll = () => document.getElementById(id)?.scrollIntoView({ block: 'start' })
+  scroll()
+  if (typeof ResizeObserver === 'undefined') return () => {}
+  const observer = new ResizeObserver(scroll)
+  observer.observe(document.body)
+  const events = ['wheel', 'touchstart', 'keydown'] as const
+  const stop = () => {
+    observer.disconnect()
+    events.forEach((name) => window.removeEventListener(name, stop))
+    window.clearTimeout(timer)
+  }
+  events.forEach((name) => window.addEventListener(name, stop, { passive: true }))
+  const timer = window.setTimeout(stop, FOLLOW_MS)
+  return stop
+}
+
+/** Thời gian cuộn theo khi trang còn đổi cao sau lần cuộn đầu. */
+const FOLLOW_MS = 3_000
+
 export function CodeRuleSection({ ws }: { ws: string }) {
   const rules = useCodeRules(ws)
   const types = usePlaceTypes(ws).data ?? []
   const categories = useItemCategories(ws).data ?? []
   const [editing, setEditing] = useState<Editing | null>(null)
   const { hash } = useLocation()
-  // Dẫn tới từ nút "Cấp mã" ở Tổng quan: cuộn tới phần này khi bảng đã tải (các phần phía trên cũng tải
-  // dần, cuộn sớm quá thì lệch).
-  const loaded = rules.isSuccess
+  // Dẫn tới từ nút "Cấp mã" ở Tổng quan: cuộn tới phần này một lần, khi mọi thứ trên trang đã tải xong.
+  // Các bảng phía trên (loại, nhóm, mục tuỳ biến) tải dần; cuộn sớm thì chúng đẩy phần này đi chỗ khác.
+  const fetching = useIsFetching()
+  const scrolled = useRef(false)
+  const stopFollowing = useRef<(() => void) | null>(null)
   useEffect(() => {
-    if (hash === `#${ANCHOR}` && loaded) {
-      document.getElementById(ANCHOR)?.scrollIntoView({ block: 'start' })
-    }
-  }, [hash, loaded])
+    if (hash !== `#${ANCHOR}` || !rules.isSuccess || fetching !== 0 || scrolled.current) return
+    scrolled.current = true
+    stopFollowing.current = scrollAndFollow(ANCHOR)
+  }, [hash, rules.isSuccess, fetching])
+  useEffect(() => () => stopFollowing.current?.(), [])
   const remove = useCatalogWrite(ws, (rule: CodeRule) => codeRuleApi.remove(ws, rule.target, rule.typeId))
   const year = Number(todayInBusinessZone().slice(0, 4))
 
