@@ -1,6 +1,7 @@
 import {
   ActivityIcon,
   BedDoubleIcon,
+  FileUpIcon,
   LayoutDashboardIcon,
   ListChecksIcon,
   PackageIcon,
@@ -50,6 +51,7 @@ const SECTIONS: { path: string; label: string; icon: LucideIcon }[] = [
   { path: 'vacancies', label: 'Chỗ trống', icon: BedDoubleIcon },
   { path: 'items', label: 'Đồ đạc', icon: PackageIcon },
   { path: 'catalog', label: 'Danh mục', icon: TagsIcon },
+  { path: 'import', label: 'Nhập từ Excel', icon: FileUpIcon },
   { path: 'activity', label: 'Hoạt động', icon: ActivityIcon },
   { path: 'trash', label: 'Thùng rác', icon: Trash2Icon },
 ]

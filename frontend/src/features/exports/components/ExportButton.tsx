@@ -13,6 +13,7 @@ const EXPORT_PATH: Record<ExportKind, string> = {
   workspace: '/exports/workspace.xlsx',
   items: '/exports/items.xlsx',
   people: '/exports/people.xlsx',
+  template: '/imports/template.xlsx',
 }
 
 /**

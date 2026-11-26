@@ -1,9 +1,9 @@
 import { todayInBusinessZone } from '@/lib/dates'
 
-/** Một loại file xuất: cả không gian, đồ đạc, hay người. */
-export type ExportKind = 'workspace' | 'items' | 'people'
+/** Một loại file tải về: cả không gian, đồ đạc, người, hay file mẫu để nhập. */
+export type ExportKind = 'workspace' | 'items' | 'people' | 'template'
 
-const KIND_SLUG: Record<ExportKind, string> = { workspace: 'toan-bo', items: 'do-dac', people: 'nguoi' }
+const KIND_SLUG: Record<ExportKind, string> = { workspace: 'toan-bo', items: 'do-dac', people: 'nguoi', template: 'mau-nhap' }
 
 /**
  * Tên file khi lưu về máy: `<tên không gian bỏ dấu>-<loại>-<yyyy-MM-dd>.xlsx`. Máy chủ không biết tên

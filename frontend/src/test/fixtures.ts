@@ -1,5 +1,6 @@
 // Dữ liệu mẫu cho test, đúng dạng backend trả về: đủ mọi khoá, trường trống là null.
 import type { FieldDef, ItemCategory, PlaceType } from '@/features/catalog'
+import type { ImportReport, RowReport, SheetReport } from '@/features/imports'
 import type { ItemDetail, ItemSummary } from '@/features/items'
 import type { Overview } from '@/features/overview'
 import type { Ownership } from '@/features/ownership'
@@ -307,4 +308,38 @@ export function todo(overrides: Partial<Todo> = {}): Todo {
 /** Tóm tắt việc cần làm của một không gian chưa có việc gì. */
 export function emptyTodoSummary(): TodoSummary {
   return { total: 0, byKind: { BROKEN: 0, WARRANTY: 0, SERVICE: 0, MOVE_OUT: 0, CUSTOM_DATE: 0 }, newCount: 0, latest: [] }
+}
+
+/** Một dòng của báo cáo nhập; mặc định là dòng 2 của sheet Người, không có lời nhắn. */
+export function rowReport(overrides: Partial<RowReport> = {}): RowReport {
+  return { row: 2, label: 'Nguyễn An', code: null, status: 'OK', messages: [], ...overrides }
+}
+
+/** Một sheet của báo cáo nhập; số dòng, lỗi, cảnh báo đếm từ `items`. */
+export function sheetReport(overrides: Partial<SheetReport> = {}): SheetReport {
+  const items = overrides.items ?? [rowReport()]
+  return {
+    sheet: 'PERSON',
+    name: 'Người',
+    rows: items.length,
+    errors: items.filter((item) => item.status === 'ERROR').length,
+    warnings: items.filter((item) => item.status === 'WARNING').length,
+    items,
+    ...overrides,
+  }
+}
+
+/** Báo cáo của một lần xem trước; tổng đếm từ `sheets`. */
+export function importReport(overrides: Partial<ImportReport> = {}): ImportReport {
+  const sheets = overrides.sheets ?? [sheetReport()]
+  const sum = (key: 'rows' | 'errors' | 'warnings') => sheets.reduce((total, sheet) => total + sheet[key], 0)
+  return {
+    fileName: 'nha.xlsx',
+    committed: false,
+    fileErrors: [],
+    notices: [],
+    totals: { rows: sum('rows'), errors: sum('errors'), warnings: sum('warnings') },
+    sheets,
+    ...overrides,
+  }
 }

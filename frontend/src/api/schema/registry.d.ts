@@ -193,6 +193,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["commit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/imports/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/imports/template.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["template"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/item-categories": {
         parameters: {
             query?: never;
@@ -1406,6 +1454,14 @@ export interface components {
             /** Format: int32 */
             remindDays?: number;
         };
+        ImportReport: {
+            fileName?: string;
+            committed?: boolean;
+            fileErrors?: string[];
+            notices?: string[];
+            totals?: components["schemas"]["Totals"];
+            sheets?: components["schemas"]["SheetReport"][];
+        };
         ItemCategoryRequest: {
             name: string;
             /** Format: int32 */
@@ -2153,8 +2209,35 @@ export interface components {
             /** @description Machine-readable reason, when there is one; VERSION_CONFLICT means read again */
             code?: string;
         };
+        RowMessage: {
+            /** @enum {string} */
+            level?: "ERROR" | "WARNING";
+            column?: string;
+            text?: string;
+        };
+        RowReport: {
+            /** Format: int32 */
+            row?: number;
+            label?: string;
+            code?: string;
+            /** @enum {string} */
+            status?: "OK" | "WARNING" | "ERROR";
+            messages?: components["schemas"]["RowMessage"][];
+        };
         SetupResponse: {
             created?: boolean;
+        };
+        SheetReport: {
+            /** @enum {string} */
+            sheet?: "PLACE" | "PERSON" | "OCCUPANCY" | "OWNERSHIP" | "ITEM";
+            name?: string;
+            /** Format: int32 */
+            rows?: number;
+            /** Format: int32 */
+            errors?: number;
+            /** Format: int32 */
+            warnings?: number;
+            items?: components["schemas"]["RowReport"][];
         };
         TodoResponse: {
             key?: string;
@@ -2180,6 +2263,14 @@ export interface components {
             /** Format: int32 */
             newCount?: number;
             latest?: components["schemas"]["TodoResponse"][];
+        };
+        Totals: {
+            /** Format: int32 */
+            rows?: number;
+            /** Format: int32 */
+            errors?: number;
+            /** Format: int32 */
+            warnings?: number;
         };
         TrashResponse: {
             /** @enum {string} */
@@ -2751,6 +2842,120 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["FieldDefResponse"];
                 };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    commit: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImportReport"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    preview: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImportReport"];
+                };
+            };
+            /** @description Error, described as Problem Details */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    template: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Id of the workspace the call works in */
+                "X-Workspace-Id": string;
+                /** @description Id of the calling user */
+                "X-User-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Error, described as Problem Details */
             default: {

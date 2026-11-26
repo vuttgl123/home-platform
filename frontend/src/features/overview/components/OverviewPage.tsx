@@ -1,5 +1,5 @@
 import { cn } from 'cn'
-import { Building2Icon, PackageCheckIcon, TriangleAlertIcon, UsersIcon, WrenchIcon, type LucideIcon } from 'lucide-react'
+import { Building2Icon, FileUpIcon, PackageCheckIcon, TriangleAlertIcon, UsersIcon, WrenchIcon, type LucideIcon } from 'lucide-react'
 import { type ReactNode, useId } from 'react'
 import { Link } from 'react-router'
 import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts'
@@ -55,6 +55,10 @@ export function OverviewPage({ ws, overview }: { ws: string; overview: Overview 
           <h1 className="text-2xl font-semibold tracking-tight">Tổng quan</h1>
           <p className="text-sm text-muted-foreground">Chỗ ở, đồ đạc và những thay đổi mới nhất của không gian này.</p>
         </div>
+        <Link to={`/w/${ws}/import`} className={buttonVariants({ variant: 'outline' })}>
+          <FileUpIcon aria-hidden="true" />
+          Nhập Excel
+        </Link>
         <ExportButton ws={ws} kind="workspace" label="Tải Excel" />
       </header>
       <ul aria-label="Số liệu chính" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

@@ -1,9 +1,10 @@
-import { MapPinIcon, PlusIcon, TagsIcon } from 'lucide-react'
+import { FileUpIcon, MapPinIcon, PlusIcon, TagsIcon } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router'
 
 import { ErrorState } from '@/components/common/ErrorState'
 import { FormError } from '@/components/common/FormError'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePlaceTypes, useSetupWorkspace } from '@/features/catalog'
@@ -60,10 +61,16 @@ export function WorkspaceHomePage() {
         <EmptyDescription>Thông tin, người ở và đồ đạc của địa điểm sẽ hiện ở đây.</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button onClick={() => setAdding(true)}>
-          <PlusIcon aria-hidden="true" />
-          Thêm địa điểm
-        </Button>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button onClick={() => setAdding(true)}>
+            <PlusIcon aria-hidden="true" />
+            Thêm địa điểm
+          </Button>
+          <Link to={`/w/${workspaceId}/import`} className={buttonVariants({ variant: 'outline' })}>
+            <FileUpIcon aria-hidden="true" />
+            Nhập từ Excel
+          </Link>
+        </div>
       </EmptyContent>
       <PlaceFormDialog ws={workspaceId} mode="create" parent={null} open={adding} onOpenChange={setAdding} />
     </Empty>

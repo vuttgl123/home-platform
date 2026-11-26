@@ -8,6 +8,7 @@ import { PeoplePage, PersonPage, PlaceOccupantsTab, type PersonTabSlots } from '
 import { PersonOwnershipsTab, PlaceOwnersTab } from '@/features/ownership'
 import { PlacePage, type PlaceTabSlots } from '@/features/places'
 import { PlacePrintPage } from '@/features/print'
+import { ImportPage } from '@/features/imports'
 import { TodosPage } from '@/features/todos'
 import { VacanciesPage } from '@/features/vacancies'
 
@@ -67,6 +68,7 @@ export const routes: RouteObject[] = [
               { path: 'items', element: <ItemsPage /> },
               { path: 'items/:itemId', element: <ItemPage tabs={itemTabs} /> },
               { path: 'catalog', element: <CatalogPage /> },
+              { path: 'import', element: <ImportPage /> },
               { path: 'activity', element: <ActivityPage /> },
               { path: 'trash', element: <TrashPage /> },
               { path: '*', element: <NotFoundPage /> },
