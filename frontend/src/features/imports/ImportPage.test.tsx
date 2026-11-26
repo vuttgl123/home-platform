@@ -4,8 +4,8 @@ import { expect, test } from 'vitest'
 
 import { mockDownloads } from '@/test/downloads'
 import { emptyOverview, importReport, rowReport, sheetReport } from '@/test/fixtures'
-import { mockShell } from '@/test/handlers'
-import { mockImportBackend } from '@/test/importBackend'
+import { mockShell, recordRequests } from '@/test/handlers'
+import { mockImportBackend, type ImportResponder } from '@/test/importBackend'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/server'
 
@@ -229,4 +229,148 @@ test('aFileOverFiveMegabytesIsNotSent', async () => {
 
   expect(await screen.findByText('File lớn hơn 5 MB')).toBeInTheDocument()
   expect(calls).toHaveLength(0)
+})
+
+/** Xem trước một báo cáo sạch (5 dòng), rồi trả `commit` khi bấm Nhập. */
+function cleanPreview(commit?: ImportResponder) {
+  const clean = importReport({
+    sheets: [
+      sheetReport({ items: [rowReport({ row: 2 }), rowReport({ row: 3, label: 'Trần Bình' })] }),
+      sheetReport({ sheet: 'ITEM', name: 'Đồ đạc', items: [2, 3, 4].map((row) => rowReport({ row, label: `Món ${row}` })) }),
+    ],
+  })
+  return mockImportBackend({ preview: clean, commit: commit ?? { ...clean, committed: true } })
+}
+
+test('importSendsTheFileAgainAndShowsTheResult', async () => {
+  mockShell()
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const calls = cleanPreview(async () => {
+    await gate
+    return importReport({
+      committed: true,
+      sheets: [
+        sheetReport({ items: [rowReport({ row: 2 }), rowReport({ row: 3 })] }),
+        sheetReport({ sheet: 'ITEM', name: 'Đồ đạc', items: [2, 3, 4].map((row) => rowReport({ row })) }),
+      ],
+    })
+  })
+  const { user } = renderApp({ route: '/w/7/import', userId: '42' })
+  await choose(user)
+
+  await user.click(await screen.findByRole('button', { name: 'Nhập 5 dòng' }))
+
+  expect(await screen.findByText('Đang nhập, đừng đóng trang')).toBeInTheDocument()
+  expect(screen.getByRole('progressbar')).toBeInTheDocument()
+  release()
+  expect(await screen.findByText('Đã nhập 5 hồ sơ')).toBeInTheDocument()
+  expect(calls.map((call) => call.path)).toEqual(['preview', 'commit'])
+  const result = await main()
+  expect(result.getByText('Người: 2')).toBeInTheDocument()
+  expect(result.getByText('Đồ đạc: 3')).toBeInTheDocument()
+  expect(result.getByRole('link', { name: 'Tổng quan' })).toHaveAttribute('href', '/w/7')
+  expect(result.getByRole('link', { name: 'Người' })).toHaveAttribute('href', '/w/7/people')
+  expect(result.getByRole('link', { name: 'Đồ đạc' })).toHaveAttribute('href', '/w/7/items')
+  expect(result.getByRole('link', { name: 'Hoạt động' })).toHaveAttribute('href', '/w/7/activity')
+  const steps = within(screen.getByRole('list', { name: 'Các bước' }))
+  expect(steps.getByText('Nhập').closest('li')).toHaveAttribute('aria-current', 'step')
+})
+
+test('importButtonLocksWhileRunning', async () => {
+  mockShell()
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const calls = cleanPreview(async () => {
+    await gate
+    return importReport({ committed: true })
+  })
+  const { user } = renderApp({ route: '/w/7/import', userId: '42' })
+  await choose(user)
+
+  await user.dblClick(await screen.findByRole('button', { name: 'Nhập 5 dòng' }))
+  release()
+
+  expect(await screen.findByText(/^Đã nhập/)).toBeInTheDocument()
+  expect(calls.filter((call) => call.path === 'commit')).toHaveLength(1)
+})
+
+test('dataChangedSincePreview', async () => {
+  mockShell()
+  cleanPreview(
+    importReport({
+      committed: false,
+      sheets: [
+        sheetReport({
+          items: [
+            rowReport({
+              row: 2,
+              status: 'ERROR',
+              messages: [{ level: 'ERROR', column: 'Số giấy tờ', text: 'Đã có người dùng giấy tờ này' }],
+            }),
+          ],
+        }),
+      ],
+    }),
+  )
+  const { user } = renderApp({ route: '/w/7/import', userId: '42' })
+  await choose(user)
+
+  await user.click(await screen.findByRole('button', { name: 'Nhập 5 dòng' }))
+
+  expect(await screen.findByText('Dữ liệu đã thay đổi từ lúc xem trước')).toBeInTheDocument()
+  expect(screen.getByText('Đã có người dùng giấy tờ này')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Nhập 1 dòng' })).toBeDisabled()
+  const steps = within(screen.getByRole('list', { name: 'Các bước' }))
+  expect(steps.getByText('Xem trước').closest('li')).toHaveAttribute('aria-current', 'step')
+})
+
+test('unreadableFileAsksToChooseAgain', async () => {
+  mockShell()
+  const calls = cleanPreview()
+  const { user } = renderApp({ route: '/w/7/import', userId: '42' })
+  const file = xlsx()
+  await choose(user, file)
+  await screen.findByRole('button', { name: 'Nhập 5 dòng' })
+  Object.defineProperty(file, 'arrayBuffer', {
+    value: () => Promise.reject(new DOMException('gone', 'NotReadableError')),
+  })
+
+  await user.click(screen.getByRole('button', { name: 'Nhập 5 dòng' }))
+
+  expect(await screen.findByText('Không đọc lại được file; chọn lại file')).toBeInTheDocument()
+  expect(calls.filter((call) => call.path === 'commit')).toHaveLength(0)
+})
+
+test('importAnotherFileStartsOver', async () => {
+  mockShell()
+  cleanPreview()
+  const { user } = renderApp({ route: '/w/7/import', userId: '42' })
+  await choose(user)
+  await user.click(await screen.findByRole('button', { name: 'Nhập 5 dòng' }))
+
+  await user.click(await screen.findByRole('button', { name: 'Nhập file khác' }))
+
+  expect(await screen.findByLabelText('Chọn file .xlsx')).toBeInTheDocument()
+  expect(screen.queryByText(/^Đã nhập/)).not.toBeInTheDocument()
+})
+
+test('successRefreshesWorkspaceData', async () => {
+  mockShell()
+  cleanPreview()
+  const requests = recordRequests()
+  const { user } = renderApp({ route: '/w/7/import', userId: '42' })
+  await choose(user)
+  await screen.findByRole('button', { name: 'Nhập 5 dòng' })
+  const treeLoads = () => requests.filter((request) => request === 'GET /api/registry/places').length
+  const beforeImport = treeLoads()
+
+  await user.click(screen.getByRole('button', { name: 'Nhập 5 dòng' }))
+
+  await screen.findByText(/^Đã nhập/)
+  await waitFor(() => expect(treeLoads()).toBeGreaterThan(beforeImport))
 })
