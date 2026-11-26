@@ -1,4 +1,5 @@
 import type { Present, RegistrySchemas } from '@/api'
+import type { AttributeCondition } from '@/features/catalog'
 
 type S = RegistrySchemas
 
@@ -21,6 +22,17 @@ export type Relation = Occupancy['relation']
 export type OccupancyStatus = Occupancy['status']
 export type Gender = NonNullable<PersonDetail['gender']>
 export type PersonSearchField = 'name' | 'phone' | 'idNumber'
+
+/**
+ * Bộ lọc của trang Người (spec Đợt 11, S4). `living`: đang ở / không ở đâu hôm nay; `rootId`: đang ở
+ * trong toà đó, nên đi với `living` khác `'no'`.
+ */
+export type PersonFilter = {
+  q: string
+  living: 'yes' | 'no' | null
+  rootId: string | null
+  conditions: AttributeCondition[]
+}
 
 /** Sức chứa và đỉnh của một địa điểm trong một khoảng ngày (spec Đợt 6, L3). */
 export type CapacityCheck = Present<S['CapacityCheckResponse'], 'peak'>

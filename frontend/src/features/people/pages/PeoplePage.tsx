@@ -1,6 +1,6 @@
 import { PlusIcon, UsersIcon } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useId, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router'
 
 import { PersonAvatar } from '@/components/common/PersonAvatar'
 import type { CursorList } from '@/api'
@@ -8,34 +8,44 @@ import { ErrorState } from '@/components/common/ErrorState'
 import { LoadMoreButton } from '@/components/common/LoadMoreButton'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AttributeFilters, filterableDefs, useAllFieldDefs } from '@/features/catalog'
 import { ExportButton } from '@/features/exports'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { thumbnailUrl } from '@/features/media'
+import { useTopLevelPlaces } from '@/features/places'
 
 import { PersonFormDialog } from '../components/PersonFormDialog'
-import { usePeople, usePeopleSearch } from '../queries'
-import type { PersonSearchField, PersonSummary } from '../types'
+import { isFiltered, readPersonFilter, writePersonFilter } from '../personFilter'
+import { usePeopleList } from '../queries'
+import type { PersonFilter, PersonSummary } from '../types'
 
-const SEARCH_FIELDS: { value: PersonSearchField; label: string; placeholder: string }[] = [
-  { value: 'name', label: 'Tên', placeholder: 'Tên bắt đầu bằng…' },
-  { value: 'phone', label: 'Số điện thoại', placeholder: 'Đúng số điện thoại' },
-  { value: 'idNumber', label: 'Số giấy tờ', placeholder: 'Đúng số giấy tờ' },
-]
-
-/** Trang `/w/:workspaceId/people`: mọi người của không gian, tìm theo tên, số điện thoại hay số giấy tờ. */
+/**
+ * Trang `/w/:workspaceId/people`: mọi người của không gian (spec Đợt 11, S4). Một ô tìm trong họ tên,
+ * số điện thoại, email, giấy tờ, ghi chú; lọc theo nơi đang ở và mục tuỳ biến. Bộ lọc nằm trên URL;
+ * ô gõ đổi URL ngay, danh sách tải lại sau 300 ms.
+ */
 export function PeoplePage() {
   const { workspaceId = '' } = useParams()
-  const [by, setBy] = useState<PersonSearchField>('name')
-  const [term, setTerm] = useState('')
-  const settled = useDebouncedValue(term.trim(), 300)
-  const searchFor = term.trim() === '' ? '' : settled
-  const all = usePeople(workspaceId)
-  const found = usePeopleSearch(workspaceId, by, searchFor)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const fieldDefs = useAllFieldDefs(workspaceId, 'PERSON')
+  const defs = fieldDefs.data ?? []
+  const filter = readPersonFilter(searchParams, defs)
+  const settled = new URLSearchParams(useDebouncedValue(searchParams.toString(), 300))
+  const settledFilter = readPersonFilter(settled, defs)
+  // Điều kiện trên URL chỉ đọc được khi đã có danh sách mục; chờ để không tải một lần không có chúng.
+  const list = usePeopleList(workspaceId, settledFilter, !(settled.has('f') && fieldDefs.isPending))
+  const buildings = useTopLevelPlaces(workspaceId).data ?? []
   const [adding, setAdding] = useState(false)
-  const field = SEARCH_FIELDS.find((option) => option.value === by)!
+  const livingId = useId()
+  const buildingId = useId()
+
+  function update(next: PersonFilter) {
+    setSearchParams(writePersonFilter(next), { replace: true })
+  }
 
   const addButton = (
     <Button onClick={() => setAdding(true)}>
@@ -51,30 +61,66 @@ export function PeoplePage() {
         <ExportButton ws={workspaceId} kind="people" label="Xuất Excel" />
         {addButton}
       </header>
-      <div className="flex gap-2">
-        <NativeSelect aria-label="Tìm theo" value={by} onChange={(event) => setBy(event.target.value as PersonSearchField)}>
-          {SEARCH_FIELDS.map((option) => (
-            <NativeSelectOption key={option.value} value={option.value}>
-              {option.label}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+      <div className="flex flex-col gap-4">
         <Input
           type="search"
           aria-label="Tìm người"
-          placeholder={field.placeholder}
-          value={term}
-          onChange={(event) => setTerm(event.target.value)}
-          className="flex-1"
+          placeholder="Tên, số điện thoại, email, giấy tờ, ghi chú…"
+          value={filter.q}
+          onChange={(event) => update({ ...filter, q: event.target.value })}
+        />
+        <div className="grid gap-4 sm:max-w-xl sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor={livingId}>Cư trú</FieldLabel>
+            <NativeSelect
+              id={livingId}
+              className="w-full"
+              value={filter.living ?? ''}
+              onChange={(event) => {
+                const living = (event.target.value || null) as PersonFilter['living']
+                update({ ...filter, living, rootId: living === 'no' ? null : filter.rootId })
+              }}
+            >
+              <NativeSelectOption value="">Mọi người</NativeSelectOption>
+              <NativeSelectOption value="yes">Đang ở</NativeSelectOption>
+              <NativeSelectOption value="no">Không ở đâu</NativeSelectOption>
+            </NativeSelect>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={buildingId}>Toà</FieldLabel>
+            <NativeSelect
+              id={buildingId}
+              className="w-full"
+              disabled={filter.living === 'no'}
+              value={filter.rootId ?? ''}
+              // Đang ở trong một toà nghĩa là đang ở: chọn toà thì "Cư trú" thành "Đang ở".
+              onChange={(event) => {
+                const rootId = event.target.value || null
+                update({ ...filter, rootId, living: rootId ? 'yes' : filter.living })
+              }}
+            >
+              <NativeSelectOption value="">Mọi toà</NativeSelectOption>
+              {buildings.map((building) => (
+                <NativeSelectOption key={building.id} value={building.id}>
+                  {building.name}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Field>
+        </div>
+        <AttributeFilters
+          defs={filterableDefs(defs, null)}
+          value={filter.conditions}
+          onChange={(conditions) => update({ ...filter, conditions })}
         />
       </div>
-      {searchFor !== '' ? (
-        <PeopleList ws={workspaceId} list={found} empty={<p className="text-muted-foreground">Không tìm thấy ai.</p>} />
-      ) : (
-        <PeopleList
-          ws={workspaceId}
-          list={all}
-          empty={
+      <PeopleList
+        ws={workspaceId}
+        list={list}
+        empty={
+          isFiltered(settledFilter) ? (
+            <p className="text-muted-foreground">Không tìm thấy ai.</p>
+          ) : (
             <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
@@ -85,9 +131,9 @@ export function PeoplePage() {
               </EmptyHeader>
               <EmptyContent>{addButton}</EmptyContent>
             </Empty>
-          }
-        />
-      )}
+          )
+        }
+      />
       <PersonFormDialog ws={workspaceId} mode="create" open={adding} onOpenChange={setAdding} />
     </div>
   )

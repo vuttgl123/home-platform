@@ -97,7 +97,12 @@ export function mockPeopleBackend(options: {
   const sortedPeople = () => [...people.values()].sort((a, b) => a.fullName.localeCompare(b.fullName))
 
   server.use(
-    http.get('/api/registry/people', () => HttpResponse.json(page(sortedPeople().map(summary)))),
+    http.get('/api/registry/people', ({ request }) => {
+      // Như backend: `q` là "chứa" trong họ tên hay số điện thoại (đủ cho test); các bộ lọc khác không giả lập.
+      const q = new URL(request.url).searchParams.get('q')?.toLowerCase()
+      const found = sortedPeople().filter((p) => !q || p.fullName.toLowerCase().includes(q) || (p.phone ?? '').includes(q))
+      return HttpResponse.json(page(found.map(summary)))
+    }),
     http.get('/api/registry/people/search', ({ request }) => {
       const query = new URL(request.url).searchParams
       const name = query.get('name')

@@ -18,6 +18,7 @@ import {
   listOccupanciesInSubtree,
   listOccupanciesOfPerson,
   listPeople,
+  personListQuery,
   quickFindPeople,
   restorePerson,
   searchPeople,
@@ -25,6 +26,7 @@ import {
   updatePerson,
 } from './api'
 import type {
+  PersonFilter,
   CapacityRange,
   Occupancy,
   OccupancyBody,
@@ -40,7 +42,7 @@ import type {
 export const personKeys = {
   all: (ws: string) => ['people', ws] as const,
   lists: (ws: string) => ['people', ws, 'list'] as const,
-  list: (ws: string) => ['people', ws, 'list', 'all'] as const,
+  filtered: (ws: string, query: ReturnType<typeof personListQuery>) => ['people', ws, 'list', 'filtered', query] as const,
   search: (ws: string, by: PersonSearchField, term: string) => ['people', ws, 'list', 'search', by, term] as const,
   details: (ws: string) => ['people', ws, 'detail'] as const,
   detail: (ws: string, id: string) => ['people', ws, 'detail', id] as const,
@@ -56,8 +58,10 @@ export const occupancyKeys = {
 
 // Người
 
-export function usePeople(ws: string): CursorList<PersonSummary> {
-  return useCursorList({ queryKey: personKeys.list(ws), fetchPage: (cursor) => listPeople(ws, cursor) })
+/** Người theo bộ lọc của trang Người, tải dần; chỉ tải khi `enabled`. */
+export function usePeopleList(ws: string, filter: PersonFilter, enabled = true): CursorList<PersonSummary> {
+  const query = personListQuery(filter)
+  return useCursorList({ queryKey: personKeys.filtered(ws, query), fetchPage: (cursor) => listPeople(ws, query, cursor), enabled })
 }
 
 /** Tìm người; `term` rỗng thì không gọi. */
@@ -170,6 +174,8 @@ export function useOccupanciesOfPerson(ws: string, personId: string): CursorList
 export function refreshOccupancies(queryClient: QueryClient, ws: string, personId: string): void {
   void queryClient.invalidateQueries({ queryKey: occupancyKeys.all(ws) })
   void queryClient.invalidateQueries({ queryKey: personKeys.detail(ws, personId) })
+  // Bộ lọc "Đang ở", "Toà" của trang Người phụ thuộc cư trú.
+  void queryClient.invalidateQueries({ queryKey: personKeys.lists(ws) })
   // Trang Chỗ trống (features/vacancies) đếm người đang ở; khoá viết thẳng để không import vòng.
   void queryClient.invalidateQueries({ queryKey: ['vacancies', ws] })
   // Bảng địa điểm (features/places) có cột Đang ở; khoá viết thẳng như trên.

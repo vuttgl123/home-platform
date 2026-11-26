@@ -1,4 +1,6 @@
 import { registry, unwrap, workspaceHeaders, type CursorPage } from '@/api'
+import { toApiValues } from '@/features/catalog'
+import { searchText } from '@/lib/searchText'
 
 import type {
   CapacityCheck,
@@ -10,6 +12,7 @@ import type {
   OccupancyUpdateBody,
   PersonBody,
   PersonDetail,
+  PersonFilter,
   PersonSearchField,
   PersonSummary,
   PersonUpdateBody,
@@ -17,9 +20,24 @@ import type {
 
 // Người
 
-/** Mọi người chưa xoá, theo tên. */
-export async function listPeople(ws: string, cursor?: string): Promise<CursorPage<PersonSummary>> {
-  const call = registry.GET('/people', { params: { header: workspaceHeaders(ws), query: { cursor } } })
+/** Tham số của `GET /people` cho một bộ lọc; cũng là khoá cache. */
+export function personListQuery(filter: PersonFilter) {
+  const attr = toApiValues(filter.conditions)
+  return {
+    q: searchText(filter.q),
+    living: filter.living === 'yes' || filter.rootId ? true : filter.living === 'no' ? false : undefined,
+    rootId: filter.living === 'no' ? undefined : (filter.rootId ?? undefined),
+    attr: attr.length > 0 ? attr : undefined,
+  }
+}
+
+/** Người chưa xoá theo bộ lọc, theo tên (spec Đợt 11, S4). */
+export async function listPeople(
+  ws: string,
+  query: ReturnType<typeof personListQuery>,
+  cursor?: string,
+): Promise<CursorPage<PersonSummary>> {
+  const call = registry.GET('/people', { params: { header: workspaceHeaders(ws), query: { ...query, cursor } } })
   return (await unwrap(call)) as CursorPage<PersonSummary>
 }
 
