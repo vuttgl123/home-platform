@@ -28,6 +28,12 @@ final class XlsxBuilder {
 
 	private final List<SheetData> sheets = new ArrayList<>();
 
+	private boolean withoutStyles;
+
+	private boolean date1904;
+
+	private long extraBytes;
+
 	static XlsxBuilder workbook() {
 		return new XlsxBuilder();
 	}
@@ -44,6 +50,29 @@ final class XlsxBuilder {
 	XlsxBuilder row(Object... cells) {
 		this.sheets.getLast().rows.add(java.util.Arrays.asList(cells));
 		return this;
+	}
+
+	/** Bỏ {@code xl/styles.xml} khỏi file, như vài công cụ tạo xlsx tối giản. */
+	XlsxBuilder withoutStyles() {
+		this.withoutStyles = true;
+		return this;
+	}
+
+	/** Bật hệ ngày 1904 của workbook (Excel trên Mac cũ). */
+	XlsxBuilder date1904() {
+		this.date1904 = true;
+		return this;
+	}
+
+	/** Thêm một mục zip toàn số 0, giải nén ra {@code bytes} byte nhưng nén rất nhỏ ("bom zip"). */
+	XlsxBuilder extraEntry(long bytes) {
+		this.extraBytes = bytes;
+		return this;
+	}
+
+	/** Ô ngày ghi bằng số thứ tự ngày cho trước (theo hệ ngày của workbook), định dạng ngày. */
+	static DateSerial dateSerial(long serial) {
+		return new DateSerial(serial);
 	}
 
 	/** Ô số định dạng phần trăm: Excel lưu {@code 0.5} cho ô người dùng gõ "50%". */
@@ -79,7 +108,7 @@ final class XlsxBuilder {
 		catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
-		return withCachedValues(out.toByteArray(), cachedBySheet);
+		return rewrite(out.toByteArray(), cachedBySheet);
 	}
 
 	private static void write(Worksheet sheet, int row, int column, Object value, Map<String, String> cached) {
@@ -90,6 +119,10 @@ final class XlsxBuilder {
 			case Number number -> sheet.value(row, column, number);
 			case LocalDate date -> {
 				sheet.value(row, column, date);
+				sheet.style(row, column).format("dd/mm/yyyy").set();
+			}
+			case DateSerial serial -> {
+				sheet.value(row, column, serial.value());
 				sheet.style(row, column).format("dd/mm/yyyy").set();
 			}
 			case Percent percent -> {
@@ -113,9 +146,13 @@ final class XlsxBuilder {
 		}
 	}
 
-	/** Thư viện không ghi giá trị đã tính của công thức; thêm {@code <v>} vào XML của sheet. */
-	private static byte[] withCachedValues(byte[] file, Map<Integer, Map<String, String>> cachedBySheet) {
-		if (cachedBySheet.values().stream().allMatch(Map::isEmpty)) {
+	/**
+	 * Sửa file sau khi thư viện ghi: thêm {@code <v>} cho công thức (thư viện không ghi giá trị đã tính),
+	 * bỏ {@code styles.xml}, bật hệ ngày 1904, thêm mục zip lớn.
+	 */
+	private byte[] rewrite(byte[] file, Map<Integer, Map<String, String>> cachedBySheet) {
+		if (cachedBySheet.values().stream().allMatch(Map::isEmpty) && !this.withoutStyles && !this.date1904
+				&& this.extraBytes == 0) {
 			return file;
 		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -126,7 +163,27 @@ final class XlsxBuilder {
 			Files.write(temp, file);
 			try (ZipFile in = new ZipFile(temp.toFile()); ZipOutputStream zip = new ZipOutputStream(out)) {
 				for (ZipEntry entry : java.util.Collections.list(in.entries())) {
+					if (this.withoutStyles && entry.getName().equals("xl/styles.xml")) {
+						continue;
+					}
 					byte[] content = in.getInputStream(entry).readAllBytes();
+					if (this.withoutStyles && (entry.getName().endsWith(".rels") || entry.getName().equals("[Content_Types].xml"))) {
+						content = new String(content, StandardCharsets.UTF_8)
+							.replaceAll("<Relationship [^>]*styles\\.xml\"/>", "")
+							.replaceAll("<Override [^>]*styles\\.xml\"[^>]*/>", "")
+							.getBytes(StandardCharsets.UTF_8);
+					}
+					if (this.date1904 && entry.getName().equals("xl/workbook.xml")) {
+						String xml = new String(content, StandardCharsets.UTF_8);
+						if (xml.contains("date1904=\"")) {
+							xml = xml.replaceFirst("date1904=\"[^\"]*\"", "date1904=\"1\"");
+						}
+						else {
+							xml = xml.contains("<workbookPr") ? xml.replaceFirst("<workbookPr", "<workbookPr date1904=\"1\"")
+									: xml.replaceFirst("(<workbook[^>]*>)", "$1<workbookPr date1904=\"1\"/>");
+						}
+						content = xml.getBytes(StandardCharsets.UTF_8);
+					}
 					for (Map.Entry<Integer, Map<String, String>> sheet : cachedBySheet.entrySet()) {
 						if (entry.getName().equals("xl/worksheets/sheet" + sheet.getKey() + ".xml")) {
 							String xml = new String(content, StandardCharsets.UTF_8);
@@ -139,6 +196,14 @@ final class XlsxBuilder {
 					}
 					zip.putNextEntry(new ZipEntry(entry.getName()));
 					zip.write(content);
+					zip.closeEntry();
+				}
+				if (this.extraBytes > 0) {
+					zip.putNextEntry(new ZipEntry("xl/media/zeros.bin"));
+					byte[] chunk = new byte[1 << 16];
+					for (long written = 0; written < this.extraBytes; written += chunk.length) {
+						zip.write(chunk, 0, (int) Math.min(chunk.length, this.extraBytes - written));
+					}
 					zip.closeEntry();
 				}
 			}
@@ -158,6 +223,9 @@ final class XlsxBuilder {
 	}
 
 	record Percent(double value) {
+	}
+
+	record DateSerial(long value) {
 	}
 
 	private static final class SheetData {

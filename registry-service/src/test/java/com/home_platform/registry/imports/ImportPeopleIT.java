@@ -184,6 +184,14 @@ class ImportPeopleIT extends ImportTestData {
 	}
 
 	@Test
+	void fileNameKeepsOnlyTheLastSegment() throws Exception {
+		String report = report(commit("C:\\Users\\An\\nha.xlsx", workbook().sheet("Người", "Họ tên").row("Nguyễn An").build()));
+
+		assertThat((String) read(report, "$.fileName")).isEqualTo("nha.xlsx");
+		assertThat(versionNote("PERSON", personId("Nguyễn An"), 1)).isEqualTo("Nhập từ Excel: nha.xlsx");
+	}
+
+	@Test
 	void oversizedFileIs413() throws Exception {
 		byte[] file = new byte[5 * 1024 * 1024 + 1];
 

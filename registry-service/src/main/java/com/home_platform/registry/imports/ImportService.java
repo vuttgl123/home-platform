@@ -1,6 +1,5 @@
 package com.home_platform.registry.imports;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -102,7 +101,7 @@ public class ImportService {
 
 		ImportWorkbook workbook;
 		try {
-			workbook = WorkbookReader.read(new ByteArrayInputStream(file), extraHeaders);
+			workbook = WorkbookReader.read(file, extraHeaders);
 		}
 		catch (ImportFileException ex) {
 			return new ImportReport(fileName, false, ex.errors(), List.of(), new Totals(0, 0, 0), List.of());

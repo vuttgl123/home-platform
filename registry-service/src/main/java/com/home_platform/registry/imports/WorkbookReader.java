@@ -1,7 +1,7 @@
 package com.home_platform.registry.imports;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -40,11 +40,40 @@ final class WorkbookReader {
 
 	static final String NOTHING_TO_IMPORT = "File không có dòng nào để nhập";
 
+	/** Tổng dung lượng giải nén tối đa: chặn "bom zip" làm hết bộ nhớ. */
+	static final long MAX_UNZIPPED_BYTES = 100L * 1024 * 1024;
+
+	/** Số dòng quét tối đa, kể cả dòng trống (định dạng cả cột có thể sinh hàng triệu dòng rỗng). */
+	static final int MAX_SCANNED_ROWS = 50_000;
+
+	static final String TOO_MANY_SCANNED_ROWS = "File có quá nhiều dòng (kể cả dòng trống); hãy xoá các dòng thừa";
+
 	/** Đọc cả định dạng của ô; không có nó thì không biết ô số nào là ngày. */
 	private static final ReadingOptions WITH_FORMATS = new ReadingOptions(true, false);
 
+	/** File không có phần định dạng: đọc với định dạng thì thư viện báo lỗi, mà file như vậy không có ô ngày. */
+	private static final ReadingOptions WITHOUT_FORMATS = new ReadingOptions(false, false);
+
 	/** Mốc ngày của Excel (hệ 1900): số 1 là 01/01/1900, và Excel coi 1900 là năm nhuận. */
 	private static final LocalDate EXCEL_EPOCH = LocalDate.of(1899, 12, 30);
+
+	/** Mốc của hệ ngày 1904: số 0 là 01/01/1904. */
+	private static final LocalDate EPOCH_1904 = LocalDate.of(1904, 1, 1);
+
+	/** Đếm của một lần đọc, và mốc ngày của workbook. */
+	private static final class Counts {
+
+		private final LocalDate epoch;
+
+		private int rows;
+
+		private int scanned;
+
+		private Counts(LocalDate epoch) {
+			this.epoch = epoch;
+		}
+
+	}
 
 	private WorkbookReader() {
 	}
@@ -53,12 +82,14 @@ final class WorkbookReader {
 	 * @param extraHeaders tiêu đề cột mục tuỳ biến của từng sheet; cột có tiêu đề này không bị coi là
 	 *     cột lạ
 	 */
-	static ImportWorkbook read(InputStream in, Map<SheetKind, Set<String>> extraHeaders) {
+	static ImportWorkbook read(byte[] file, Map<SheetKind, Set<String>> extraHeaders) {
+		ZipFacts facts = ZipFacts.scan(file, MAX_UNZIPPED_BYTES);
 		List<String> notices = new ArrayList<>();
 		List<String> errors = new ArrayList<>();
 		List<ImportSheet> sheets = new ArrayList<>();
-		int[] rowCount = { 0 };
-		try (ReadableWorkbook workbook = new ReadableWorkbook(in, WITH_FORMATS)) {
+		Counts rowCount = new Counts(facts.date1904() ? EPOCH_1904 : EXCEL_EPOCH);
+		ReadingOptions options = facts.hasStyles() ? WITH_FORMATS : WITHOUT_FORMATS;
+		try (ReadableWorkbook workbook = new ReadableWorkbook(new ByteArrayInputStream(file), options)) {
 			for (Sheet sheet : workbook.getSheets().toList()) {
 				SheetKind kind = kindOf(sheet.getName());
 				if (kind == null) {
@@ -107,7 +138,7 @@ final class WorkbookReader {
 
 	/** {@code null} khi sheet không có dòng dữ liệu nào: sheet đó coi như không có trong file. */
 	private static ImportSheet readSheet(Sheet sheet, SheetKind kind, Set<String> extraHeaders, List<String> notices,
-			int[] rowCount) throws IOException {
+			Counts rowCount) throws IOException {
 		Map<String, String> known = new HashMap<>();
 		Stream.concat(kind.headers().stream(), extraHeaders.stream())
 			.forEach(header -> known.put(ImportText.key(header), header));
@@ -116,6 +147,9 @@ final class WorkbookReader {
 		List<ImportRow> rows = new ArrayList<>();
 		try (Stream<Row> stream = sheet.openStream()) {
 			for (Row row : (Iterable<Row>) stream::iterator) {
+				if (++rowCount.scanned > MAX_SCANNED_ROWS) {
+					throw new ImportFileException(TOO_MANY_SCANNED_ROWS);
+				}
 				if (row.getRowNum() == 1) {
 					readHeaders(row, kind, known, columnHeaders, sheetNotices);
 					continue;
@@ -124,14 +158,14 @@ final class WorkbookReader {
 				boolean blank = true;
 				for (Map.Entry<Integer, String> column : columnHeaders.entrySet()) {
 					Cell cell = (column.getKey() < row.getCellCount()) ? row.getCell(column.getKey()) : null;
-					ImportCell value = toCell(column.getValue(), cell);
+					ImportCell value = toCell(column.getValue(), cell, rowCount.epoch);
 					cells.put(column.getValue(), value);
 					blank &= value.isBlank();
 				}
 				if (blank) {
 					continue;
 				}
-				if (++rowCount[0] > MAX_ROWS) {
+				if (++rowCount.rows > MAX_ROWS) {
 					throw new ImportFileException(TOO_MANY_ROWS);
 				}
 				rows.add(new ImportRow(row.getRowNum(), cells));
@@ -193,7 +227,7 @@ final class WorkbookReader {
 		return missing;
 	}
 
-	private static ImportCell toCell(String column, Cell cell) {
+	private static ImportCell toCell(String column, Cell cell, LocalDate epoch) {
 		if (cell == null) {
 			return ImportCell.blank(column);
 		}
@@ -201,15 +235,15 @@ final class WorkbookReader {
 			case EMPTY -> ImportCell.blank(column);
 			case STRING -> ImportCell.text(column, cell.getText());
 			case BOOLEAN -> ImportCell.text(column, Boolean.TRUE.equals(cell.asBoolean()) ? "Có" : "Không");
-			case NUMBER -> isDateFormatted(cell) ? ImportCell.date(column, fromExcel(cell.asNumber()))
+			case NUMBER -> isDateFormatted(cell) ? ImportCell.date(column, fromExcel(cell.asNumber(), epoch))
 					: ImportCell.number(column, asShown(cell, cell.asNumber()));
-			case FORMULA -> fromFormula(column, cell);
+			case FORMULA -> fromFormula(column, cell, epoch);
 			case ERROR -> ImportCell.uncomputed(column);
 		};
 	}
 
 	/** Ô công thức: dùng giá trị Excel đã lưu cùng file. */
-	private static ImportCell fromFormula(String column, Cell cell) {
+	private static ImportCell fromFormula(String column, Cell cell, LocalDate epoch) {
 		String raw = ImportText.clean(cell.getRawValue());
 		if (raw == null) {
 			return ImportCell.uncomputed(column);
@@ -221,7 +255,7 @@ final class WorkbookReader {
 		catch (NumberFormatException ex) {
 			return ImportCell.text(column, raw);
 		}
-		return isDateFormatted(cell) ? ImportCell.date(column, fromExcel(number))
+		return isDateFormatted(cell) ? ImportCell.date(column, fromExcel(number, epoch))
 				: ImportCell.number(column, asShown(cell, number));
 	}
 
@@ -254,8 +288,8 @@ final class WorkbookReader {
 		return percent ? value.movePointRight(2) : value;
 	}
 
-	private static LocalDate fromExcel(BigDecimal serial) {
-		return EXCEL_EPOCH.plusDays(serial.longValue());
+	private static LocalDate fromExcel(BigDecimal serial, LocalDate epoch) {
+		return epoch.plusDays(serial.longValue());
 	}
 
 }

@@ -5,7 +5,6 @@ import static com.home_platform.registry.imports.XlsxBuilder.workbook;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
@@ -164,6 +163,53 @@ class WorkbookReaderTests {
 	}
 
 	@Test
+	void fileWithoutStylesIsRead() {
+		ImportWorkbook book = read(workbook().sheet("Người", "Họ tên").row("Nguyễn An").withoutStyles().build());
+
+		assertThat(book.sheets().get(0).rows().get(0).cell("Họ tên").text()).isEqualTo("Nguyễn An");
+	}
+
+	@Test
+	void hugeUnzippedSizeIsAFileError() {
+		byte[] file = workbook().sheet("Người", "Họ tên").row("Nguyễn An").extraEntry(101L * 1024 * 1024).build();
+
+		assertThat(file.length).isLessThan(5 * 1024 * 1024);
+		assertFileErrors(file, "File quá lớn khi giải nén; hãy lưu lại file chỉ gồm dữ liệu cần nhập");
+	}
+
+	@Test
+	void tooManyScannedRowsIsAFileError() {
+		XlsxBuilder file = workbook().sheet("Người", "Họ tên").row("Nguyễn An");
+		for (int row = 0; row < 50_001; row++) {
+			file.row("");
+		}
+
+		assertFileErrors(file.build(), "File có quá nhiều dòng (kể cả dòng trống); hãy xoá các dòng thừa");
+	}
+
+	@Test
+	void datesUseThe1904System() {
+		long serial = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.of(1904, 1, 1), LocalDate.of(2026, 3, 5));
+
+		ImportWorkbook book = read(workbook().sheet("Người", "Họ tên", "Ngày sinh")
+			.row("Nguyễn An", XlsxBuilder.dateSerial(serial))
+			.date1904()
+			.build());
+
+		assertThat(book.sheets().get(0).rows().get(0).cell("Ngày sinh").date()).isEqualTo(LocalDate.of(2026, 3, 5));
+	}
+
+	@Test
+	void textDatesIgnoreThe1904System() {
+		ImportWorkbook book = read(workbook().sheet("Người", "Họ tên", "Ngày sinh")
+			.row("Nguyễn An", "05/03/2026")
+			.date1904()
+			.build());
+
+		assertThat(book.sheets().get(0).rows().get(0).cell("Ngày sinh").date()).isEqualTo(LocalDate.of(2026, 3, 5));
+	}
+
+	@Test
 	void notAnXlsxIsAFileError() {
 		assertFileErrors("Họ tên\nNguyễn An\n".getBytes(StandardCharsets.UTF_8),
 				"Không đọc được file; hãy lưu lại dưới dạng Excel (.xlsx)");
@@ -181,7 +227,7 @@ class WorkbookReaderTests {
 	}
 
 	private static ImportWorkbook read(byte[] file, Map<SheetKind, Set<String>> extraHeaders) {
-		return WorkbookReader.read(new ByteArrayInputStream(file), extraHeaders);
+		return WorkbookReader.read(file, extraHeaders);
 	}
 
 	private static void assertFileErrors(byte[] file, String... errors) {

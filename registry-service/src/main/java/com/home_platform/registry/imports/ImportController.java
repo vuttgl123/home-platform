@@ -67,8 +67,12 @@ class ImportController {
 		return file.getBytes();
 	}
 
+	/** Tên file không kèm đường dẫn: vài trình duyệt cũ gửi cả "C:\\…\\nha.xlsx". */
 	private static String fileName(MultipartFile file) {
 		String name = ImportText.clean(file.getOriginalFilename());
+		if (name != null) {
+			name = ImportText.clean(name.substring(Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\')) + 1));
+		}
 		return (name != null) ? name : "import.xlsx";
 	}
 
