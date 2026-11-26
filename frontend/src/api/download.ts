@@ -43,6 +43,9 @@ export async function downloadFile(
   save(blob, fileName)
 }
 
+/** Link tạm của file được thu hồi sau chừng này: một số trình duyệt huỷ việc tải nếu thu hồi ngay lúc bấm. */
+export const REVOKE_AFTER_MS = 10_000
+
 function save(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -51,5 +54,5 @@ function save(blob: Blob, fileName: string): void {
   document.body.append(link)
   link.click()
   link.remove()
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS)
 }

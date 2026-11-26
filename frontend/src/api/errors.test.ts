@@ -65,3 +65,15 @@ test('messageIsStillAFallback', () => {
   expect(ApiError.from(409, { detail: 'Item 7 was changed by someone else' }).isVersionConflict).toBe(true)
   expect(ApiError.from(409, { detail: 'Item 7 was changed by someone else', code: 'OTHER' }).isVersionConflict).toBe(false)
 })
+
+test('busyConflictReadsInVietnamese', () => {
+  const error = ApiError.from(409, {
+    status: 409,
+    detail: 'The record is being changed by someone else; try again',
+    code: 'BUSY',
+  })
+
+  expect(error.detail).toBe('Đang có thao tác khác trên dữ liệu này (ví dụ đang nhập Excel); thử lại sau ít phút')
+  expect(error.isBusy).toBe(true)
+  expect(error.isVersionConflict).toBe(false)
+})

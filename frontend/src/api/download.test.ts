@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { mockDownloads } from '@/test/downloads'
 import { server } from '@/test/server'
@@ -42,9 +42,8 @@ test('savesTheBlobUnderTheGivenName', async () => {
   expect(saved).toHaveLength(1)
   expect(saved[0].name).toBe('nha-an-nguoi-2026-11-17.xlsx')
   expect(await saved[0].blob.text()).toBe('nội dung')
-  // Liên kết tạm và địa chỉ blob không ở lại sau khi lưu.
+  // Liên kết tạm không ở lại sau khi lưu; địa chỉ blob được thu hồi sau (downloadUrlIsRevokedLater).
   expect(document.querySelector('a[download]')).toBeNull()
-  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1)
 })
 
 test('errorBecomesApiError', async () => {
@@ -111,4 +110,21 @@ test('brokenDownloadIsNotSaved', async () => {
   expect(error).toBeInstanceOf(ApiError)
   expect((error as ApiError).status).toBe(0)
   expect(saved).toHaveLength(0)
+})
+
+test('downloadUrlIsRevokedLater', async () => {
+  mockDownloads()
+  server.use(http.get('/api/registry/exports/people.xlsx', () => file()))
+  setCurrentUser('42')
+  const timers = vi.spyOn(globalThis, 'setTimeout')
+
+  await downloadFile('7', '/exports/people.xlsx', {}, 'a.xlsx')
+
+  // Một số trình duyệt huỷ việc tải nếu link tạm bị thu hồi ngay lúc bấm.
+  expect(URL.revokeObjectURL).not.toHaveBeenCalled()
+  const revoke = timers.mock.calls.find(([, delay]) => delay === 10_000)
+  expect(revoke).toBeDefined()
+  ;(revoke![0] as () => void)()
+  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1)
+  timers.mockRestore()
 })

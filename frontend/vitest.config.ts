@@ -1,5 +1,8 @@
 import { defineConfig, mergeConfig } from "vitest/config"
 
+// Ngày "hôm nay", bộ lọc ngày, nhãn hạn tính theo giờ Việt Nam; test chạy cùng múi giờ dù máy ở đâu.
+process.env.TZ = "Asia/Ho_Chi_Minh"
+
 import viteConfig from "./vite.config.ts"
 
 export default mergeConfig(
