@@ -20,7 +20,7 @@ import org.dhatim.fastexcel.reader.ReadingOptions;
 import org.dhatim.fastexcel.reader.Row;
 
 /** Đọc lại một file xlsx trong test: tên sheet, tiêu đề, giá trị và kiểu của từng ô. */
-final class XlsxReader {
+public final class XlsxReader {
 
 	/** Đọc cả định dạng của ô; không có nó thì không phân biệt được ô ngày với ô số. */
 	private static final ReadingOptions WITH_FORMATS = new ReadingOptions(true, false);
@@ -28,7 +28,7 @@ final class XlsxReader {
 	private XlsxReader() {
 	}
 
-	static List<XlsxSheet> read(byte[] bytes) {
+	public static List<XlsxSheet> read(byte[] bytes) {
 		try (ReadableWorkbook workbook = new ReadableWorkbook(new ByteArrayInputStream(bytes), WITH_FORMATS)) {
 			List<XlsxSheet> sheets = new ArrayList<>();
 			for (var sheet : workbook.getSheets().toList()) {
@@ -56,7 +56,7 @@ final class XlsxReader {
 	 * XML thô của sheet thứ {@code number} (từ 1), để kiểm thứ mà bộ đọc không đưa ra: khung cố định, lọc
 	 * tự động. Mở qua một file tạm vì file xlsx ghi dạng luồng chỉ đọc đúng được qua mục lục của zip.
 	 */
-	static String sheetXml(byte[] bytes, int number) {
+	public static String sheetXml(byte[] bytes, int number) {
 		Path file = null;
 		try {
 			file = Files.createTempFile("export", ".xlsx");
@@ -83,13 +83,13 @@ final class XlsxReader {
 	 * Một sheet: dòng đầu là tiêu đề, các dòng sau là dữ liệu. Dòng không có ô nào thì không có trong
 	 * file: ở giữa nó là một dòng rỗng, ở cuối nó không được đếm.
 	 */
-	record XlsxSheet(String name, List<List<XlsxCell>> rows) {
+	public record XlsxSheet(String name, List<List<XlsxCell>> rows) {
 
-		List<String> headers() {
+		public List<String> headers() {
 			return this.rows.get(0).stream().map(XlsxCell::text).toList();
 		}
 
-		int dataRowCount() {
+		public int dataRowCount() {
 			return this.rows.size() - 1;
 		}
 
@@ -97,7 +97,7 @@ final class XlsxReader {
 		 * Ô của dòng dữ liệu thứ {@code row} (từ 0) ở cột có tiêu đề {@code header}; ô hay dòng không được
 		 * ghi là ô trống.
 		 */
-		XlsxCell cell(int row, String header) {
+		public XlsxCell cell(int row, String header) {
 			int column = headers().indexOf(header);
 			if (column < 0) {
 				throw new IllegalArgumentException("No column " + header + " in " + headers());
@@ -107,7 +107,7 @@ final class XlsxReader {
 		}
 
 		/** Chữ của mọi dòng dữ liệu ở một cột. */
-		List<String> column(String header) {
+		public List<String> column(String header) {
 			List<String> texts = new ArrayList<>();
 			for (int row = 0; row < dataRowCount(); row++) {
 				texts.add(cell(row, header).text());
@@ -117,40 +117,40 @@ final class XlsxReader {
 
 	}
 
-	record XlsxCell(Cell cell) {
+	public record XlsxCell(Cell cell) {
 
-		boolean isBlank() {
+		public boolean isBlank() {
 			return this.cell == null || this.cell.getType() == CellType.EMPTY;
 		}
 
-		boolean isText() {
+		public boolean isText() {
 			return this.cell != null && this.cell.getType() == CellType.STRING;
 		}
 
 		/** Ô số không mang định dạng ngày. */
-		boolean isNumber() {
+		public boolean isNumber() {
 			return this.cell != null && this.cell.getType() == CellType.NUMBER && !isDate();
 		}
 
 		/** Ô số mang định dạng ngày: Excel hiện là một ngày và lọc, sắp theo ngày được. */
-		boolean isDate() {
+		public boolean isDate() {
 			return this.cell != null && this.cell.getType() == CellType.NUMBER && format() != null
 					&& format().toLowerCase().contains("yy");
 		}
 
-		String format() {
+		public String format() {
 			return (this.cell != null) ? this.cell.getDataFormatString() : null;
 		}
 
-		String text() {
+		public String text() {
 			return isBlank() ? "" : this.cell.getText();
 		}
 
-		BigDecimal number() {
+		public BigDecimal number() {
 			return this.cell.asNumber();
 		}
 
-		LocalDate date() {
+		public LocalDate date() {
 			return this.cell.asDate().toLocalDate();
 		}
 

@@ -7,10 +7,9 @@ import org.dhatim.fastexcel.Workbook;
 /** Sheet "Cư trú": mọi dòng cư trú chưa xoá, cả dòng đã kết thúc. */
 final class OccupancySheet {
 
-	static final String NAME = "Cư trú";
+	static final String NAME = ExcelLayout.OCCUPANCIES;
 
-	private static final List<String> HEADERS = List.of("Địa điểm", "Mã địa điểm", "Người", "Quan hệ", "Từ ngày",
-			"Đến ngày", "Ghi chú");
+	private static final List<String> HEADERS = ExcelLayout.OCCUPANCY_HEADERS;
 
 	private final SheetWriter writer;
 

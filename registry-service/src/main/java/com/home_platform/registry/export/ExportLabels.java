@@ -6,12 +6,12 @@ import com.home_platform.registry.person.Gender;
 import com.home_platform.registry.place.PlaceStatus;
 
 /** Nhãn tiếng Việt của các giá trị liệt kê trong file Excel; trùng với nhãn trên giao diện. */
-final class ExportLabels {
+public final class ExportLabels {
 
 	private ExportLabels() {
 	}
 
-	static String itemStatus(ItemStatus status) {
+	public static String itemStatus(ItemStatus status) {
 		return switch (status) {
 			case IN_USE -> "Đang dùng";
 			case BROKEN -> "Hỏng";
@@ -20,14 +20,14 @@ final class ExportLabels {
 		};
 	}
 
-	static String placeStatus(PlaceStatus status) {
+	public static String placeStatus(PlaceStatus status) {
 		return switch (status) {
 			case ACTIVE -> "Đang dùng";
 			case INACTIVE -> "Tạm ngưng";
 		};
 	}
 
-	static String relation(Relation relation) {
+	public static String relation(Relation relation) {
 		return switch (relation) {
 			case OWNER -> "Chủ";
 			case RESIDENT -> "Người ở";
@@ -38,7 +38,7 @@ final class ExportLabels {
 	}
 
 	/** {@code null} (không ghi giới tính) vẫn là {@code null}, để ô trống. */
-	static String gender(Gender gender) {
+	public static String gender(Gender gender) {
 		if (gender == null) {
 			return null;
 		}
@@ -49,7 +49,7 @@ final class ExportLabels {
 		};
 	}
 
-	static String yesNo(boolean value) {
+	public static String yesNo(boolean value) {
 		return value ? "Có" : "Không";
 	}
 

@@ -9,13 +9,12 @@ import org.dhatim.fastexcel.Workbook;
 /** Sheet "Người": mỗi người một dòng, cột cố định rồi tới cột mục tuỳ biến của người. */
 final class PersonSheet {
 
-	static final String NAME = "Người";
+	static final String NAME = ExcelLayout.PEOPLE;
 
 	/** Ngăn các nơi trong cột "Đang ở". */
 	static final String PLACE_SEPARATOR = "; ";
 
-	private static final List<String> HEADERS = List.of("Họ tên", "Điện thoại", "Email", "Loại giấy tờ", "Số giấy tờ",
-			"Ngày sinh", "Giới tính", "Đang ở", "Ghi chú");
+	private static final List<String> HEADERS = ExcelLayout.PERSON_HEADERS;
 
 	private final SheetWriter writer;
 

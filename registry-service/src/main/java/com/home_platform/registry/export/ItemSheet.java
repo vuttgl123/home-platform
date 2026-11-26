@@ -9,10 +9,9 @@ import org.dhatim.fastexcel.Workbook;
 /** Sheet "Đồ đạc": mỗi món một dòng, cột cố định rồi tới cột mục tuỳ biến của đồ đạc. */
 final class ItemSheet {
 
-	static final String NAME = "Đồ đạc";
+	static final String NAME = ExcelLayout.ITEMS;
 
-	private static final List<String> HEADERS = List.of("Mã", "Tên", "Nhóm", "Ở đâu", "Số lượng", "Đơn vị",
-			"Trạng thái", "Ngày đặt", "Ngày gỡ", "Hết bảo hành", "Bảo trì (tháng)", "Chủ", "Mô tả");
+	private static final List<String> HEADERS = ExcelLayout.ITEM_HEADERS;
 
 	private final SheetWriter writer;
 

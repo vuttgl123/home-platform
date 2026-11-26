@@ -5,6 +5,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ import com.home_platform.registry.fielddef.FieldTarget;
  * <p>Hai mục của hai loại có thể cùng nhãn và cùng khoá. Khi nhãn trùng, cột của mục thuộc một loại
  * mang thêm tên loại; mục áp cho mọi loại giữ nhãn trần.
  */
-final class AttributeColumns {
+public final class AttributeColumns {
 
 	private final List<Column> columns;
 
@@ -32,7 +33,7 @@ final class AttributeColumns {
 	 * @param defs mọi mục của không gian; chỉ mục đang dùng của {@code target} thành cột
 	 * @param typeNames tên của loại địa điểm hoặc nhóm đồ theo {@code id}, để phân biệt nhãn trùng
 	 */
-	static AttributeColumns of(List<FieldDef> defs, FieldTarget target, Map<Long, String> typeNames) {
+	public static AttributeColumns of(List<FieldDef> defs, FieldTarget target, Map<Long, String> typeNames) {
 		List<FieldDef> active = defs.stream()
 			.filter(def -> def.target() == target && def.status() == CatalogStatus.ACTIVE)
 			.sorted(Comparator.comparingInt(FieldDef::sortOrder).thenComparingLong(FieldDef::id))
@@ -50,8 +51,15 @@ final class AttributeColumns {
 		return new AttributeColumns(columns);
 	}
 
-	List<String> headers() {
+	public List<String> headers() {
 		return this.columns.stream().map(Column::header).toList();
+	}
+
+	/** Mục của từng cột theo tiêu đề, cùng thứ tự với {@link #headers()}. */
+	public Map<String, FieldDef> defsByHeader() {
+		Map<String, FieldDef> defs = new LinkedHashMap<>();
+		this.columns.forEach(column -> defs.put(column.header(), column.def()));
+		return defs;
 	}
 
 	/**

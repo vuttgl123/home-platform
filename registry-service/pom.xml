@@ -36,17 +36,16 @@
 			<artifactId>fastexcel</artifactId>
 			<version>${fastexcel.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.dhatim</groupId>
+			<artifactId>fastexcel-reader</artifactId>
+			<version>${fastexcel.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com</groupId>
 			<artifactId>platform-common</artifactId>
 			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.dhatim</groupId>
-			<artifactId>fastexcel-reader</artifactId>
-			<version>${fastexcel.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

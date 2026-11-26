@@ -7,10 +7,9 @@ import org.dhatim.fastexcel.Workbook;
 /** Sheet "Sở hữu": mọi dòng sở hữu chưa xoá, cả dòng đã kết thúc. */
 final class OwnershipSheet {
 
-	static final String NAME = "Sở hữu";
+	static final String NAME = ExcelLayout.OWNERSHIPS;
 
-	private static final List<String> HEADERS = List.of("Địa điểm", "Mã địa điểm", "Người", "Tỷ lệ (%)", "Từ ngày",
-			"Đến ngày", "Số giấy tờ", "Ghi chú");
+	private static final List<String> HEADERS = ExcelLayout.OWNERSHIP_HEADERS;
 
 	private final SheetWriter writer;
 

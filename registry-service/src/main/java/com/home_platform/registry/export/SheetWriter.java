@@ -77,6 +77,16 @@ final class SheetWriter {
 		this.column++;
 	}
 
+	/**
+	 * Danh sách chọn ở {@code rows} dòng dữ liệu đầu của cột {@code column}. Không báo lỗi khi gõ giá trị
+	 * khác (ví dụ mã tiếng Anh), vì lớp đọc file nhập vẫn nhận chúng. Giá trị không được chứa dấu phẩy.
+	 */
+	void dropdown(int column, List<String> values, int rows) {
+		this.sheet.range(1, column, rows, column)
+			.validateWithListByFormula("\"" + String.join(",", values) + "\"")
+			.showErrorMessage(false);
+	}
+
 	/** Kết thúc dòng đang ghi. Dòng nào cũng phải kết thúc bằng lời gọi này. */
 	void nextRow() {
 		if (this.row % FLUSH_EVERY == 0) {

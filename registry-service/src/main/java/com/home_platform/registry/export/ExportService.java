@@ -188,11 +188,11 @@ public class ExportService {
 		return this.fieldDefs.listAll(workspaceId);
 	}
 
-	private static Workbook workbook(OutputStream out) {
+	static Workbook workbook(OutputStream out) {
 		return new Workbook(out, APPLICATION, APPLICATION_VERSION);
 	}
 
-	private static void finish(Workbook workbook) {
+	static void finish(Workbook workbook) {
 		try {
 			workbook.finish();
 		}

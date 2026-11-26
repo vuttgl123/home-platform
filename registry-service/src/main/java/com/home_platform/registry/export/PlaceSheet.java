@@ -9,10 +9,9 @@ import org.dhatim.fastexcel.Workbook;
 /** Sheet "Địa điểm": mỗi địa điểm một dòng theo thứ tự của cây, cột cố định rồi tới cột mục tuỳ biến. */
 final class PlaceSheet {
 
-	static final String NAME = "Địa điểm";
+	static final String NAME = ExcelLayout.PLACES;
 
-	private static final List<String> HEADERS = List.of("Mã", "Tên", "Loại", "Sức chứa", "Nằm trong", "Trạng thái",
-			"Mô tả");
+	private static final List<String> HEADERS = ExcelLayout.PLACE_HEADERS;
 
 	private final SheetWriter writer;
 

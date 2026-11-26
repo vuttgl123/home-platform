@@ -1,6 +1,11 @@
 spring:
   application:
     name: registry-service
+  servlet:
+    # File nhập Excel tối đa 5 MB; ImportController tự kiểm để trả 413 kèm lời rõ ràng.
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   profiles:
     default: uat
   flyway:
