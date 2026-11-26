@@ -63,7 +63,36 @@ Vì sao: không gian có sẵn danh sách trên Excel thì nhập tay từng dò
 - Thứ tự nhập: địa điểm, người, cư trú, sở hữu, đồ đạc.
 - Giao diện: các bước bằng `tabs` hoặc thanh tiến trình (`progress`), bảng xem trước (`table`, `scroll-area`).
 
-### Đợt 10: Đăng nhập, thành viên, phân quyền
+### Đợt 10: Dọn và làm chắc
+
+Vì sao: ngày 2026-11-26 bạn gác đăng nhập, phân quyền lại và muốn "tối ưu lại toàn bộ những phần đã làm để cho chi tiết hơn, cụ thể hơn" **(bạn)**. Đợt đầu gom các điểm nhỏ đã hoãn qua các lần duyệt Đợt 4 tới 9. Thiết kế: `2026-11-26-cleanup-design.md`.
+
+### Đợt 11: Tìm và lọc sâu hơn
+
+- Lọc danh sách người, đồ theo mục tuỳ biến (trước ở mục 4 "Để dành").
+- Trang danh sách địa điểm dạng bảng: lọc theo loại, trạng thái, sức chứa, còn chỗ.
+- Tìm cả trong ghi chú, mô tả (trước ở mục 4 "Để dành").
+
+### Đợt 12: Chi phí
+
+- Đồ đạc có giá mua, ngày mua, nơi mua; mỗi lần sửa chữa, bảo trì có chi phí.
+- Tổng chi theo món, theo địa điểm, theo tháng; biểu đồ 12 tháng ở Tổng quan.
+
+### Đợt 13: Cư trú chi tiết hơn
+
+- Hợp đồng (số, ngày hết hạn, tiền cọc); hợp đồng sắp hết hạn vào Việc cần làm.
+- Biên bản bàn giao khi vào, khi ra.
+
+### Đợt 14: Việc cần làm chủ động
+
+- Đánh dấu "đã xử lý" hay "hoãn tới ngày…" cho từng việc.
+- Tự tạo việc gắn với một hồ sơ, có hạn và nhắc lặp.
+
+Thứ tự Đợt 10 tới 15 do bạn duyệt ngày 2026-11-26: "cứ theo thứ tự bạn đề xuất" **(bạn)**.
+
+### Chờ bạn bảo: Đăng nhập, thành viên, phân quyền
+
+Gác lại ngày 2026-11-26: "bao giờ cần làm tôi sẽ bảo bạn" **(bạn)**. Nội dung giữ nguyên như dưới đây.
 
 Vì sao: hiện "phiên" chỉ là id người dùng chọn trên trình duyệt, registry tin header `X-Workspace-Id`. Trước khi nhiều người cùng dùng một không gian, phải có đăng nhập thật và kiểm tra quyền.
 
@@ -72,7 +101,7 @@ Vì sao: hiện "phiên" chỉ là id người dùng chọn trên trình duyệt
 - Registry và media kiểm tra người gọi là thành viên của không gian (sửa lỗ hổng: hiện chỉ frontend chặn).
 - Ghi chú: Đợt 1 bạn để đăng nhập và phân quyền ra ngoài phạm vi lúc đó **(bạn)**; đề xuất đưa vào ở đây vì các đợt sau cần nhiều người dùng.
 
-### Đợt 11: Tem mã QR và dùng trên điện thoại
+### Đợt 15: Tem mã QR và dùng trên điện thoại
 
 Vì sao: mỗi địa điểm, món đồ đã có mã; dán tem QR lên cửa phòng, lên tủ lạnh thì quét là mở đúng hồ sơ.
 
