@@ -46,6 +46,11 @@ final class XlsxBuilder {
 		return this;
 	}
 
+	/** Ô số định dạng phần trăm: Excel lưu {@code 0.5} cho ô người dùng gõ "50%". */
+	static Percent percent(double value) {
+		return new Percent(value);
+	}
+
 	/** Ô công thức; {@code cached} {@code null} là chưa tính (như file do thư viện ghi ra). */
 	static Formula formula(String expression, Object cached) {
 		return new Formula(expression, cached);
@@ -86,6 +91,10 @@ final class XlsxBuilder {
 			case LocalDate date -> {
 				sheet.value(row, column, date);
 				sheet.style(row, column).format("dd/mm/yyyy").set();
+			}
+			case Percent percent -> {
+				sheet.value(row, column, percent.value());
+				sheet.style(row, column).format("0%").set();
 			}
 			case Formula formula -> {
 				sheet.formula(row, column, formula.expression());
@@ -146,6 +155,9 @@ final class XlsxBuilder {
 	}
 
 	record Formula(String expression, Object cached) {
+	}
+
+	record Percent(double value) {
 	}
 
 	private static final class SheetData {

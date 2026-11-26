@@ -202,7 +202,7 @@ final class WorkbookReader {
 			case STRING -> ImportCell.text(column, cell.getText());
 			case BOOLEAN -> ImportCell.text(column, Boolean.TRUE.equals(cell.asBoolean()) ? "Có" : "Không");
 			case NUMBER -> isDateFormatted(cell) ? ImportCell.date(column, fromExcel(cell.asNumber()))
-					: ImportCell.number(column, cell.asNumber());
+					: ImportCell.number(column, asShown(cell, cell.asNumber()));
 			case FORMULA -> fromFormula(column, cell);
 			case ERROR -> ImportCell.uncomputed(column);
 		};
@@ -221,7 +221,8 @@ final class WorkbookReader {
 		catch (NumberFormatException ex) {
 			return ImportCell.text(column, raw);
 		}
-		return isDateFormatted(cell) ? ImportCell.date(column, fromExcel(number)) : ImportCell.number(column, number);
+		return isDateFormatted(cell) ? ImportCell.date(column, fromExcel(number))
+				: ImportCell.number(column, asShown(cell, number));
 	}
 
 	/**
@@ -239,6 +240,18 @@ final class WorkbookReader {
 		}
 		String bare = format.replaceAll("\"[^\"]*\"", "").replaceAll("\\[[^\\]]*\\]", "").toLowerCase();
 		return bare.contains("y") || bare.contains("d");
+	}
+
+	/**
+	 * Số như người dùng thấy: ô định dạng phần trăm lưu {@code 0.5} cho "50%", nên nhân 100. Không có
+	 * bước này, "50%" ở cột "Tỷ lệ (%)" thành 0,5% mà không ai hay.
+	 */
+	private static BigDecimal asShown(Cell cell, BigDecimal value) {
+		Integer id = cell.getDataFormatId();
+		String format = cell.getDataFormatString();
+		boolean percent = (id != null && (id == 9 || id == 10))
+				|| (format != null && format.replaceAll("\"[^\"]*\"", "").replaceAll("\\[[^\\]]*\\]", "").contains("%"));
+		return percent ? value.movePointRight(2) : value;
 	}
 
 	private static LocalDate fromExcel(BigDecimal serial) {

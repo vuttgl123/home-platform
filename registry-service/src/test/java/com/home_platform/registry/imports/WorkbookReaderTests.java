@@ -87,6 +87,17 @@ class WorkbookReaderTests {
 	}
 
 	@Test
+	void percentCellsReadAsShown() {
+		ImportWorkbook book = read(workbook().sheet("Sở hữu", "Mã địa điểm", "Người", "Từ ngày", "Tỷ lệ (%)", "Ghi chú")
+			.row("P1", "An", "01/01/2026", XlsxBuilder.percent(0.5), XlsxBuilder.percent(0.125))
+			.build());
+
+		ImportRow row = book.sheets().get(0).rows().get(0);
+		assertThat(row.cell("Tỷ lệ (%)").decimal()).isEqualByComparingTo("50");
+		assertThat(row.cell("Ghi chú").text()).isEqualTo("12.5");
+	}
+
+	@Test
 	void formulaUsesTheStoredValueOrFails() {
 		ImportWorkbook book = read(workbook().sheet("Đồ đạc", "Tên", "Ở đâu", "Số lượng", "Ngày đặt")
 			.row("Quạt", "P301", formula("1+1", 2), formula("DATE(2026,3,5)", LocalDate.of(2026, 3, 5)))
