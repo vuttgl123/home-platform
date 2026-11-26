@@ -1,6 +1,6 @@
 # Nhập từ Excel (Đợt 9)
 
-Ngày: 2026-11-26 · Trạng thái: **chờ duyệt bản thiết kế** (bạn: "Tôi đồng ý" với đề xuất 7 luật và cách A)
+Ngày: 2026-11-26 · Trạng thái: **đã duyệt** (bạn: "Tôi đồng ý" với đề xuất 7 luật và cách A; "Tôi đồng ý" với bản thiết kế)
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 
@@ -161,7 +161,7 @@ Cảnh báo "có vẻ đã có" (không chặn, vì trùng tên vẫn có thể 
 
 - **Trang "Nhập từ Excel"** `/w/:ws/import`. Vào từ thanh bên (nhóm dưới, cạnh Danh mục; biểu tượng tải lên) và từ nút **Nhập Excel** cạnh "Tải Excel" ở trang Tổng quan.
 - **Ba bước** hiện trên đầu trang (① Chọn file, ② Xem trước, ③ Nhập), bước hiện tại tô đậm.
-  - **① Chọn file:** nút **Tải mẫu** (lưu `mau-nhap-<tên không gian>.xlsx` qua `downloadFile`), ô chọn file chỉ nhận `.xlsx`, kéo thả được. Chọn xong là gửi xem trước ngay, có "Đang đọc file…".
+  - **① Chọn file:** nút **Tải mẫu** (lưu `<tên không gian>-mau-nhap-<ngày>.xlsx`, cùng cách đặt tên với file xuất), ô chọn file chỉ nhận `.xlsx`, kéo thả được. Chọn xong là gửi xem trước ngay, có "Đang đọc file…".
   - **② Xem trước:** dải số "Địa điểm 12 · Người 30 · Cư trú 28 (2 lỗi) · …". Lỗi cả file trong một `Alert` đỏ; ghi chú trong một `Alert` nhạt. `Tabs` theo sheet, mỗi tab kèm số lỗi (đỏ) hoặc cảnh báo (vàng). Bảng trong `ScrollArea`: Dòng, Hồ sơ (`label`), Kết quả (dấu ổn, hoặc từng lời nhắn kèm tên cột). Công tắc "Chỉ hiện dòng có lỗi hoặc cảnh báo" (bật sẵn khi có lỗi). Bảng hiện 200 dòng một lần, có "Hiện thêm". Nút **Chọn file khác** và **Nhập N dòng**; còn lỗi thì nút khoá, kèm "Sửa N lỗi trong file rồi chọn lại file".
   - **③ Nhập:** gửi lại **cùng file** đã chọn. Trong lúc chạy: `Progress` chạy liên tục và "Đang nhập, đừng đóng trang". Xong: "Đã nhập 115 hồ sơ" với số theo sheet và link tới Tổng quan, Người, Đồ đạc, Hoạt động; nút "Nhập file khác". Mọi dữ liệu đã tải của không gian được làm mới.
 - **Trường hợp riêng:** lần nhập trả `committed: false` (dữ liệu đổi từ lúc xem trước) thì quay về bước ② với báo cáo mới và dòng "Dữ liệu đã thay đổi từ lúc xem trước". File trên máy bị sửa hay xoá sau khi chọn (trình duyệt không đọc lại được) thì "Không đọc lại được file; chọn lại file". `413` thì "File lớn hơn 5 MB". `404` (registry chưa có `/imports`) thì "Máy chủ chưa hỗ trợ nhập Excel; cần cập nhật registry".
