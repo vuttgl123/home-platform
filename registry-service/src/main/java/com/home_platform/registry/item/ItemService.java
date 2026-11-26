@@ -113,6 +113,17 @@ public class ItemService {
 
 	@Transactional
 	public Item create(WorkspaceContext ctx, ItemRequest request) {
+		return create(ctx, request, null);
+	}
+
+	/**
+	 * Tạo với mã cho trước. Chỉ dùng khi nhập từ Excel (mã có sẵn từ sổ sách, nhãn đã in); form luôn
+	 * để hệ thống cấp mã. Mọi luật khác như {@link #create(WorkspaceContext, ItemRequest)}.
+	 * @param givenCode mã đã bỏ khoảng trắng hai đầu, tối đa 50 ký tự; {@code null} là cấp theo mẫu mã
+	 * @throws ConflictException nếu mã đã có trên một món nào đó, kể cả món đã xoá
+	 */
+	@Transactional
+	public Item create(WorkspaceContext ctx, ItemRequest request, String givenCode) {
 		if (request.placeId() == null) {
 			throw new BadRequestException("placeId is required");
 		}
@@ -125,7 +136,7 @@ public class ItemService {
 			this.categories.requireActive(ctx.workspaceId(), request.categoryId());
 		}
 		Map<String, Object> attributes = validAttributes(ctx, request.categoryId(), request.attributes());
-		String code = issueCode(ctx, request.categoryId());
+		String code = (givenCode != null) ? requireFreeCode(ctx, givenCode) : issueCode(ctx, request.categoryId());
 		Item item = new Item(0, 0, request.placeId(), request.categoryId(), code, request.name(), request.quantity(),
 				request.unit(), request.status(), request.placedAt(), request.warrantyUntil(),
 				request.serviceEveryMonths(), null, null, request.ownerPersonId(),
@@ -172,6 +183,13 @@ public class ItemService {
 			assigned++;
 		}
 		return assigned;
+	}
+
+	private String requireFreeCode(WorkspaceContext ctx, String code) {
+		if (this.repository.codeExists(ctx.workspaceId(), code)) {
+			throw new ConflictException("Code " + code + " is already in use");
+		}
+		return code;
 	}
 
 	private String issueCode(WorkspaceContext ctx, Long categoryId) {

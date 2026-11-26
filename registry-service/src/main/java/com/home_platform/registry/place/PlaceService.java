@@ -393,6 +393,17 @@ public class PlaceService {
 
 	@Transactional
 	public Place create(WorkspaceContext ctx, PlaceCreateRequest request) {
+		return create(ctx, request, null);
+	}
+
+	/**
+	 * Tạo với mã cho trước. Chỉ dùng khi nhập từ Excel (mã có sẵn từ sổ sách, nhãn đã in); form luôn
+	 * để hệ thống cấp mã. Mọi luật khác như {@link #create(WorkspaceContext, PlaceCreateRequest)}.
+	 * @param givenCode mã đã bỏ khoảng trắng hai đầu, tối đa 50 ký tự; {@code null} là cấp theo mẫu mã
+	 * @throws ConflictException nếu mã đã có trên một địa điểm nào đó, kể cả địa điểm đã xoá
+	 */
+	@Transactional
+	public Place create(WorkspaceContext ctx, PlaceCreateRequest request, String givenCode) {
 		Place parent = (request.parentId() != null) ? getForShare(ctx.workspaceId(), request.parentId()) : null;
 		int depth = (parent != null) ? parent.depth() + 1 : 0;
 		if (depth > Place.MAX_DEPTH) {
@@ -402,7 +413,7 @@ public class PlaceService {
 		Map<String, Object> attributes = validAttributes(ctx, request.placeTypeId(), request.attributes());
 		long id = this.idGenerator.nextId();
 		String path = ((parent != null) ? parent.path() : "/") + id + "/";
-		String code = issueCode(ctx, request.placeTypeId());
+		String code = (givenCode != null) ? requireFreeCode(ctx, givenCode) : issueCode(ctx, request.placeTypeId());
 		Place place = new Place(0, id, request.parentId(), request.placeTypeId(), path, depth, code, request.name(),
 				request.description(), request.status(), request.capacity(), attributes, request.coverFileId(), null, 0, null,
 				0, 0, null);
@@ -452,6 +463,13 @@ public class PlaceService {
 			assigned++;
 		}
 		return assigned;
+	}
+
+	private String requireFreeCode(WorkspaceContext ctx, String code) {
+		if (this.repository.codeExists(ctx.workspaceId(), code)) {
+			throw new ConflictException("Code " + code + " is already in use");
+		}
+		return code;
 	}
 
 	private String issueCode(WorkspaceContext ctx, long placeTypeId) {

@@ -5,13 +5,13 @@ import java.util.Locale;
 import com.home_platform.registry.support.Text;
 
 /** Chuẩn hoá các trường của người, dùng chung cho request tạo và sửa. */
-final class PersonFields {
+public final class PersonFields {
 
 	private PersonFields() {
 	}
 
 	/** Bỏ khoảng trắng và dấu chấm: "090 123.4567" thành "0901234567". */
-	static String phone(String value) {
+	public static String phone(String value) {
 		return (value != null) ? Text.trimToNull(value.replaceAll("[\\s.]", "")) : null;
 	}
 
