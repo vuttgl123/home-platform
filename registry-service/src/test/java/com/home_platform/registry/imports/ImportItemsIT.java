@@ -177,6 +177,20 @@ class ImportItemsIT extends ImportTestData {
 	}
 
 	@Test
+	void sharedFieldsAreCheckedWhenTheCategoryIsWrong() throws Exception {
+		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.ITEM, null, "supplier", "Nơi mua",
+				FieldDataType.TEXT, null, true, 1, null));
+		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.ITEM, this.appliances, "power", "Công suất",
+				FieldDataType.NUMBER, null, null, 2, null));
+
+		String report = report(preview(workbook().sheet("Đồ đạc", "Tên", "Nhóm", "Ở đâu", "Nơi mua", "Công suất")
+			.row("Tủ lạnh", "Điện may", "P301", null, 150)
+			.build()));
+
+		assertThat(messages(report, 0)).containsExactlyInAnyOrder("Chưa có nhóm 'Điện may' trong Danh mục", "Bắt buộc");
+	}
+
+	@Test
 	void itemCodesShareTheirOwnSpace() throws Exception {
 		this.items.create(CTX_A, new ItemRequest(this.p301, null, null, "Ghế", null, null, null, null, null, null, null,
 				null, null, null), "G-01");

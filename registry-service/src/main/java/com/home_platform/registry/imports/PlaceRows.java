@@ -133,7 +133,8 @@ class PlaceRows implements SheetRows {
 		}
 		draft.status = reader.choice("Trạng thái", STATUSES, STATUS_LABELS);
 		draft.description = reader.text("Mô tả");
-		draft.attributes = (type != null) ? AttributeCells.read(reader, attributes, type.id(), type.name()) : Map.of();
+		draft.attributes = (type != null) ? AttributeCells.read(reader, attributes, type.id(), type.name())
+				: AttributeCells.readShared(reader, attributes);
 		return draft;
 	}
 

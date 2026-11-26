@@ -48,6 +48,27 @@ final class AttributeCells {
 		return values;
 	}
 
+	/**
+	 * Chỉ các mục áp cho mọi loại ({@code typeId} 0), khi loại (nhóm) của dòng không tìm được: vẫn báo
+	 * lỗi của chúng trong cùng lần xem trước; cột của các mục theo loại thì bỏ qua, vì chưa biết loại.
+	 */
+	static Map<String, Object> readShared(RowReader reader, AttributeColumns columns) {
+		Map<String, Object> values = new LinkedHashMap<>();
+		columns.defsByHeader().forEach((header, def) -> {
+			if (def.typeId() != 0) {
+				return;
+			}
+			Object value = value(reader, header, def);
+			if (value != null) {
+				values.put(def.fieldKey(), value);
+			}
+			else if (def.isRequired() && !reader.hasErrorIn(header)) {
+				reader.error(header, ImportMessages.REQUIRED);
+			}
+		});
+		return values;
+	}
+
 	private static Object value(RowReader reader, String header, FieldDef def) {
 		return switch (def.dataType()) {
 			case TEXT -> {

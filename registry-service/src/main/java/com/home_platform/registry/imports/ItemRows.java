@@ -112,7 +112,9 @@ class ItemRows implements SheetRows {
 					reader.integer("Số lượng", 1, MAX_QUANTITY), reader.text("Đơn vị"),
 					removed ? ItemStatus.IN_USE : status, reader.date("Ngày đặt"), reader.date("Hết bảo hành"),
 					reader.integer("Bảo trì (tháng)", 1, 120), reader.text("Mô tả"),
-					AttributeCells.read(reader, attributes, categoryId, categoryName), null, run.versionNote());
+					reader.hasErrorIn("Nhóm") ? AttributeCells.readShared(reader, attributes)
+							: AttributeCells.read(reader, attributes, categoryId, categoryName),
+					null, run.versionNote());
 			if (placeId != null) {
 				this.runner.validate(request, reader, columns);
 			}

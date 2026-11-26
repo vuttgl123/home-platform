@@ -178,6 +178,20 @@ class ImportPlacesIT extends ImportTestData {
 	}
 
 	@Test
+	void sharedFieldsAreCheckedWhenTheTypeIsWrong() throws Exception {
+		this.fieldDefs.create(CTX_A, new FieldDefCreateRequest(FieldTarget.PLACE, null, "postcode", "Mã bưu chính",
+				FieldDataType.TEXT, null, true, 1, null));
+
+		String report = report(preview(workbook().sheet("Địa điểm", "Tên", "Loại", "Mã bưu chính")
+			.row("Kho sau", "Kho", null)
+			.build()));
+
+		assertThat(messages(report, 0)).containsExactlyInAnyOrder("Chưa có loại 'Kho' trong Danh mục", "Bắt buộc");
+		assertThat((List<String>) read(report, "$.sheets[0].items[0].messages[*].column"))
+			.containsExactlyInAnyOrder("Loại", "Mã bưu chính");
+	}
+
+	@Test
 	void tooDeepIsTranslated() throws Exception {
 		XlsxBuilder file = workbook().sheet("Địa điểm", HEADERS);
 		for (int level = 1; level <= 21; level++) {
