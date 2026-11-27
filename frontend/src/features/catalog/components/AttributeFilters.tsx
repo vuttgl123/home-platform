@@ -138,7 +138,7 @@ function ValueInput({
       inputMode={def.dataType === 'NUMBER' ? 'decimal' : undefined}
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="w-auto min-w-0 flex-1 sm:max-w-56"
+      className="w-auto min-w-0 flex-[1_1_10rem] sm:max-w-56"
     />
   )
 }

@@ -65,7 +65,7 @@ export function PeoplePage() {
         <Input
           type="search"
           aria-label="Tìm người"
-          placeholder="Tên, số điện thoại, email, giấy tờ, ghi chú…"
+          placeholder="Tên, SĐT, email, giấy tờ, ghi chú…"
           value={filter.q}
           onChange={(event) => update({ ...filter, q: event.target.value })}
         />

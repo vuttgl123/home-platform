@@ -1,6 +1,6 @@
 # Tìm và lọc sâu hơn (Đợt 11)
 
-Ngày: 2026-11-26 · Trạng thái: **đã duyệt** (bạn: "Được làm cho tôi nhé cứ theo thứ tự bạn đề xuất" với nhóm 2 "Tìm và lọc sâu hơn"; "làm tiếp wave tiếp theo")
+Ngày: 2026-11-26 · Trạng thái: **đã xây** (2026-11-27), **đã duyệt** (bạn: "Được làm cho tôi nhé cứ theo thứ tự bạn đề xuất" với nhóm 2 "Tìm và lọc sâu hơn"; "làm tiếp wave tiếp theo")
 
 Ký hiệu: **(bạn)** là điều bạn đã nói; **(tôi chọn)** là quyết định của tôi, bạn có thể bác.
 
